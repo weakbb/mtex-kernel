@@ -1,0 +1,3 @@
+set TTFONTS=%TTFDIR
+set TTFCFG=%ETC
+set TTF2PKINPUTS=%ETC!!;%MTEX\texinput\ttfcfg;%MTEX\texlocal\ttfcfg

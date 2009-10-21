@@ -1,0 +1,117 @@
+@echo off
+setlocal
+if #%1==#  goto usage
+if not exist %1  goto usage
+
+set /r %1
+set check_size=%@replace[,,,%check_size]
+iff not #%check_file==# then
+  if 0%@filesize["%check_file"]==0%check_size quit
+endiff
+if %@len[%url]==0 quit
+if #%arc==#  set arc=%TMP\%@name[%url].%@ext[%url]
+
+set b_download=1
+iff exist "%arc" then
+  msg 0 I have found a file [%arc] for installing [%name %version]. Click [Yes] to skip downloading or Click [No] to download it again.~~
+  msg 936 发现了安装[%name %version]需要的文件[%arc]!您是否想直接用它来安装？选[Yes]将跳过下载过程，或选[No]将从网上重新下载这个文件！~~
+  msgbox YESNO %_msg
+  if not %_?==11 set b_download=0
+endiff
+
+iff #%b_download==#1 then
+
+msg 0 Please confirm the URL to download [%arc] for [%name %version]:~~
+msg 936 请确认安装[%name %version]所需文件[%arc]的网址:~~
+querybox /E %_msg %%url
+if not %_?==0 quit
+
+iff not %@len[%url]==0 then
+  echoerr Running: down_url "%arc" "%url"
+  down_url "%arc" "%url"
+  if not exist "%arc"  goto download_error
+  if #%url_size==#  set url_size=%@filesize["%arc"]
+  iff %url_size GT %@filesize["%arc"] then
+	set CURL_OPT=%CURL_OPT -C %@filesize["%arc"]
+	down_url "%arc" "%url"
+  endiff
+  iff %url_size GT %@filesize["%arc"] then
+	goto download_error
+  endiff
+endiff
+
+endiff
+
+if %@len[%copy_files]==0  set copy_files=*.*
+if %@len[%copy_cmd]==0  set copy_cmd=copy /s "%dest"\%copy_files "%_CWD"\
+set ext=%@ext[%arc]
+switch #%ext
+case #rar
+  unrar t "%arc"
+  if not %?==0 goto download_error
+  if %@len[%inst_cmd]==0  set inst_cmd=unrar x -o+ "%arc" "%dest"\
+  if %@len[%uninst_cmd]==0  set uninst_cmd=del /XSQY "%dest"\*.*
+  gosub install
+case #zip
+  unzip -t "%arc"
+  if not %?==0 goto download_error
+  if %@len[%inst_cmd]==0  set inst_cmd=unzip -o "%arc" -d "%dest"
+  if %@len[%uninst_cmd]==0  set uninst_cmd=del /XSQY "%dest"\*.*
+  gosub install
+case #7z
+  call util 7z t "%arc"
+  if not %?==0 goto download_error
+  if %@len[%inst_cmd]==0  set inst_cmd=call util.btm 7z x -o"%dest" "%arc"
+  if %@len[%uninst_cmd]==0  set uninst_cmd=del /XSQY "%dest"\*.*
+  gosub install
+case #exe
+  if %@len[%inst_cmd]==0  set inst_cmd="%arc"
+  if %@len[%uninst_cmd]==0  set uninst_cmd=call un_inst.btm "%dest"
+  gosub install
+case #msi
+  if %@len[%inst_cmd]==0  set inst_cmd=msiexec.exe /qb /norestart /i "%arc"
+  if %@len[%uninst_cmd]==0  set uninst_cmd=msiexec.exe /qb /x "%arc"
+  gosub install
+default
+
+endswitch
+
+quit
+
+:usage
+echo Usage: %0 download.ini  ==) download a file according to settings in download.ini
+quit
+
+:download_error
+msg 0 Error in downloading? Please make sure the URL is correct!//Quit now!~~
+msg 936 下载似乎有错误！请确认下载地址正确！//现在退出!~~
+wask {300}%_msg
+del %arc
+quit
+
+:install
+  msg 0 I will run [%arc]. Please confirm the command for installing to [%dest]:~~
+  msg 936 下面将启动[%arc]，请确认安装命令行并建议您安装到目录[%dest]:~~
+  querybox /E %_msg  %%inst_cmd
+  iff %_?==0 .AND. not %@len[%inst_cmd]==0 then
+    %inst_cmd
+  endiff
+  
+  REM ~ msg 0 Please confirm the folder containing the installed [%name]:~~
+  REM ~ msg 936 请确认安装[%name]后的目录:~~
+  REM ~ querybox /E %_msg %%dest~~
+
+  msg 0 I will back up installed folder into MTeX. Please confirm the command for copying files from the installation folder:~~
+  msg 936 下面即将备份安装好的目录到MTeX里面。请确认从安装好的目录复制文件的命令：~~
+  querybox /E %_msg %%copy_cmd
+  iff %_?==0 .AND. not %@len[%copy_cmd]==0 then
+    call %copy_cmd
+  endiff
+  
+  msg 0 Now I will uninstall [%name] safely. Please confirm the command for uninstalling [%name]:~~
+  msg 936 现在您可以安全地反安装[%name]！请确认反安装[%name]的命令：~~
+  querybox /E %_msg %%uninst_cmd
+  iff %_?==0 .AND. not %@len[%uninst_cmd]==0 then
+    call %uninst_cmd
+  endiff
+return

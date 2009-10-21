@@ -1,0 +1,44 @@
+@echo off
+if #%1==# goto usage
+setlocal
+title TEX-DOS
+if #%@ext[%1]==#pdf gosub pdf-close
+set ext=%@ext[%1]
+if not #%ext==# (set ext=.%ext)
+activate "*%1&*" close >& nul
+if %_?==0 (quit 1)
+set f1=%@sfn[%1&]
+if #%f1==# (quit 2)
+set f1=%@name[%f1].%@ext[%f1]
+activate "*%f1*" close >& nul
+if %_?==0 (quit 1)
+quit 2
+
+:usage
+echo %0 filename ==) Close the window with title *filename*
+quit 0
+
+
+:pdf-close
+if #%PDFVIEW==##auto  return
+if #%PDFVIEW==#pdfxcview  goto pdfxcview-close
+if not #%PDFVIEW==#AdobeAcrobat  return
+
+set acroexe=
+set acroexe=%@regquery["HKLM\SOFTWARE\Classes\Software\Adobe\Acrobat\Exe\"]
+if #%acroexe==#-1 return
+if #%acroexe==# return
+for %_wt in ("Adobe Reader" "Acrobat Reader" "Adobe Acrobat Reader") do (
+  activate "*%@name[%_wt]*" MIN >& nul
+  iff %_?=0 then
+    pdfclose --file %@sfn[%1] 
+    quit 1
+  endiff
+)
+return
+
+:pdfxcview-close
+set _file=%@sfn[%1]
+if #%_file==# (set _file=%1)
+call util.btm pdfxcview -close %_file
+return

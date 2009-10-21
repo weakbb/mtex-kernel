@@ -1,0 +1,13 @@
+@echo off
+if #%1==# goto usage
+call mp2eps.btm -pdf %&
+quit
+
+:usage
+echo Usage1: %0 [-view] [-- outfile] mp_file ==) Compile mp_file and convert metapost figures to pdf files. 
+echo Usage2: %0 [-view] [-- outfile] mps_files ==) Convert metapost figures to pdf files.
+echo Option: -view ==) preview each pdf file.
+echo         -- outfile ==) specify the output file name.
+echo Note: Without -- option, mps_file *.n will be converted to *-n.pdf!
+echo Example: %0 fig-ex.mp ==) metapost file, convert fig-ex.n to fig-ex-n.pdf (n=1,2,...)
+quit

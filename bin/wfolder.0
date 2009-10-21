@@ -1,0 +1,4 @@
+This tool is used to get the path of some special system directories, and the results will be save in wfolder.sav in the order.
+Usage: WFOLDER [path1] [path2] ...
+Each path can begin with $Desktop, $SendTo, $Programs, $Startup, $Start Menu etc.
+

@@ -1,0 +1,17 @@
+@echo off
+set MSETUP=%@replace[$TMP,%TMP,%MSETUP]
+iff %@wild[%MSETUPBASE,\*]==1 then
+    for %_drv in (%_DRIVES) do gosub check
+    unset _drv
+endiff
+quit
+
+:check
+if %@wild[%_drv,[AB]:]==1  return
+iff isdir %[_drv]%[MSETUPBASE] then
+    set MSETUPBASE=%[_drv]%[MSETUPBASE]
+    set MSETUP=%@replace[$B,%MSETUPBASE,%MSETUP]
+    unset _drv
+    quit
+endiff
+return

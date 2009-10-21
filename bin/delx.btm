@@ -1,0 +1,164 @@
+@echo off
+setlocal
+if #%1==#  goto #usage
+pushd
+iff islabel %1 then
+  gosub %1
+else 
+  gosub del_temp
+endiff
+popd
+quit
+
+:#usage
+echo Usage1: %0 *  ==) Clean all unused files in current folder.
+echo Usage2: %0 [/S] [dir] [xxx] ==) Clean unused [xxx.*] in folder [dir]. 
+echo                By default, dir is current folder; xxx is *. Use option /S to include sub-folders.
+echo Usage3: %0 [option] ==) Clean certain MTeX sub-folders.
+echo                Option can be: -ini, -tmp, -demo, -allpk, -pk, -afm, -pfb, -sendto, -programs, -desktop, -clean, -windows, -reg, -lsr, -ttfshape
+quit
+
+:del_temp
+set dir_opt=
+iff %@wild[%1,/*]==1 then
+  set dir_opt=%1 
+  shift
+endiff
+iff isdir %1 then 
+  cdd %1>&nul 
+  shift
+endiff
+set f=%@name[%1]
+if #%f==#  set f=*
+iff #%EXT_LIST==# then
+  set EXT_LIST=aux log tmp bbl toc idx out ind tui tmp thm ilg blg dlg lot lof snm nav bak fls tab cut cpy 4ct 4tc idv lg $$$ fff
+endiff
+for %a in (%EXT_LIST) do (del %dir_opt "%f.%a" >& nul)
+del  %dir_opt  %f.dvi %f.ps %f.pdf %f.mf %f.mp %f.rtf %f.htm? %f.eps %f.jpg %f.bmp _eqns_.* _temp*.* __tmp__.* /P /E
+quit
+
+
+:-ini
+del /q "%MTEX\mtex.env"
+del /q "c:\mtex.env"
+del /q %_windir\mtex-etc.ini
+del /q %windir\mtex-etc.ini
+del /q %@sfn[%APPDATA]\mtex-etc.ini
+del /q "%ETC\mtex.ini"
+del /q %ETC\*.cfg
+del /q 
+return
+
+:-tmp
+iff not #%TMP==# then 
+	del %TMP /s /e /x /z
+endiff
+return
+
+
+:-demo
+set DEMODIR=%@sfn[%MTEX\demo]
+msg 0  Please input the path of demo folder to be cleaned:~~
+msg 936 请输入待清理的demo文件夹路径：~~
+querybox /E %_msg %%DEMODIR
+if %_?==2 return
+if not #"%DEMODIR"==#"" del  %DEMODIR\*.* /s /I"
+return
+
+:-allpk
+iff not #%PKDIR==# then  
+	del %PKDIR\*.pk /s /e /x /z
+endiff
+return
+
+:-pk
+iff not #%PKDIR==# then 
+	del %PKDIR\*.pk /s /e /x /z /a:h
+endiff
+return
+
+:-afm
+del /p %MTEX\fonts\pfb\*.afm /s /e
+return
+
+:-pfb
+echo The Type-1 fonts will be deleted!! Sure? 
+del /p %MTEX\fonts\pfb\*.pfb;*.afm /s /e
+call updmap
+return
+
+:-sendto
+call tex-lnk -clear-sendto
+return
+
+:-desktop
+call tex-lnk -clear-desktop
+return
+
+:-programs
+call tex-lnk -clear-programs
+return
+
+:-clean
+pushd %MTEX
+del *.bak;*.log;*.[1-9]* /s>&nul
+del winedt\winedt.prj>&nul
+del utils\scite\*.recent>&nul
+del fonts\pfb\*.afm;*.pfm /s>&nul
+upx bin\*.exe 
+upx -d bin\bmpcrop.exe
+cdd demo
+dir /w
+?call clean.bat
+popd
+return
+
+:-reg
+call tex-reg -u
+return
+
+:-windows
+msg 0 Are you sure to clean the rubbish files in Windows? (*.log;*.tmp;*.gid;*.chk;*.old;tempory files;IE history;document history;recycled bin;etc.)~~
+msg 936 确认清除Windows系统所有垃圾文件或者没有用的文件？【包括*.log;*.tmp;*.gid;*.chk;*.old;windows临时文件夹;IE历史;文档历史;回收站;等等】~~
+msgbox OKCANCEL %_msg
+if %_?=12 return
+echo Cleaning rubbish files, please wait a moment ...
+del /e /f /s  %systemdrive%\*.tmp;*._mp;*.log;*.gid;*.chk;*.old
+del /e /f /s  %systemdrive%\recycled\*.*
+del /e /f /s  %windir%\*.bak
+del /e /f /s  %windir%\prefetch\*.*
+rd /s /q %windir%\temp  
+md %windir%\temp
+del /e /f  %userprofile%\cookies\*.*
+del /e /f  %userprofile%\recent\*.*
+del /e /f /s  "%userprofile%\Local Settings\Temporary Internet Files\*.*"
+del /e /f /s  "%userprofile%\Local Settings\Temp\*.*"
+del /e /f /s  "%userprofile%\Local Settings\Application Data\*.db"
+del /e /f /s  "%userprofile%\recent\*.*"
+msg 0 Cleaning done!~~
+msg 936 清除系统完成！~~
+msgbox OK %_msg
+return
+
+:-ttfshape
+del %ETC%\*.fd
+
+pushd  %MTEX\fonts\tfm\cjk
+dir /b /a:d *| for /a:d %_z in (@con) do (
+  del %_z\*.* /y 
+  rd %_z
+)
+popd
+
+pushd %MTEX\fonts\enc\cjk
+dir /b /a:d *| for /a:d %_z in (@con) do (
+  del %_z\*.* /y 
+  rd %_z
+)
+popd
+
+return
+
+:-lsr
+del %ETC\ls-R %MTEX\ls-R
+return

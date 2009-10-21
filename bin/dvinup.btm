@@ -1,0 +1,16 @@
+@echo off
+setlocal
+if #%1==# goto usage
+set n=4
+set in=%@name[%1]
+set out=%@name[%2]
+if #%1==#-4 (shift)
+if #%2==# (set out=_Nup_)
+if #%n==#4 goto four-up
+pause Sorry! Currently only support 4-up of dvi file.
+quit
+
+:four-up
+dvi_four %in %out
+start /max cctwin32.exe %out
+quit

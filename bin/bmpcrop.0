@@ -1,0 +1,6 @@
+This tool is used to crop the extra blank of figures, and it can do it automatically with  IrfanView, XnView etc.
+Although these softwares can crop extra blank, you need to specify the region after cropping, and the mouse is needed in some other softwares, which is not convenient for processing the figures in a batch.
+Hence, [mhb] developed this tool, the 4DOS batch file cropbmp.btm is an application.
+Usage£ºbmpcrop f.bmp [d]
+==) detect the extra blank region in f.bmp, and save it in bmpcrop.sav with the format "Crop=x,y,w,h".
+

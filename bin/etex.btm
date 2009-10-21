@@ -1,0 +1,19 @@
+@echo off
+if #%1==# goto usage
+setlocal
+if not isdir %UTILS\etex goto pdfetex
+set etex=%UTILS\etex
+set texformats=%etex
+set texinputs=.;%MTEX\texinput\\
+set tfmfonts=.;%MTEX\fonts\tfm\\
+%etex\einitex %&
+quit
+
+:pdfetex
+echo Runing [ptex %&]
+ptex %&
+quit
+
+:usage
+echo Usage: %0 etex_file ==) Compile tex file using (pdf)eTeX.
+quit

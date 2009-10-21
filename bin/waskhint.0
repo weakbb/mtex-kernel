@@ -1,0 +1,295 @@
+TeX IDE --- your default text editor (such as WinEdt) for using MTeX
+tex-edit --- your default text editor (such as WinEdt) for using MTeX
+Utils Manager --- a tool for invoking most utils in MTeX 
+TeX-Dos --- very powerful command shell for using MTeX (much better than CMD Dos prompt window) 
+TeX Bitmap --- a tool for compiling latex formula into clipboard as bitmap format and then sending bitmap to any other application (such as PowerPoint) 
+Templates and Symbols --- a tool for choosing many templates and symbols, easy to edit documents or procedures, such as tex 
+BibX Util --- a tool for extracting bib data from a certain format of the text automatically 
+Basic Settings --- immediately change MTeX basic configuration (language interface, the default editor, pdf preview tool, and so on)
+Reconfigure MTeX --- If you add a new tool or upgrade the MTeX, you may need to re-configure MTeX
+Create Shortcuts --- create shortcuts in the Quick Start, Desktop, Start menu and "Send To" Right Menu
+RightMenu+FileAssocs --- add/delete MTeX right-mouse menu or register/unregister documents related MTeX (registry will be modified!!) 
+Configure TTFonts --- configure MTeX to use TrueType fonts in latex document
+Install Package or Fonts --- help you add a new package of macro and fonts, and related documents will be automatically Kaoru appropriate directory 
+Search and Download --- search and download standard macro packages from CTAN online
+Update Font Maps --- update font mapping files so as to ensure pdfetex/dvips/dvipdfm to use fonts properly
+Filename Database --- this optional menu lets you generate filename database so as to speed up file search 
+Preview Font File --- preview font files (TTF, OTF, PFB, PFA, AFM, TFM, PFM, etc.) 
+MTeX documents --- choose and open plenty of documents provided by MTeX or MTeX servers
+MTeX Read Me! --- Please read it first if you never use MTeX before
+Choose Editors --- choose and run a text editor to open tex file
+Choose Spell Checkers --- choose and run a spellchecker to check a specified file
+Choose Picture Utils --- choose and run a picture util
+Choose User Utils --- choose and run other user utils
+Choose File Viewers --- this menu lets you select a file and choose a viewer according to file extension
+Try TeX Fmts --- this menu lets you select a file and try any TeX engine for this file
+Arbitrary File Conversion --- universal conversion tool, integrated hundreds of file conversion functions
+Smart Open File --- open a file smartly (via file extension) with proper tool
+Smart Edit File --- edit a file smartly (via file extension) with proper tool
+Clean Unused Files --- clean temporary files (*. aux etc.) in a specified folder
+Clean Certain Objs --- clean specific files (such as pixel fonts, Windows junk files, etc.) 
+Uninstall --- remove MTeX-related files (you can still use MTeX by reconfiguring MTeX)
+Add MTeX right mouse menu --- add "Smart Open File",etc. to right mouse menu
+Delete MTeX right mouse menu --- delete "Smart Open File",etc. from right mouse menu
+Associate MTeX files --- associate tex / ctx / dtx / eps / ps / pdf / pfb / btm files with MTeX
+Clear file associations --- unregister MTeX related files
+Manual configure TTF --- edit TTFonts.cfg manually and configure TTF fonts in batch mode
+TTF Configuration wizard --- search TTF fonts and confirm configuration of each font
+TTF Configuration dialog --- pop-up a dialog box to configure to use any TTF font
+Update MTeX Component --- Download and update MTeX components directly
+Visit MTeX Group --- Visit MTeX-suite google group for discussions or information
+Join MTeX Group --- Subscribe to MTeX-suite google group for lately updates
+Support MTeX! --- MTeX needs your support in any way, such as feedback, comments, recommendation, donations, etc.
+Mathmhb's Homepage --- Unofficial personal page of mathmhb, http://mathmhb.googlepages.com
+Mathmhb's web-readings --- Unofficial blog of mathmhb, just readings found from elsewhere, just for fun:-)
+_.rar --- The archive of latest configuration files of MTeX
+bin.rar --- Kernel archive of MTeX, containing many utils and scripts developed by mathmhb, providing uniqe MTeX architecture
+web2c.rar --- Archive of MTeX tex engine, containing most exe files from W32TeX such as tex, mf, and so on
+gs.rar --- Latest GhostScript, providing important support to process, convert or preview eps/ps/pdf files
+demo.rar --- (optional) Lots of simple examples and demonstration files (tex/latex/context/xetex/luatex,Chinese typesetting,graphics,drawings,100+ package examples,slides,thesis,journal papers,etc. Try them always!
+doc.rar --- (optional) Documents of MTeX  
+texinput.rar --- Basic macro packages as well as most packages written by Chinese for Chinese typesetting
+texlocal.rar --- (optional) Extra macro packages, covering almost all latex packages in CTAN. No need to install all of them because MTeX can download and install missing packages on the fly.
+fonts1.rar --- Most commonly used fonts (esp. symbols). Most people in fact only use a few of them.
+fonts2.rar --- (optional) Some seldom used fonts. No need to install because MTeX can download and install missing fonts on the fly.
+windlls.rar --- (optional) Containing some Windows dynamic libraries MSVCP60.DLL, MSVCP71.DLL, MSVCR71.DLL, MFC71.DLL.
+winedt.rar --- (optional) Perfect text editor especially designed for TeXers. Customized and optimized by mathmhb.
+macrodemo.rar --- (optional) Original document source or example source of standard macro packages.
+template.rar --- (optional) Some big full Chinese templates collected from web (such as CTEX forum). For uses who do need them.
+acrobat.rar --- (optional) AcrobatReader 4.0, very fast. Customized and optimized by mathmhb. MTeX also provides many other good pdf viewers for your choice.
+editors --- this folder contains many good text editors and you set your favarite editor as TeX IDE
+plugins --- this folder contains some plugins of WinEdt, and they are also useful with other editors with the help of clipboard
+utils --- this folder contains hundreds of good utils (previewers, typesetting engines, LyX, spell checkers, drawing tools, converters, math softwares, packers, font tools, and so on) so as to support utils fly install; please use only when you need!
+docs --- this folder contains near one thousand of documents on almost all macro packages and TeXing so as to support docs fly install; please use only when you need!
+macros --- this folder contains several non-standard macro packages not available from CTAN so as to support macros fly install
+fonts --- this folder contains almost all fonts found in CTAN so as to support fonts fly install
+------ empty menu for adding functions in the future
+LyX --- a powerful Word-like What-You-See-Is-What-You-Get typesetting environment with LaTeX support! Try it!
+4Spell --- a good spell-checking tool (Windows version) with graphical interface and the slightly larger size 
+ASpell --- proposal to install the spell-checking tool, it can be used in any software, check the spelling 
+ISpell --- a very good spell checker (Dos version) 
+ISpellW --- a very good spell-checking tool (Windows version) 
+AmSpell --- small spelling checker (Dos version) 
+IrfanView --- very good image viewer/converter
+XnView --- another good image viewer/converter
+MsPaint --- simple picture drawing tool shipped with Windows
+MsImgView --- simple image and fax viewer shipped with Windows
+GConvert --- command-line tool to convert pictures among any formats shipped with MTeX
+Metapost --- powerful graphic programming language (generating mps / eps images directly)
+GnuPlot --- powerful scientific 2D/3D drawing tool shipped with default installation
+TpX --- easy-to-use drawing tool designed for latex shipped with default installation
+JsPlot --- powerful tool for drawing and painting (supporting user-defined modules, exporting eps, etc.)
+MDraw --- MayuDraw: classical vector image editor (exporting eps)
+PageDraw --- free version of MDraw: classical vector image editor (exporting eps)
+TkPaint --- simple drawing tool (exporting eps)
+LatexCAD --- latex drawing tool generating tex file (you need to learn how to operate)
+TeXCad --- easy-to-use tex drawing tool generating tex file 
+TexCad32 --- easy-to-use tex drawing tool generating tex file 
+WinFig --- easy-to-use drawing tool (exporting eps,tex,etc.)
+Upaint --- drawing tool like mspaint with enhanced functions
+QFig --- tex drawing tool generating tex file for Dos
+Asymptote --- powerful graphic programming language, similar to metapost, with strong c++ style syntax 
+Winplot --- plotting functions easily, graphical interface, no programming 
+PhotoFiltre --- compact and powerful drawing tool, replacement of PhotoShop 
+LaTeXPiX --- good latex drawing tool, recommended
+Kseg --- very good geometric drawing tool, no Java dependency, recommended 
+Geogebra --- another good geometric drawing tool, relying on JRE1.5+ 
+Zirkel --- another good geometric drawing and presentation software, relying on JRE1.4+ 
+Jaxodraw --- good drawing tool, relying on JRE1.5+
+LatexDraw --- good latex drawing tool, recommended 
+GraphViz --- special drawing language (DOT) for graphs/diarams 
+WinGeom --- another geometric drawing tool, no Java dependency, 
+GeoNext --- another geometric drawing tool, relying on Java 
+WinGclc --- tool for geometric drawing and geometric theorem proving
+GrafProg --- a mathematics, statistics drawing tool, including function calculator 
+Fplot --- plotting functions, useful for learning maths
+Speq --- calculating complex mathematical formulas and plotting functions
+ZGrapher --- a mathematics, statistics drawing tool, including calculators expression 
+AlgoSim --- algorithm simulator that can plot functions, statistical calculations and so on 
+Archim --- tool for plotting functions
+AlgoDraw --- a good tool for drawing flow chart 
+WPlot --- plotting functions or data
+MathGraf --- tool for plotting functions
+MathGraph --- tool for plotting functions
+GraphMat --- tool for plotting functions
+EDraw --- good tool for drawing flow chart, replacement of Visio
+GraphPlus --- 3D plotting tool
+YED --- easy-to-use drawing tool, relying on Java 
+TED --- tex drawing tool for Dos
+Ipe --- good vector drawing tool
+Jpgfdraw --- good drawing tool generating tex codes using pgf package (Java needed)
+Jfig3 --- good drawing tool (Java needed)
+TexGraph --- good drawing tool
+NeoPaint --- good painting tool, more powerful than MSPAINT
+PosteRazor --- help you split large poster into small pages for easy printing
+LatexMac --- another latex symbols panel, similar to TeXfriends and TMac
+TeXaide --- similar to Equation Editor in MS Office, exporting latex codes to clipboard
+MathType --- full version of Equation Editor+TeXaide
+EqmLite --- equation editor with latex-style inputting (with OLE support)
+M-Timer --- tiny tool for timing (useful for presenting slides)
+Zoomer --- small screen magnifier 
+TypoGraf --- good tool to view/manage fonts in Windows
+FontViewer --- compact and powerful tool to view/manage fonts in Windows, recommended
+BibEdit --- small yet good tool to edit bib files, easy to use
+BibDB --- tool to edit and manage bib files (Dos version)
+WBibDB --- tool to edit and manage bib files (Windows version) 
+JabRef --- good tool to manage references (bib files) (Windows version) 
+Makepdf --- a small GUI interface of ps2pdf, not necessary to install
+FreeDist --- free distiller using ps2pdf, not necessary to install
+PdfLib --- manage your pdf file and search keywords in pdf files
+FreeSpell --- provide you spell-checking function in any Windows applications by pressing a hot key (via aspell)
+ProSpell --- provide you spell-checking function in any Windows applications by pressing a hot key (via aspell)
+LuaWin --- lua language with native Windows graphics support
+PostRazor --- help you print large posters by splitting a large picture into small parts
+Rlab --- very compact yet good scientific computing language tailored by mathmhb, replacement of MATLAB, with plotting feature via Gnuplot, recommended for study
+FreeMat --- another MATLAB clone (relatively bigger, about 10M)
+MathViews --- scientific computing software, similar to MATLAB, with certain limit on matrix dimension
+MLAB --- scientific computing software, similar to MATLAB, with built-in plotting feature
+Jmath --- scientific software for symbolic computing, with built-in plotting feature, relying on Java
+JmathLib --- scientific software, similar to MATLAB, with built-in plotting feature, relying on Java
+MathN --- scientific software, similar to MATLAB, with built-in plotting feature, relying on Java
+Yorick --- compact yet powerful scientific computing software, similar to MATLAB
+SysQuake --- another small scientific computing software, MATLAB replacement
+MATLAB --- the most famous and most expensive scientific computing software, not provided by MTeX
+Octave --- the most famous cloned MATLAB, too big, not provided by MTeX
+Scilab --- another famous replacement of MATLAB, too big, not provided by MTeX
+Ox --- very small and fast scientific computing software, with C style language
+Yacas --- a small yet powerful sign computing software, replacement of Mathematica, recommended to learn
+WinLab --- math software for learning math 
+WinCalc --- math expression calculator
+MiniMat --- scientific computing software, similar to MATLAB, for DOS
+Maple --- the most efficient scientific software for symbolic computing, demo version of Maple V5, fully functional, good for learning Maple language
+tex --- the most basic plain format to generate dvi file
+latex --- the most common form of latex to generate dvi file
+ptex --- pdfetex engine corresponding plain format to generate dvi file
+platex --- pdfetex engine format corresponding to the latex to generate dvi file
+pdftex --- pdfetex engine corresponding plain format to generate pdf file 
+pdflatex --- pdfetex engine corresponding latex format to generate pdf file 
+xetex --- xetex engine corresponding plain format to generate dvi file
+xelatex --- xetex engine format corresponding to the latex to generate dvi file
+luatex --- luatex engine corresponding plain format to generate pdf file 
+lualatex --- luatex engine corresponding latex format to generate pdf file 
+uptex --- uptex engine corresponding plain format to generate dvi file
+uplatex --- uptex engine format corresponding to the latex to generate dvi file
+ntstex --- nts engine corresponding plain format to generate dvi file
+ntslatex --- nts engine format corresponding to the latex to generate dvi file
+context --- pdfetex engine corresponding ConTeXt format, usually generate pdf file 
+omega --- omega engine corresponding plain format to generate dvi file
+lambda --- omega engine format corresponding to the latex to generate dvi file
+lout --- another small yet powerful typesetting engine, not based on tex, to generate ps/pdf file
+notepad --- text editor shipped with Windows
+mini_pad --- mini text editor shipped with MTeX
+winedt --- very good text editor, called the use of the best integrated TeX environment 
+EditPlus --- a very good general text editor for programming and support utf8 encoding 
+Sc1 --- open source general editor (single-file version), compact and powerful, well-mathmhb configuration features go a long way to expand 
+SciTE --- open source general-purpose editor, compact and powerful, tailored by mathmhb with many new functions
+#Start --- open file with associated program in Windows
+run --- prompt you to edit the command line and then run the command 
+Regsvr32 --- register DLL or ActiveX Controls 
+Anti-Virus --- check virus by running anti-virus software defined in openx.cfg
+list  --- view file by LIST command (supporting text/binary mode)
+list-bin --- view file by LIST command (in binary mode)
+edit-bin --- edit file in binary mode (by using Hexapad or hex_ed.exe in MTeX)
+Edit-config --- edit configuration file openx.cfg
+Copy-To --- Copy selected file (or files in selected folder) to another folder
+Move-To --- Move selected file (or files in selected folder) to another folder
+Send-To --- Send shortcut of selected file to another folder
+Make-Shortcut --- Create shortcut of selected file and send it to the folder defined by MakeShortcutDir in openx.cfg
+reshacker --- edit resources in exe file by ResHacker
+molebox --- make a single exe application by MoleBox
+install-inf --- install device driver or service described in inf file
+7z --- pack folder into .7z archive
+cab --- pack folder into .cab archive
+zip --- pack folder into .zip archive
+rar --- pack folder into .rar archive
+un-7z --- unpack .7z archive
+un-cab --- unpack .cab archive
+un-zip --- unpack .zip archive
+un-rar --- unpack .rar archive
+7z-sfx --- create 7z self-extractor
+mount-wim --- mount .WIM image
+unmount-wim --- unmount .WIM image
+dir-wim --- list directories in .WIM image
+wim --- create (capture) .WIM image
+
+GS --- make eps/ps/pdf related conversion or view eps/ps/pdf by GhostScript
+ltx2txt --- conversion: latex document ==> text file 
+txt2ltx --- conversion: text file ==> latex document 
+ltx2word --- conversion: latex document ==> Word document in RTF format (equations are converted to pictures) 
+ltx2rtf --- conversion: latex document ==> Word document in RTF format (equations are converted to EQ fields) 
+rtf2ltx --- conversion: Word document in RTF format ==> latex document (through its convertible any word document) 
+ltx2htm --- conversion: latex document ==> html file (web page) 
+htm2ltx --- conversion: html file (web page) to document latex 
+rtf2htm --- conversion: Word document in RTF format ==> html file (web page)
+htm2rtf --- conversion: htm file (web page) ==> Word document in RTF format 
+txt2htm --- conversion: text file ==> html file (web page) 
+htm2txt --- conversion: htm file (web page) ==> text file 
+txt2rtf --- conversion: text file ==> Word Word document in RTF format 
+rtf2txt --- conversion: Word Word document in RTF format ==> text file (not yet been implemented) 
+dvi2txt --- conversion: dvi file ==> text file
+txt2dvi --- conversion: text file ==> dvi file
+dvi2bmp --- conversion: dvi file ==> bmp image
+dvi2img --- conversion: dvi file ==> image of any formats ...
+dvi2eps --- conversion: dvi file ==> eps image 
+dvi2ps --- conversion: dvi file ==> ps file (not embedding standard Type1 fonts) 
+dvi-ps --- conversion: dvi file ==> ps file (embedding standard Type1 fonts) 
+dvi2pdf --- conversion: dvi file ==> pdf file (not embedding standard Type1 fonts) 
+dvi-pdf --- conversion: dvi file ==> pdf file (embedding standard Type1 fonts) 
+eps2ps --- conversion: eps image ==> ps file (not embedding standard Type1 fonts) 
+eps-ps --- conversion: eps image ==> ps file (embedding standard Type1 fonts) 
+ps2eps --- conversion: ps file ==> eps image (not embedding standard Type1 fonts) 
+ps-eps --- conversion: ps file ==> eps image (embedding standard Type1 fonts) 
+eps2pdf --- conversion: eps image ==> pdf file (not embedding standard Type1 fonts) 
+eps-pdf --- conversion: eps image ==> pdf file (embedding standard Type1 fonts) 
+ps2pdf --- conversion: eps image ==> pdf file (not embedding standard Type1 fonts) 
+ps-pdf --- conversion: eps image ==> pdf file (embedding standard Type1 fonts) 
+pdf2ps --- conversion: pdf file ==> ps file (not embedding standard Type1 fonts) 
+pdf-ps --- conversion: pdf file ==> ps file (embedding standard Type1 fonts) 
+pdf2eps --- conversion: pdf file ==> eps image (not embedding standard Type1 fonts) 
+pdf-eps --- conversion: pdf file ==> eps image (embedding standard Type1 fonts) 
+pdf2txt --- conversion: pdf file ==> text file 
+ps2txt --- conversion: ps file ==> text file 
+txt2pdf --- conversion: text file ==> pdf file 
+txt2ps --- conversion: text file ==> ps file 
+txt2eps --- conversion: text file ==> eps image
+txt2img --- conversion: text file ==> jpg image
+ps2htm --- conversion: ps file ==> html file (web page) 
+pstoedit --- conversion: ps file ==> other vector image formats ...
+emf2eps --- conversion: emf image ==> eps image
+emf2pdf --- conversion: emf image ==> pdf image
+tpx2eps --- conversion: tpx file ==> eps image (with text annotation)
+tpx2pdf --- conversion: tpx file ==> pdf image (with text annotation)
+tpx2jpg --- conversion: tpx file ==> jpg image (with text annotation) 
+asy2eps --- conversion: asy file ==> eps image (with text annotation)
+asy2pdf --- conversion: asy file ==> pdf image (with text annotation)
+mp2eps --- conversion: mp file ==> eps image (with text annotation)
+mp2pdf --- conversion: mp file ==> pdf image (with text annotation)
+croppdf --- conversion: crop pdf image automatically
+cropeps --- conversion: crop eps image automatically 
+cropimg --- conversion: crop common image automatically
+dvi2dvi --- conversion: expand virtual fonts in selected dvi file 
+dviselect --- conversion: extract specific pages from selected dvi file 
+psselect --- conversion: extract specific pages from selected ps file 
+pdfselect --- conversion: extract specific pages from selected pdf file 
+dvimerge --- conversion: merge selected dvi file with other dvi file(s)
+psmerge --- conversion: merge selected ps file with other ps file(s)
+pdfmerge --- conversion: merge selected pdf file with other pdf file(s)
+dvinup --- conversion: put multiple pages per sheet (eg.2x2), dvi ==> dvi
+psnup --- conversion: put multiple pages per sheet (eg.2x2), ps ==> ps
+pdfnup --- conversion: put multiple pages per sheet (eg.2x2), pdf ==> pdf
+Unix2Dos --- conversion: Unix text file (LF) ==> Dos text file (CR+LF) 
+Dos2Unix --- conversion: Dos text file (CR+LF) ==> Unix text file (LF) 
+gbk2big5 --- conversion: gbk encoding file ==> big5 encoding file (use ConCmd)
+gbk2utf8 --- conversion: gbk encoding file ==> utf-8 encoding file (use ConCmd)
+utf82gbk --- conversion: utf-8 encoding file ==> gbk encoding file (use ConCmd)
+utf82big5 --- conversion: utf-8 encoding file ==> big5 encoding file (use ConCmd)
+big52gbk --- conversion: big5 encoding file ==> gbk encoding file (use ConCmd)
+big52utf8 --- conversion: big5 encoding file ==> utf-8 encoding file (use ConCmd)
+iconv --- conversion: use IConv to convert from one encoding to another encoding ...
+striptex --- conversion: delete comment lines of selected tex file (OVERWRITING original file!) 
+upx --- conversion: compress exe or dll file to reduce disk space 
+upx-undo --- conversion: restore exe or dll file compressed by upx
+Un-Upx --- conversion: restore exe or dll file compressed by upx
+
+? --- conversion: prompt entered ==> the file for conversion of the command-line 
+

@@ -1,0 +1,185 @@
+@echo off
+echo Usage: %0 [fmts] ==) Make specified formats
+echo Available formats: tex latex p-tex p-latex mptopdf context mf mpost xetex xelatex luatex
+
+setlocal
+alias UNKNOWN_CMD=
+mkdir "%ETC\formats" >& nul
+if not #%1==# goto auto
+pushd "%ETC\formats"
+for %a in (tex latex p-tex p-latex mptopdf latex209 context mf mpost xetex xelatex) do (
+  echo Making format "%a" ...
+  gosub %a
+)
+del *.aux;*.log >& nul
+popd
+quit
+
+:auto
+mkdir %ETC\formats >& nul
+pushd %ETC\formats 
+for %a in (%&) do if islabel %a  (
+  echo Making format %a ... 
+  gosub %a
+)
+del *.aux;*.log >& nul
+popd
+quit
+
+:fn_space
+text
+\everyjob\expandafter{\the\everyjob \catcode`\ =10\relax}
+\catcode`\ =12 \dump
+endtext
+return
+
+:emtex
+call setemtex
+if not isdir %EMTEXDIR\htexfmts  return
+cdd %EMTEXDIR\htexfmts
+tex /i /8 /s plain \dump
+tex /i /8 /s latex.ltx \dump
+return
+
+
+:tex
+iff exist %MTEX\texinput\etc\tex.ini then
+  tex -ini  tex.ini
+else
+  tex -ini plain \dump
+  if exist plain.fmt move plain.fmt tex.fmt
+endiff
+return
+
+:latex
+tex -ini latex.ltx 
+return
+
+:latex209
+iff not isdir "%MTEX\utils\latex209" then
+  call add_util.btm latex209
+endiff
+tex -progname=latex209 -ini latex209.ini \dump
+return
+
+:texinfo
+tex -ini texinfo.tex @dump
+return
+
+:p-tex
+:pdftex
+pdfetex -ini *p-tex.ini \dump
+return
+
+:p-latex
+:pdflatex
+pdfetex -ini --translate-file=cp227.tcx *p-latex.ini \dump
+return
+
+:mptopdf
+pdfetex -ini *mptopdf.ini
+return
+
+:context
+set c_ini=%@execstr[kpsewhich context.ini]
+if #%c_ini==#  return
+call tex-cfg context
+return 
+
+:luacontext
+:cont-en
+alias luatools=texlua.exe %UTILS\context\lua\luatools.lua
+alias mtxrun=texlua.exe %UTILS\context\lua\mtxrun.lua
+apath %UTILS\luatex
+apath %UTILSLOCAL\luatex
+luatools --generate
+luatools --make --compile cont-en
+return
+
+:mf
+mf.exe -ini plain.mf;input modes.mf;input local.mf;dump
+move plain.base mf.base>&nul
+return
+
+:mp
+:mpost
+apath %UTILS\metapost
+apath %UTILSLOCAL\metapost
+mpost.exe -ini mpost
+return
+
+:xetex
+apath %UTILS\xetex
+apath %UTILSLOCAL\xetex
+xetex.exe -etex -ini xetex.ini \dump
+return
+
+:xelatex
+apath %UTILS\xetex
+apath %UTILSLOCAL\xetex
+xetex.exe -etex -ini xelatex.ini \dump
+return
+
+:luatex
+apath %UTILS\luatex
+apath %UTILSLOCAL\luatex
+luatex.exe -ini *luatex.ini \dump
+return
+
+:lualatex
+apath %UTILS\luatex
+apath %UTILSLOCAL\luatex
+luatex.exe -ini *lualatex.ini \dump
+return
+
+
+:ntstex
+apath %UTILS\nts
+apath %UTILSLOCAL\nts
+nts.exe -ini plain.tex \dump
+move plain.nfmt ntstex.nfmt
+return
+
+:ntslatex
+apath %UTILS\nts
+apath %UTILSLOCAL\nts
+nts.exe -ini latex.ltx \dump
+move latex.nfmt ntslatex.nfmt
+return
+
+:uptex
+apath %UTILS\uptex
+apath %UTILSLOCAL\uptex
+uptex.exe -ini uptex.ini \dump
+return
+
+:uplatex
+apath %UTILS\uptex
+apath %UTILSLOCAL\uptex
+uptex.exe -ini uplatex.ini \dump
+return
+
+
+:omega
+apath %UTILS\omega
+apath %UTILSLOCAL\omega
+omega.exe -ini omega.ini \dump
+return
+
+:aleph
+apath %UTILS\omega
+apath %UTILSLOCAL\omega
+omega.exe -ini aleph.ini \dump
+return
+
+:lambda
+apath %UTILS\omega
+apath %UTILSLOCAL\omega
+omega.exe -ini lambda.ini \dump
+return
+
+:lamed
+apath %UTILS\omega
+apath %UTILSLOCAL\omega
+omega.exe -ini lamed.ini \dump
+return

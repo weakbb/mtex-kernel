@@ -1,0 +1,129 @@
+@echo off
+setlocal
+REM ~ alias mp=mpost.exe -interaction=nonstopmode
+alias mp=mpost.exe 
+set _view=
+set _debug=
+set _out=
+set _fmt=eps
+set _p3=1
+set _mproof=
+do while %@wild[%1,-*]==1
+  switch %1
+  case -p3
+    set _p3=1
+  case -fast
+    set _p3=1
+  case -nop3
+    set _p3=
+  case -slow
+    set _p3=
+  case -eps
+    set _fmt=eps
+  case -pdf
+    set _fmt=pdf
+  case -debug
+    set _debug=1
+  case -view
+    set _view=1
+  case -mproof
+    set _mproof=1
+  case --
+    set _out=%2
+	shift
+  endswitch
+  shift
+enddo
+if #%1==# goto usage
+pushd %@path[%1]
+iff #%@ext[%1]==#mp .OR. #%@ext[%1]==#  then 
+  del %@name[%1]-*.eps >& nul
+  set testltx=%@execstr[xfind "\documentclass" %@name[%1].mp]
+  iff not #%testltx==# then
+    set TEX=latex
+  endiff
+  iff #%_p3==#1 then
+    REM ~ mp \prologues:=3;filenametemplate `"""%%j-%%c.eps"""`;input %@name[%1]
+    mp \prologues:=3;input %@name[%1]
+    iff %? GT 0 then
+      goto error
+    endiff
+    del "%@name[%1].log";"%@name[%1].mpx"
+    for %a in (%@name[%1].[0-9]*) do move %a %@name[%1]-%@ext[%a].eps
+  endiff
+  iff not exist %@name[%1]-[0-9]*.eps then
+    mp %1
+    iff %? GT 0 then
+      goto error
+    endiff    
+    del "%@name[%1].log";"%@name[%1].mpx"
+    for %a in (%@name[%1].[0-9]*) gosub proc %a
+  endiff
+  set z=%@name[%1]-[0-9]*.eps
+else
+  for %a in (%&) gosub proc %a
+  set z=%&
+endiff
+del %@name[%_tmp].log;%@name[%_tmp].aux >& nul
+
+iff #%_fmt==#pdf then
+  for %a in (%z) do call eps2pdf.btm %a "%@name[%a].pdf"
+endiff
+
+iff #%_view==#1 then
+  call preview.btm %z
+endiff
+iff #%_mproof==#1 then
+  call mproof.btm %z
+endiff
+
+popd
+quit
+
+:error
+if exist "%@name[%1].log" tview "%@name[%1].log"
+if exist mpxerr.log tview mpxerr.log
+del "%@name[%1].log";mpxerr.log >& nul
+popd
+quit
+
+
+:proc [x]
+set _tmp=_mp2eps_.tex
+iff #%_out==# then
+  set _out=%@name[%x]-%@ext[%x].%_fmt
+endiff
+gosub make_tex %x>%_tmp
+::call %@if[%_fmt==pdf,pdflatex,latex] %_tmp
+call latex %_tmp
+if not #%_debug==#1 del %_tmp
+if not exist "%@name[%_tmp].dvi" (return)
+dvips -E -o %@name[%_out].eps %@name[%_tmp].dvi
+
+del "%@name[%_tmp].dvi"
+return
+
+
+:make_tex [f]
+echo \documentclass{report}
+echo \usepackage{amssymb}
+echo \usepackage{amsmath}
+echo \usepackage{times,mathptmx}
+echo \usepackage{graphicx}
+echo \usepackage{color}
+echo \DeclareGraphicsRule{*}{eps}{*}{}
+echo \begin{document}
+echo \pagestyle{empty}
+echo \includegraphics{%f}
+echo \end{document};
+return
+
+
+:usage
+echo Usage1: %0 [-view] [-- outfile] mp_file ==) Compile mp_file and convert metapost figures to eps files. 
+echo Usage2: %0 [-view] mps_files ==) Convert metapost figures to eps files.
+echo Option: -view ==) preview each eps file.
+echo         -- outfile ==) specify the output file name.
+echo Note: Without -- option, mps_file *.n will be converted to *-n.eps!
+echo Example: %0 fig-ex.mp ==) metapost file, convert fig-ex.n to fig-ex-n.eps (n=1,2,...)
+quit

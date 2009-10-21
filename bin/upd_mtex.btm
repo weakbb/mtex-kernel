@@ -1,0 +1,270 @@
+@echo off
+setlocal
+
+set ver_sav=%@if[%@cdrom[%MTEX]==1,%ETC\version.sav,%MTEX\version.sav]
+
+pushd "%TMP"
+:start
+gosub set_server
+
+dir_ftp "%[server]/"
+echos>__tmp__
+for %x in (@.listing) do (
+  set w=%@word[-0,%x]
+  if %@wild[%w,*[a-z0-9].rar]==1  echo %w >>__tmp__ 
+)
+del /z /e .listing >& nul
+
+iff %@filesize[__tmp__] LT 50 then
+  msg 0 Error in connecting server? Try another server?~~
+  msg 936 连接服务器似乎有错误！是否尝试其它服务器？~~
+  msgbox OKCANCEL %_msg
+  if  %_?==10 (goto start) else (goto end)
+endiff
+
+set arclist=
+gosub down_ver
+
+set _i=0
+iff not %@len[%arclist]==0 then
+  msg 0 Found new updates for existing components in the server! Do you want to update them automatically? //Yes, thanks!/Let me choose them manually! ~~
+  msg 936 服务器发现若干已有组件的新版本，是否自动更新它们？//谢谢，开始吧/我自己选吧~~
+  wask {180}%_msg
+  set _i=%?
+endiff
+iff %_i==1 then
+  for %_arc in (%arclist) do gosub upd_component
+else
+  set _upd=
+  do until #%_upd==#0
+    set _upd=0
+    gosub menu
+    iff #%_upd==#1 then
+      gosub upd_component
+    endiff
+  enddo
+endiff
+
+:end
+del version.ini
+del __tmp__ >& nul
+del .listing >& nul
+popd
+quit
+
+
+:set_server
+iff exist "%ETC\mserver.cfg" then
+  set server=%@line["%ETC\mserver.cfg",0]
+else
+  set server=%@line["%MTEX\_\mserver.cfg",0]
+endiff
+del "%ETC"\mserver.sav >& nul
+del "%ETC"\mserver.cfg >& nul
+set server=%@execstr[call ask_server.btm]
+return
+
+
+:menu
+set _upd=0
+set menu=editors/plugins/utils/docs/macros/fonts
+for %z in (@__tmp__) do (set menu=%menu/%z)
+set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+msg 0 You may choose the component that you want to update/download. Please check the hint info for the function of each component.~~
+msg 936 您可以选择一个您要更新/下载的组件。请看提示信息来了解每个组件的功能。~~
+wask {140}%_msg//%menu
+set _i=%?
+if %_i LE 0 (return)
+set _w=%@word["/",%_i,#/%menu]
+iff #%@ext[%_w]==#rar then
+  set _arc=%_w
+  REM ~ set _url=%[server]/%_w
+  REM ~ set _f=%_w
+else
+  dir_ftp "%[server]/%_w/"
+  sed -e "1,2d;s/.*group //g" .listing > .list
+  set _sel=%@select[.list,1,1,25,60,Please choose an archieve to download:]
+  del .list >& nul
+  if #%_sel==# return
+  set _arc=%@word[-0,%_sel]
+  set _arc=%_w\%_arc
+  REM ~ set _url="%[server]/%_w/%_arc"
+  REM ~ set _f=%_w\%_arc
+endiff
+
+gosub check_ver
+return
+
+
+
+:upd_component
+set _w=%@path[%_arc]
+set _w=%@replace[\\,,%_w\]
+iff #%_w==# then
+  set _w=%_arc
+else
+  mkdir /s %_w >& nul
+endiff
+echo %_CWD,%_w
+set _url=%[server]/%@replace[\,/,%_arc]
+gosub download
+iff exist "%_arc" then
+  gosub update
+endiff
+return
+
+
+
+:download
+iff #%quiet==# then
+  msg 0 Ready to download [%_arc] from server, please confirm the URL and then wait until downloaded.~~
+  msg 936 即将下载如下文件，请确认网址。下载文件可能较慢，确认后请耐心等待。~~
+  querybox /E %_msg %%_url
+  if %_?==2 (return)
+endiff
+
+echo Downloading file [%_url] to [%_CWD\%_arc], please wait until finished ...
+
+echo Running: down_url "%_arc" "%_url"
+down_url "%_arc" "%_url"
+
+echo Downloading finished? I will test the rar archieve:-)
+
+unrar t "%_arc"
+iff %?==0 then 
+  iff #%quiet==# then
+    msg 0  Downloading finished! File [%_arc] is saved in folder [%_CWD]!~~
+    msg 936 下载完毕！文件[%_arc]保存于文件夹[%_CWD]！~~
+    msgbox OK %_msg
+  endiff
+else
+  del "%_arc"
+  iff #%quiet==# then
+    msg 0 Error in downloading? Please make sure the URL is correct! Try another server?~~
+    msg 936 下载似乎有错误！请确认下载地址正确！是否尝试其它服务器？~~
+    msgbox OKCANCEL %_msg
+    iff  %_?==10 then
+      gosub set_server
+      set _url=%[server]/%@replace[\,/,%_arc]
+      goto download
+    endiff
+  endiff
+endiff
+
+return
+
+:update
+set _dest=%MTEX
+switch %_w
+case template.rar
+  set _dest=%MTEX\demo
+case windlls.rar
+  set _dest=%MTEX\bin
+case avp35.rar
+  set _dest=d:\
+case docs
+  set _dest=%MTEX\doc
+case plugins
+  set _dest=%MTEX\utils
+case utils
+  set _dest=%MTEX\utils
+case editors
+  set _dest=%MTEX\utils
+case fonts
+  set _dest=%TMP\fonts
+case macros
+  set _dest=%MTEX\texlocal
+endswitch
+
+iff #%quiet==# then
+  msg 0 Ready to extract file [%_arc] to folder [%_dest]. Please confirm the destination folder. Otherwise, click [Cancel] to quit!~~
+  msg 936 即将把文件 [%_arc] 解压到文件夹 [%_dest]. 请确认目标文件夹位置。否则，请点击[取消]退出！~~
+  querybox /E %_msg %%_dest
+  if %_?==2 (return)
+endiff
+
+if #%_dest==# (return)
+
+iff #%quiet==# then
+  msg 0 Please confirm that you really want to update component [%_arc]. Existing files will be OVERWITTEN directly. If you are not sure, you can back up your files.~~
+  msg 936 请再次确认您打算更新组件[%_arc]! 原有的文件将被覆盖!~~ 
+  msgbox OKCANCEL %_msg
+  if not %_?==10 (return)
+endiff
+
+mkdir /s "%_dest"
+switch %_w
+case fonts
+  set _nam=%@name[%_arc]
+  mkdir /s "%_dest"\$$$
+  unrar x -o+ "%_arc" "%_dest"\$$$
+  call copyfnts.btm "%_dest"\$$$ %@name[%_arc]
+  rmdir "%_dest"\$$$ /S /Q
+case bin.rar
+  unrar x -o+ "%_arc" "%_dest"\
+  del "%TMP"\4nt.exe;*.dll >& nul
+  unrar e -o+ "%_arc" bin\4nt.exe bin\*.dll bin\unrar.exe "%TMP"\
+  move "%TMP"\unrar.exe "%_dest"\
+  echo @echo off > "%TMP"\_upd4nt_.bat
+  echo %MTEX\bin\nircmdc killprocess %MTEX\bin\4nt.exe >> "%TMP"\_upd4nt_.bat
+  echo %MTEX\bin\nircmdc infobox "Please click [OK] to continue to update [4NT.exe] ..." >> "%TMP"\_upd4nt_.bat
+  echo copy "%TMP\4nt.exe" "%MTEX\bin" /Y >> "%TMP"\_upd4nt_.bat
+  echo copy "%TMP\*.dll" "%MTEX\bin" /Y >> "%TMP"\_upd4nt_.bat
+  echo %MTEX\bin\nircmdc infobox "File [4NT.exe] has been updated!" >> "%TMP"\_upd4nt_.bat
+  echo del "%TMP"\4nt.exe >> "%TMP"\_upd4nt_.bat
+  echo del "%TMP"\_upd4nt_.bat >> "%TMP"\_upd4nt_.bat
+  start cmd.exe /c "%TMP"\_upd4nt_.bat
+  quit
+case web2c.rar
+  unrar x -o+ "%_arc" "%_dest"\
+  call makefmts.btm mf tex latex p-tex p-latex mptopdf mpost
+default
+  unrar x -o+ "%_arc" "%_dest"\
+  set _cfg=%@findfirst["%_dest"\%@name[%_arc]\_\c-*.btm]
+  if not #%_cfg==# (call %_cfg)
+endswitch
+if #%[new_ver]==# return
+
+set _err=%@iniwrite[%ver_sav,Setup,%_arc,%new_ver]
+echo Updating %ver_sav ... %@if[%_err==0,OK.,Error!]
+iff #%quiet==# then
+  iff #%_err==#0 then
+    msg 0 Component [%_arc] has been updated to folder [%_dest] successfully! Click [OK] to continue.~~
+    msg 936 组件[%_arc]已经成功更新到文件夹[%_dest]！~~
+  else
+    msg 0 Someting is wrong when I try to update file [%ver_sav]! Please try again:-) Click [OK] to continue.~~
+    msg 936 更新文件[%ver_sav]出错！请再次尝试。~~
+  endiff
+  msgbox OK %_msg
+endiff
+return
+
+:down_ver
+echo Running: down_url "%TMP\version.ini" "%server/version.ini"
+down_url "%TMP\version.ini" "%server/version.ini"
+set arclist=
+for %_a in (@%ver_sav) do gosub auto_check
+return
+
+:auto_check
+set narc=%@word["=",0,%_a]
+set varc=%@word["=",1,%_a]
+if #%varc==#  return
+set vnew=%@iniread[%TMP\version.ini,Setup,%narc]
+iff not #%[varc]==#%[vnew] then
+  iff %[narc]==bin.rar then
+    set arclist=%arclist %[narc]
+  else
+    set arclist=%[narc] %arclist
+  endiff
+endiff
+return
+
+:check_ver
+set old_ver=%@iniread[%ver_sav,Setup,%_arc]
+set new_ver=%@iniread[%TMP\version.ini,Setup,%_arc]
+msg 0 Existing component [%_arc] is dated [%old_ver] while the component in the server is dated [%new_ver]. Do you want to download and update this component?~~
+msg 936 已有组件[%_arc]的日期标记是[%old_ver],服务器上它的日期标记是[%new_ver]. 是否确认要继续下载和更新该组件？~~
+msgbox OKCANCEL %_msg
+if %_?==10 (set _upd=1) else (set _upd=0)
+return

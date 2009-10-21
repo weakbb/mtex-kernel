@@ -1,0 +1,36 @@
+@echo off
+setlocal
+set url=ftp://ftp.quantum.nus.edu.sg/tex-archive
+set pdir=%@if[isdir i:\tex\ctan,i:\tex\ctan,%@if[isdir g:\tex\ctan,g:\tex\ctan,ctan]]
+pushd %TMP
+iff not %@filedate[FILES.byname,c]==%_ISODATE then
+    del FILES.[bl]* >& nul
+    wget "%url/FILES.*"
+endiff
+sed -n -e "s/|/:/g;/ macros.*\.zip/p;/ fonts.*\.zip/p;/ graphics.*\.zip/p" FILES.byn* | sortu -r > FILES.lst
+REM call tex-edit.btm 1 FILES.lst
+start tview.exe FILES.lst
+for %a in (@FILES.lst) do gosub proc
+popd
+*quit
+
+:proc
+set d=%@word[":",0,%a]
+set d=%@replace[/,-,%d]
+set f=%@word[":",2,%a]
+set f=%@trim[%f]
+set m=7
+iff "%@left[%m,%d]"=="%@left[%m,%_ISODATE]" then
+echo %a
+echo Running: wget --timestamping --progress=dot "%url/%f"
+wget -nr --timestamping --progress=dot -P %pdir "%url/%f"
+endiff
+return
+
+:#down_pkg
+pushd %TMP
+set server=ftp://tug.ctan.org/tex-archive
+set dir=macros/latex209/
+wget -N -nd -r -A zip %server/%dir 
+popd
+quit

@@ -1,0 +1,100 @@
+@echo off
+if #%1==# (goto usage)
+setlocal
+set _in=%1
+if not exist %_in (goto usage)
+set _out=%@if[#%2==#,%@path[%_in]%@name[%_in]-crop.pdf,%2]
+if #%_out==#%_in (copy %_in %@path[%_in]%@name[%_in]-saved.pdf)
+
+set temppdf=tmp0000.pdf
+set tempout=tmp0crop
+set page=1
+set bbox=0 0 0 0
+
+copy %_in "%TEMP"\%temppdf
+pushd "%TEMP"
+gosub get-bbox
+gosub gen-tex > %tempout.tex
+pdftex %tempout.tex
+popd
+move "%TEMP"\%tempout.pdf %_out
+del "%TEMP"\%tempout.tex
+quit
+
+:usage
+echo Usage1: %0 a.pdf b.pdf ==) Crop a.pdf to b.pdf
+echo Usage2: %0 a.pdf ==) Crop a.pdf to a-crop.pdf
+quit
+
+
+:get-bbox
+(GSX bbox %temppdf) |& sed -n -e "/BoundingBox:/{s/^.*:\(.*\)$/\1/g;p;q;}" > __tmp__.bb
+set bbox=%@trim[%@line[__tmp__.bb,0]]
+del __tmp__.bb
+return
+
+:gen-tex
+echo \def\pdffile{%temppdf}
+
+text
+\csname pdfmapfile\endcsname{}
+\def\page #1 [#2 #3 #4 #5]{%
+  \count0=#1\relax
+  \setbox0=\hbox{%
+    \pdfximage page #1{\pdffile}%
+    \pdfrefximage\pdflastximage
+  }%
+  \pdfhorigin=-#2bp\relax
+  \pdfvorigin=#3bp\relax
+  \pdfpagewidth=#4bp\relax
+  \advance\pdfpagewidth by -#2bp\relax
+  \pdfpageheight=#5bp\relax
+  \advance\pdfpageheight by -#3bp\relax
+  \ht0=\pdfpageheight
+  \shipout\box0\relax
+}
+\def\pageclip #1 [#2 #3 #4 #5][#6 #7 #8 #9]{%
+  \count0=#1\relax
+  \dimen0=#4bp\relax \advance\dimen0 by -#2bp\relax
+  \edef\imagewidth{\the\dimen0}%
+  \dimen0=#5bp\relax \advance\dimen0 by -#3bp\relax
+  \edef\imageheight{\the\dimen0}%
+  \pdfximage page #1{\pdffile}%
+  \setbox0=\hbox{%
+    \kern -#2bp\relax
+    \lower #3bp\hbox{\pdfrefximage\pdflastximage}%
+  }%
+  \wd0=\imagewidth\relax
+  \ht0=\imageheight\relax
+  \dp0=0pt\relax
+  \pdfhorigin=#6pt\relax
+  \pdfvorigin=#7bp\relax
+  \pdfpagewidth=\imagewidth
+  \advance\pdfpagewidth by #6bp\relax
+  \advance\pdfpagewidth by #8bp\relax
+  \pdfpageheight=\imageheight\relax
+  \advance\pdfpageheight by #7bp\relax
+  \advance\pdfpageheight by #9bp\relax
+  \pdfxform0\relax
+  \shipout\hbox{\pdfrefxform\pdflastxform}%
+}%
+endtext
+
+echo \page%page [%bbox]
+echo \csname @@end\endcsname
+echo \end
+echo \endinput
+return
+
+
+:no-use
+gsx ps2write  -dEmbedAllFonts=true -sOutputFile=__tmp__.1 %_in
+call psview __tmp__.1
+pause
+gsx epswrite -dEPSCrop -dEPSFitPage -dEmbedAllFonts=true -sOutputFile=__tmp__.2 __tmp__.1
+call psview __tmp__.2
+pause
+gsx pdfwrite -dPDFSETTINGS=/prepress -dSubsetFonts=true -dEmbedAllFonts=true -dEPSCrop -dEPSFitPage -sOutputFile=%_out __tmp__.2
+del __tmp__.1;__tmp__.2 >& nul
+quit
+

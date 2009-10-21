@@ -1,0 +1,8 @@
+@echo off
+echo Usage: %0 [-] texfile [options] ==) Convert LaTeX file to text file.
+echo Options: -c (echo cites),-l (latex mode),-n (not processing \include,\input),-s,-t (tex mode),-w (word list),-e env-list (ignore envs)
+::echo Note: Option "-" is to support Chinese; otherwise, only enlish file is supported.
+setlocal
+set cmd=detex.exe
+if #%1==#- (shift) 
+%cmd %2& %1>%@path[%1]%@name[%1].txt

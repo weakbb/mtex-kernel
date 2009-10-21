@@ -1,0 +1,17 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set _tmp=__tmp__.tex
+if not exist %1 goto usage
+set out=%2
+if #%2==# set out=%@name[%1].ps
+call t2l.btm  %1 %_tmp
+call latex %_tmp
+dvips %@name[%_tmp].dvi 
+for %a in (log aux tex dvi) del %@name[%_tmp].%a
+move %@name[%_tmp].ps "%out"
+quit
+
+:usage
+echo %0 txtfile [psfile] ==) Convert txtfile to psfile
+quit

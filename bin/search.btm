@@ -1,0 +1,31 @@
+@echo off
+setlocal
+set _testutil=
+iff #%1==#-u then
+  set _testutil=1
+  shift
+endiff
+if #%1==# goto usage
+iff exist %1 then
+  iff not "%@path[%1]"=="" then
+    echo %1
+    *quit
+  endiff
+endiff
+set _exe=%@if[#%@ext[%1]==#,%@replace[.,%@name[%1].,%PATHEXT],%1]
+set _path=%@replace[;, ,%@if[%#==1,%PATH,%2&]]
+for %_z in (. %_path) do gosub find_exe
+*quit
+
+:find_exe
+iff #%_testutil==#1 then
+  if %@index[%_z,%MTEX\bin\util] GE 0   return
+endiff
+set _f=%@findfirst[%_z\%_exe]
+if #%_f==#  return
+echo %_f
+*quit
+
+:usage
+echoerr Usage: %0 file [path] ==) Find a (exe) file in specified path 
+*quit

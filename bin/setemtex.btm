@@ -1,0 +1,21 @@
+@echo off
+set EMTEXDIR=%MTEX\texinput
+set TEXFONTS=%MTEX\fonts\tfm!!;%TMP\fonts\tfm!!
+set TEXVFONTS=%MTEX\fonts\vf!!
+set T1INPUTS=%MTEX\fonts\pfb!!
+::set MFINPUT=.;;%MTEX\fonts\mf!!
+::set BIBINPUT=%EMTEXDIR%\bibtex;%TEXINPUT%
+::set BSTINPUT=%BIBINPUT%
+::set CSFINPUT=%BIBINPUT%
+::set INDEXSTYLE=.;%EMTEXDIR%\mkidx;%TEXINPUT%
+::set TEXINPUT=.;%MTEX\texinput!!;%MTEX\texlocal!!
+::set TEXLOCAL=%MTEX\texlocal
+::set FONTS=%MTEX\fonts
+::set TMPDVI=__tmp__.dvi
+
+iff not #%VAR==#  then
+  set _a=%@replace[//,!!,%VAR]
+  set TEXTFM=%TEXTFM;%_a
+::  set TEXINPUT=%TEXINPUT;%_a
+::  set MFINPUT=%MFINPUT;%_a
+endiff

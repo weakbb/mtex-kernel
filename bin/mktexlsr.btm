@@ -1,0 +1,40 @@
+@echo off
+setlocal
+echo Updating MTeX database, please wait ...
+
+pushd %@if[#%1==#,%MTEX,%ETC]
+set q=.
+del ls-R>&nul
+gosub ls_dir %ETC\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\dvipdfm\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\dvips\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\pdftex\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\context\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\xetex\>>%s\ls-R 
+gosub ls_dir %MTEX\utils\metapost\>>%s\ls-R 
+::gosub ls_dir %MTEX\emtex\>>%s\ls-R 
+gosub ls_dir %MTEX\texinput\>>%s\ls-R 
+gosub ls_dir %MTEX\texlocal\>>%s\ls-R
+gosub ls_dir %MTEX\fonts\>>%s\ls-R
+popd
+quit
+
+:ls_dir [d]
+if not isdir "%d" return 
+cdd %d
+for /r %a in (*.*) do gosub check
+return
+
+:check 
+set p=%@path[%a]
+if #%1==# set p=%@replace[%MTEX,.,%p]
+set p=%@replace[\\,,%p\]
+set n=%@name[%a]
+if not #%@ext[%a]==# set n=%n.%@ext[%a]
+iff not #%p==#%q then
+  echo. 
+  echo %@replace[\,/,%p]: 
+  set q=%p
+endiff
+echo %n
+return

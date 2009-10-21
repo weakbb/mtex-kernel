@@ -1,0 +1,9 @@
+@echo off
+setlocal
+set _d=%@if[isdir %UTILS\yap,%UTILS\yap,%UTILSLOCAL\yap]
+iff not isdir "%_d" then
+call add_util.btm yap
+endiff
+apath %_d
+start /max yap0.exe %&
+start yap1.exe %1

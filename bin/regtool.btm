@@ -1,0 +1,101 @@
+@echo off
+if #%1==#  goto help
+if #%1==#/?  goto help
+setlocal
+
+set _cmd=%@name[%1]
+if #%@left[1,%_cmd]==#- (set _cmd=%@instr[1,,%_cmd])
+iff #%@left[1,%_cmd]==#- then
+  set _cmd=%@instr[1,,%_cmd]
+  iff islabel %_cmd then
+    echo ;{%_cmd %2&} 
+    gosub %_cmd
+  endiff
+else 
+  set f=%tmp\_tmp_.reg
+  echo REGEDIT4>>%f
+  iff islabel %_cmd then
+    echo ;{%_cmd %2&} 
+    gosub %_cmd|tee /a %f 
+    regedit /s %f
+  endiff
+  del %f
+endiff
+quit
+
+
+:help
+echo This is a windows registry tool [mhb]. It is very useful!
+echo Usage: %0 -addmenu regclass menutext cmd ==) Add a right-menu.
+echo        %0 -delmenu regclass menutext cmd ==) Delete a right-menu.  
+echo        %0 -assoc .ext cmd ==) Associate a command for files [*.ext].
+echo        %0 -set var value ==) Assign a value for environment [var] (Windows NT only).
+echo        %0 -addpath files ==) Add application path for specified files.
+echo        %0 -delpath files ==) Delete application path for specified files.
+echo        %0 -addfont fontfiles ==) Add font to windows.
+echo        %0 -delfont fontfiles ==) Delete font from windows.
+echo Note: if "-" is replaced with "--", then only registry items are displayed.
+quit
+
+:reg_head
+echo REGEDIT4
+echo.
+return
+
+:addmenu
+set n=%@sfn[%@search[%4 4dos]]
+if #%@ext[%n]==#btm  set n=%@sfn[%@search[4dos]] /c %n
+set cmd=%@replace[\,\\,%n %5&]
+echo [HKEY_CLASSES_ROOT\%2]
+echo @=""
+echo [HKEY_CLASSES_ROOT\%2\shell\%3\command]
+echo @="%cmd %%1"
+return
+
+:delmenu
+echo [-HKEY_CLASSES_ROOT\%2\shell\%3]
+return
+
+:assoc
+set n=%@sfn[%@search[%3 4dos]]
+if #%@ext[%n]==#btm  set n=%@sfn[%@search[4dos]] /c %n
+set cmd=%@replace[\,\\,%n %4&]
+echo [HKEY_CLASSES_ROOT\%2]
+echo @=""
+echo [HKEY_CLASSES_ROOT\%2\shell\open\command]
+echo @="%cmd \"%%1\""
+echo [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\%2]
+echo @=""
+return
+
+:addpath
+echo [HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\%@name[%2].EXE]
+echo @="%2"
+echo ;;"Path"="d:\\Office"
+return
+
+:delpath
+echo [-HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\%@name[%2].EXE]
+return
+
+:addfont
+set n=%@word["=",0,%2]
+set t=%@word["=",1,%2]
+iff #%t==# then 
+  set t=%2 
+  set n=%@name[%t] (TrueType)
+endiff
+echo [HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts]
+echo "%n"="%@replace[\,\\,%t]"
+return
+
+:delfont
+set n=%@word["=",0,%2]
+set t=%@word["=",1,%2]
+iff #%t==# then
+  set t=%2 
+  set n=%@name[%t] (TrueType)
+endiff
+echo [HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts]
+echo "%n"=""
+return

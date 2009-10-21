@@ -1,0 +1,16 @@
+plugin /L lua4nt.dll
+echo %_luaver
+echo %@lua[1+1+math.pi]
+echo %@lua[tostring(math)]
+echo %@lua[os.getenv('PATH')]
+rem next two lines trigger errors
+echo %@lua[xos.getenv('PATH')]
+echo %@lua[os.xgetenv('PATH')]
+rem ANSI
+ilua <test1.lua
+rem Unicode
+ilua <utest1.lua
+echo Use 'return' to end interactive session...
+keystack "print(math.pi*3^2) print(math)" enter enter
+ilua
+

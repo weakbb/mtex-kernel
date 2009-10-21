@@ -1,0 +1,28 @@
+@echo off
+setlocal
+set _d=.
+if #%1==# goto help
+pushd 
+iff isdir %1 then 
+  cdd %1 
+  shift
+endiff
+set files=%@if[#%1==#,*.tpx,%&]
+for %a in (%files) do gosub tpx_scale "%a"
+popd
+rem 为了使用新的tpx文件，请在latex文件导言区加入（您可以自己修改图形放缩比例\picscale）: 
+echo TpxScale finshed. Please add the following to the preamble of latex file:
+echo    \usepackage{graphicx,ifpdf}\def\picscale{1}
+quit
+
+:help
+echo Usage1: %0 [figure_dir]  ==) Process TpX files in specified dir to support arbitrary picture scaling
+echo Usage2: %0 [figure_dir] tpxfiles ==) Process specified TpX files (in figure_dir) to support arbitrary picture scaling
+quit
+
+
+:tpx_scale [f]
+set sed_opt=-e "s/^\\ifpdf/ \\scalebox{\\picscale}{\\makebox{\\ifpdf/g" -e "s/^\\fi/ \\fi}}/g" 
+set sed_opt=%sed_opt -e "s/\\begin{figure}$/\\begin{figure}\\ifx\\picscale\\undefined \\def\\picscale{1}\\fi/g"
+type "%f" | sed %sed_opt > "%f"
+return

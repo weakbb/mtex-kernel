@@ -1,0 +1,5 @@
+\{Title=Licence for $(UTIL)};
+${w=600}You are ready to configure: $(UTIL_DES);
+/${w=600,h=60,color=AAAA00}Please review the following licence terms carefully. To use [$(UTIL)], you must accept the terms below.If you accept the above terms, please click [I Agree] to continue configuration or [I Disagree] to give up the configuration or [Cancel] to simply skip the configuration.;
+/+{w=600,h=400,dy=10,@=$(LICENSE_FILE)};
+/{w=200,dy=10,label=b_agree}I Agree;{w=200,label=b_disagree}I Disagree;{w=200,label=b_cancel}Cancel;

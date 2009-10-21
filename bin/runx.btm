@@ -1,0 +1,187 @@
+@echo off
+if #%1==#  goto #help
+setlocal
+cls
+alias go=`if islabel %1     gosub %1`
+alias hint=`scrput +0 +0 whi on blu Hint:[*%_e] %& %+ echo.`
+set _opt=
+set _cmd=
+set _ask=
+set _e=.%@ext[%1]
+set _n=%@name[%1]
+if %@index[%1,"]==0 goto -start
+
+iff #%@left[2,%1]==#// then
+  set _cmd=%@instr[2,,%1] 
+  shift
+endiff
+iff #%1==#/? then
+  set _ask=1 
+  shift
+endiff
+set _e=%@word[0,.%@word[".",1,%&]]
+set _n=%@word[-0,.%@word[".",0,%&]]
+
+:-start
+iff #%_cmd==# then
+	go #hint
+	go %_e%#hint
+	input  Command?[%_e]  %%_
+	if #%_==#  (set _cmd=%_e) else (set _cmd=%_)
+endiff
+set _=%_cmd
+set _cmd=%@word[" /",0,%_]
+set _opt=%@replace[#%_cmd,,#%_]
+iff #%_ask==#1  then
+	go %_cmd%#help
+	input  Options?[%_opt]  %%_
+	if not #%_==#  set _opt=%_
+endiff
+echo ==Command:[%_cmd] Options:[%_opt] Command-line:[%&]
+if islabel %_cmd  (gosub %_cmd %_opt)  else (call %_cmd %_opt %&)
+
+set _k=
+inkey /W2 %%_k
+if not #%_k==#  pause
+quit
+
+:#help
+echo Purpose: Run auto-selected or specified command [//cmd] with arguments [args].
+echo     Options can be prompted by [/?]. See more help in file [%0].
+echo Usage:   %0 [/?] [//cmd] args
+echo. 
+quit
+
+rem ===========以下可加入您自定义的命令==================
+:#hint
+rem 可以给出对所有文件能用的命令的提示。也可在此加入所有命令执行前需要的预备命令。
+hint ?/./list/dir/start/tex-edit/editplus/notepad/notexpad/iview/xnview
+return
+
+:?
+set Command= %&
+echo Please input command [Tip:Add a space before cmd to pause later]:
+eset Command
+call %Command
+if #%@ascii[%@left[1,%Command]]==#32    pause
+set Command=
+return
+
+:.
+alias @@alt-x=`exit`
+4nt.exe echo Press [Alt+X] to exit.
+return
+
+:.tex#hint
+hint clatex/ctex/pdflatex/pdftex/context/tex-edit/editplus
+return
+
+:.tex
+:.ctx
+:.ty
+:.ins
+:.dtx
+:clatex
+call clatex %_opt %&
+return
+
+:.dvi#hint
+hint dviview/cctwin32/dviwin/windvi/dvips/dvipdfm/dvi2bmp/dvi2pcx/dvi2xxx
+return
+
+:.dvi
+call dviview %_opt %&
+return
+
+:.ps#hint
+:.eps#hint
+hint gsview/rops/ps2pdf/psmerge/ps2txt/pstoedit/ps2html
+apath %UTILS\tools
+return
+
+:.ps
+:.eps
+call psview %_opt %&
+return
+
+:.pdf#hint
+hint acroread/gsview
+return
+
+:.pdf
+call acroread %_opt %&
+return
+
+:.mp
+call mpost %_opt %&
+return
+
+:.tfm
+echo This will install font file [%&]. Are you sure?
+?copy %& %MTEX\fonts\tfm\
+return
+
+:.vf
+echo This will install font file [%&]. Are you sure?
+?copy %& %MTEX\fonts\vf\
+return
+
+:.mf
+echo This will install font file [%&]. Are you sure?
+?copy %& %MTEX\fonts\mf\
+return
+
+:.pfb
+echo This will install font file [%&]. Are you sure?
+?copy %& %MTEX\fonts\pfb\
+return
+
+:.ttf
+:.ttc
+echo Please input directory of TrueType fonts:
+eset TTFDIR
+input Running [copy %1 %TTFDIR\] (Y/N)? %%k
+if #%k==#y  copy %1 %TTFDIR\
+set n=%@name[%1]
+set _Name=%@lower[%@name[%n]]
+set _Family=%@left[4,%n]
+echo Please input font name used in TeX:
+eset _Name
+echo Please input font family used in LaTeX:
+eset _Family
+set w=
+if %@filesize[%&,k] LT 800 (set w=*) else (set n=%1)
+input Running [makefnt %w %n %_Name %_Family] (Y/N)? %%k
+if #%k==#y  call makefnt %w %n %_Name %_Family
+return
+
+:.bmp
+:.jpg
+:.png
+:.wmf
+:.emf
+:.gif
+:.tif
+:.pcx
+:.ico
+iff isdir %UTILS\iview  then
+	start "" %UTILS\iview\i_view32 %_opt %&
+elseiff isdir %UTILSLOCAL\iview  then
+	start "" %UTILSLOCAL\iview\i_view32 %_opt %&
+elseiff isdir %UTILS\xnview  then
+	start "" %UTILS\xnview\xnview %_opt %&
+elseiff isdir %UTILSLOCAL\xnview  then
+	start "" %UTILSLOCAL\xnview\xnview %_opt %&
+endiff
+return
+
+:.c#hint
+:.cpp#hint
+hint tcc/lcc/bcc32/gcc
+return
+
+:.c
+:tcc
+apath d:\tc\bin
+tcc %_opt %&
+return

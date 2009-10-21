@@ -1,0 +1,4 @@
+@echo off
+set GNUPLOT_DEFAULT_GDFONT=Arial
+set GDFONTPATH=%WINDIR%\fonts
+util :gnuplot wgnuplot.exe %&

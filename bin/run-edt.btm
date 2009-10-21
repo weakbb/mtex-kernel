@@ -1,0 +1,28 @@
+@echo off
+if #%1==# goto usage
+if not exist "%MTEX\winedt\winedt.exe" goto usage
+setlocal
+iff isdir %1 then
+  set d=%1
+  set c="[%2&;CMD('Exit');]"
+elseiff #%@ext[%1]==#edt then
+  set d=%@path[%1]
+  set c="[Exe('%@sfn[%1]');CMD('Exit');]"
+elseiff #%@ext[%1]==#dat then
+  set d=%@path[%1]
+  set c="[AddMenus('%@sfn[%1]',1);CMD('Exit');]"
+endiff
+pushd %d
+%MTEX\winedt\winedt.exe -V %c
+popd
+quit
+
+:usage
+echo Usage0: %0 dir cmds ==) Run WinEdt commands in specified dir
+echo Usage1: %0 xxx.edt ==) Run WinEdt macro file xxx.edt
+echo Usage2: %0 xxx.dat ==) Import menu data file xxx.dat to WinEdt
+echo Note: WinEdt must be installed in [%MTEX\winedt] first!
+echo  In usage0, cmds must be separated by semicolon and string must be enclosed by single quote
+echo  e.g.:     %0 %UTILS\array `AddMenus('Array Menu.dat',1)`
+quit
+

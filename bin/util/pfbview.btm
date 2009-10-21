@@ -1,0 +1,9 @@
+@echo off
+setlocal
+::set f=%1
+::if not exist "%f" set f=%@execstr[kwhich %f]
+::pause %f
+call util pfbview %&
+delay 100
+activate "PFB View" RESTORE
+keystack Alt-F O d:\mtex\fonts\pfb\usyr.pfb 

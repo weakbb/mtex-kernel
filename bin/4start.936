@@ -1,0 +1,5 @@
+ Hint|Back|Exit|Cls|Dir|Explorer|Find|CDD|Run|RunOne|RunMany|RunSame|
+Alt+H Bksp  X    C   D     E      F    J   R     O      M       S    
+F4:4NT帮助;PgUp:命令历史;Ctrl-PgUp:文件夹历史;Up/Dn:以前命令;
+Ctrl-X:展开变量;Ctrl-F:展开别名;Ctrl-A:长短文件名互换;Tab:补齐文件名.
+Alt-A:MTeX主菜单;Alt-T:TeX编辑器;Alt-L:查看所有命令.

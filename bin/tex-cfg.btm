@@ -1,0 +1,348 @@
+@echo off
+setlocal
+set TEMP=%@sfn[%TEMP]
+set UTILS=%MTEX\utils
+call mtex-env -clear
+iff not #%1==# then
+  for %job in (%&) do gosub #run-job %job
+  quit
+endiff
+
+gosub #mtex-license
+
+msg 0 Do you want to make a default simple configuration (incomplete yet faster for beginners) or custom configuration (very flexible for expert)? //Default Configuration/Custom Configuration~~
+msg 936 请您选择：进行默认简单配置(对初学者快速简易)还是完全自定义配置(适于老用户灵活定制)？//默认配置/自定义配置~~
+wask {300}%_msg
+goto %@if[%?==1,#express,#dialog]
+quit
+
+:#mtex-license
+set UTIL=MTeX
+msg 0 MTeX Suite---A green, mini, free, convenient, pragmatic and powerful TeX distribution and software platform!~~
+msg 936 中文MTeX套装----绿色、迷你、免费、方便、实用、强大的中文TeX套装和软件平台!~~
+set UTIL_DES=%_msg
+set _licfile=
+iff exist "%MTEX\LICENSE.%LANG" then
+  set _licfile="%MTEX\LICENSE.%LANG"
+elseiff exist "%MTEX\LICENSE.0" then
+  set _licfile="%MTEX\LICENSE.0"
+elseiff exist "%MTEX\LICENSE.*" then
+  set _licfile=%@findfirst["%MTEX\LICENSE.*"]  
+endiff
+set _mtexlic=%@execstr[call license.btm %_licfile]
+set UTIL=
+set UTIL_DES=
+if not #%_mtexlic==#yes quit
+return
+
+:#express
+gosub token
+call %MTEX\bin\tex-lnk.btm -sendto
+call %MTEX\bin\tex-lnk.btm -quick
+call %MTEX\bin\tex-lnk.btm -desktop1
+call %MTEX\bin\makefmts.btm tex latex p-tex p-latex mptopdf latex209 mf mpost
+call %MTEX\bin\cfg\c_cct.btm
+call %MTEX\bin\cfg\c_gbkfonts.btm
+copy %MTEX\_\ttfonts.map %ETC\
+call %MTEX\bin\updmap.btm
+call %MTEX\bin\updafm.btm
+call %MTEX\bin\cfg\c-ccmap.btm
+REM ~ call %MTEX\bin\tex-lnk.btm -programs
+iff isdir "%UTILS\lyx" then
+	gosub #run-job lyx
+endiff
+iff isdir "%UTILS\xetex" then
+	gosub #run-job xetex
+endiff
+iff isdir "%UTILS\luatex" then
+	gosub #run-job luatex
+endiff
+
+set license=0
+gosub #run-job redmon
+gosub ask_assoc
+if %assoc==1 echo call %MTEX\bin\tex-assoc.btm -i
+gosub sendmail
+gosub finish
+quit
+
+:#dialog
+pushd "%TEMP"
+del wbox.lst;wbox.sav;utils.lst>&nul
+dir /[!redmon] /ad /b "%UTILS\*" > _tmp_.lst
+iff isdir "%UTILSLOCAL" then
+	dir /[!redmon] /ad /b "%UTILSLOCAL\*" >> _tmp_.lst
+endiff
+if isdir "%MTEX\winedt" (echo winedt>>_tmp_.lst)
+if isdir "%MTEX\gs" (echo gs>>_tmp_.lst)
+if isdir "%UTILS\redmon" (echo redmon>>_tmp_.lst)
+
+
+gosub #gen_utils 
+
+
+del "%TEMP\_tmp_.lst">& nul
+set _wb=%MTEX\bin\tex-cfg.%@if[exist %MTEX\bin\tex-cfg.%LANG,%LANG,0]
+set LANGCODE=[Current:%LANG]
+wbox %_wb
+if %?==0 goto end
+set /r wbox.lst
+if %cancel==1 goto end
+sed -n -e "s/\(.*\) -- \(.*\)/\1/gp" wbox.sav > utils.tmp
+set lc=%@if[%lc#=#Auto#,%_CODEPAGE,%@word["-",0,%lc]]
+echo Configuring MTeX, please wait for a while ...
+if #%quickupdate==#1 goto #quick_config
+gosub #gen_batch >"%TEMP\mtex-1st.btm"
+::list "%TEMP\mtex-1st.btm"
+if %delpk==1 gosub delpk
+if %reset==1 gosub reset
+
+if %mathmhb==1 gosub sendmail
+gosub token
+call "%TEMP\mtex-1st.btm"
+gosub finish
+:end
+del "%TEMP"\wbox.lst;wbox.sav;utils.tmp;utils.lst>&nul
+del "%TEMP\mtex-1st.btm" >& nul
+popd
+quit
+
+:#gen_utils
+iff not %LANG==0 then
+	chcp %LANG
+endiff
+set MSGLOG_FILE=utils.lst 
+del %MSGLOG_FILE >& nul
+do _a in @_tmp_.lst
+	iff isdir "%UTILS\%_a" then
+		set _d=%UTILS\%_a
+	elseiff isdir "%UTILSLOCAL" .AND. isdir "%UTILSLOCAL\%_a" then
+		set _d=%UTILSLOCAL\%_a
+	elseiff isdir "%MTEX\%_a" then
+		set _d=%MTEX\%_a
+	endiff
+	set _des=[%_d]
+	iff exist "%_d\_\%LANG.des" then
+		set _des=%@execstr[sed.exe -e "1q" %_d\_\%LANG.des]
+	elseiff exist "%_d\_\0.des" then
+		set _des=%@line[sed.exe -e "1q" %_d\_\0.des]
+	endiff
+  	iff isdir "%_d\_" then 
+		unset /q CMDLINE
+		msglog %_a -- %_des
+		::cmd /c echo %_a -- %_des >>utils.lst
+		unset /q CMDLINE
+	endiff
+enddo
+return
+
+
+:#gen_batch
+if %autolang#%@numeric[%lc]==1#1 echo call setlang.btm %lc
+iff not #%utilonly==#1 then
+if %makefmts==1 echo call %MTEX\bin\makefmts.btm %fmts
+if %cct==1 echo call %MTEX\bin\cfg\c_cct.btm
+if %gbkfonts==1 echo call %MTEX\bin\cfg\c_gbkfonts.btm
+if %resetmap==1 echo copy %MTEX\_\ttfonts.map %ETC\
+if %updmap==1 echo call %MTEX\bin\updmap.btm
+if %updafm==1 echo call %MTEX\bin\updafm.btm
+if %ccmap==1 echo call %MTEX\bin\cfg\c-ccmap.btm
+if %quicklaunch==1 echo call %MTEX\bin\tex-lnk.btm -quick
+iff %desktop==1 then
+  echo call %MTEX\bin\tex-lnk.btm -desktop%@if[%desktop1==1,1,%@if[%desktop2==1,2,]]
+endiff
+if %programs==1 echo call %MTEX\bin\tex-lnk.btm -programs
+if %sendto==1 echo call %MTEX\bin\tex-lnk.btm -sendto
+iff %assoc==0 then
+  gosub ask_assoc
+endiff
+if %assoc==1 echo call %MTEX\bin\tex-assoc.btm -i
+if %rmenu==1 echo call %MTEX\bin\tex-reg.btm -- -i
+::if %notepad==1 echo call %MTEX\bin\cfg\c-notepad.btm
+endiff
+::if %autolang#%winedt==1#1 echo call %MTEX\winedt\_\L-winedt.btm
+do _a in @utils.tmp
+  set util=%@word["--",0,%_a ]
+  if #%util==# iterate
+  iff isdir "%UTILS\%util" then
+	set _d=%UTILS\%util
+  elseiff isdir "%UTILSLOCAL" .AND. isdir "%UTILSLOCAL\%util" then
+	set _d=%UTILSLOCAL\%util
+  elseiff isdir "%MTEX\%util" then
+	set _d=%MTEX\%util
+  endiff
+  set UTIL=%util
+  set UTIL_DES=%@execstr[sed -n -e "/%UTIL/{p;q;}" utils.lst]
+  set UTIL_DES=%@replace[;,.,%UTIL_DES]
+  set agree=yes
+  iff exist "%_d\LICEN[SC]E.*" .AND. not #%license==#0 then 
+    set agree=%@execstr[call license %@findfirst["%_d\LICEN[SC]E.*"]]
+  endiff	
+  iff #%agree==#yes then
+    echo echo ***Configuring Util [%_d] ... ***
+    echo cdd "%_d"
+	echo `if exist _\download.ini  call down_src.btm _\download.ini`
+    echo `if exist _\c-*.btm  call %@findfirst[_\c-*.btm]`
+    iff %autolang==1 then
+    echo `set lc=%@if[exist _%LANG.zip,%LANG,0]`
+    echo `if exist _%lc.zip  unzip.exe -o _%lc.zip`
+    echo `if exist _\L-*.btm  call %@findfirst[_\L-*.btm]`
+    endiff
+  elseiff #%agree==#no then
+    gosub remove_util >& nul
+  endiff
+enddo
+iff #%ok==#1 then
+endiff
+return
+
+:#quick_config
+gosub mtex-ini
+if %quicklaunch==1 call %MTEX\bin\tex-lnk.btm -quick
+if %desktop==1 call %MTEX\bin\tex-lnk.btm -desktop
+if %desktop2==1 call %MTEX\bin\tex-lnk.btm -desktop2
+if %programs==1 call %MTEX\bin\tex-lnk.btm -programs
+if %sendto==1 call %MTEX\bin\tex-lnk.btm -sendto
+if %assoc==1 call %MTEX\bin\tex-assoc.btm -i
+if %rmenu==1 call %MTEX\bin\tex-reg.btm -i
+gosub token
+for %xx in (yap dviwin gs editplus tex4ht redmon) call gosub #run-job %xx
+::gosub utils
+gosub finish
+goto end
+quit
+
+:ask_assoc
+  msg 0 Do you want to associate TeX related files (tex/dvi/eps/ps/pdf/mf/pfb) with MTeX? It will help you use MTeX more conveniently and these files will have MTeX icons.~~
+  msg 936 您是否希望关联TeX相关文件(tex/dvi/eps/ps/pdf/mf/pfb)?通过关联，您可以直接在资源管理器里双击这些文件来打开（编辑或预览），并看到醒目的文件图标。~~
+  msgbox YESNO %_msg
+  if %_?==10  set assoc=1
+return
+
+:mtex-ini
+echo Updating "%ETC\mtex.ini" ...
+set oldmtex=%@descript[%ETC\formats]
+type "%ETC\mtex.ini" | sed -e "s/%oldmtex/%MTEX/g" > "%ETC\mtex.ini"
+return
+
+:#run-job [job]
+set util=%job
+iff isdir "%UTILS\%util" then
+	set _d=%UTILS\%util
+elseiff isdir "%UTILSLOCAL" .AND. isdir "%UTILSLOCAL\%util" then
+	set _d=%UTILSLOCAL\%util
+elseiff isdir "%MTEX\%util" then
+	set _d=%MTEX\%util
+endiff
+set _des=[%_d]
+iff exist "%_d\_\%LANG.des" then
+	set _des=%@execstr[sed.exe -e "1q" %_d\_\%LANG.des]
+elseiff exist "%_d\_\0.des" then
+	set _des=%@execstr[sed.exe -e "1q" %_d\_\0.des]
+endiff
+set UTIL_DES=%util --- %_des
+echo ***Configuring Util [%_d] ... ***
+set agree=yes
+iff exist "%_d\LICEN[SC]E.*" .AND. not #%license==#0 then
+  set agree=%@execstr[call license %@findfirst["%_d\LICEN[SC]E.*"]]
+endiff  
+iff #%agree==#yes then
+	pushd "%_d"
+	if exist _\download.ini  call down_src.btm _\download.ini
+	if exist _\c-*.btm  call %@findfirst[_\c-*.btm]
+	set lc=%@if[exist _%LANG.zip,%LANG,0]
+	if exist _%lc.zip  unzip.exe -o _%lc.zip
+	if exist _\L-*.btm  call %@findfirst[_\L-*.btm]
+	popd
+else
+	gosub remove_util
+endiff
+return
+
+:remove_util
+msg 0 Please remove folder [%_d] manually! Or you need to pay .../OK/Cancel~~
+msg 936 请您自己删除文件夹[%_d]！否则请购买该软件！//确定/取消~~
+wask.exe {300}%_msg
+::if %?=1 start %_d
+return
+
+:remove_util_test
+	msg 0 Are you sure to REMOVE folder [%_d]? You can still install it from MTeX servers.//Yes/No~~
+	msg 936 是否确认要删除文件夹[%_d]? 您以后仍随时可以从MTeX服务器下载该工具。//是的，没错！/以后再说吧。~~
+	set _i=%@exec[wask.exe {250}%_msg]
+	iff #%_i==#1 then
+	  if exist "%_d\_\u-*.btm" call %@findfirst[%_d\_\u-*.btm]
+	  del /e /f /s /x /y /z "%_d\*.*" 2>&1 
+	  rmdir /s "%_d" 2>&1
+	endiff
+return
+
+:delpk
+iff not #%PKDIR==#  then
+echo Deleting faked pk fonts ...
+  del /s /e /i"[?]*"   "%PKDIR"\*.pk >& nul 
+  del /s /e /a:h   "%PKDIR"\*.pk >& nul 
+endiff
+return
+
+
+
+:init
+:reset
+echo Deleting previous config files [%ETC\*.cfg] ... 
+del "%ETC"\*.cfg
+set ver_sav=%@if[%@cdrom[%MTEX]==1,%ETC\version.sav,%MTEX\version.sav]
+iff not exist "%ver_sav" then
+  copy /E %MTEX\version.sav %ver_sav
+endiff
+return
+
+:basic
+echo Making basic configuration ...
+for %_a in (%MTEX\bin\cfg\c_*.btm) do (
+  echo --Running %_a-- 
+  call %_a
+)
+for %_a in (%MTEX\bin\cfg\c-*.btm) do (
+  echo --Running %_a-- 
+  call %_a
+)
+return
+
+:sendmail
+start "Send Mail to [mathmhb]" "mailto:mtex-suite+subscribe@gmail.com?subject=MTeX&body=I am a new user of MTeX!"
+return
+
+:token
+describe "%ETC" /D"%MTEX"
+describe "%ETC\formats" /D"%MTEX"
+if exist "%ETC\mtex.ini" (describe "%ETC\mtex.ini" /D"%MTEX") 
+return
+
+:utils
+msg 0 Configuring various utils included in MTeX ...~~ 
+msg 936 现在即将为您自动配置MTeX中包含的各种工具 ...~~
+msgbox /T1 OK %_msg
+echo Making configuration for misc utils ...
+
+if #%USERPROFILE==# set USERPROFILE=%_windir
+del %USERPROFILE\gsview32.ini >& nul
+for /a:d /h %_a in (%UTILS\*) do call %@findfirst[%_a\_\c-*.btm]
+iff #%UTILSLOCAL==# then
+  for /a:d /h %_a in (%UTILSLOCAL\*) do call %@findfirst[%_a\_\c-*.btm]
+endiff
+return
+
+:finish
+msg 0 Congratulations! Configuration of MTeX is done! You may need to re-configure MTeX if you add new utils.~~
+msg 936 MTeX已经配置完毕！以后如果您增加了新的组件，可能需要重新配置MTeX。~~
+msgbox /T5 OK %_msg
+return
+
+:help
+:?
+:-help
+echo Usage1: %0  ==) Configuration wizard 
+echo Usage2: %0 [delpk] [init] [basic] [token] [utils] ==) Run specified jobs
+echo Usage3: %0 utilname  ==) Configure specified util
+quit

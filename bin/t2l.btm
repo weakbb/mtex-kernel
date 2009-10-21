@@ -1,0 +1,19 @@
+@echo off
+if #%1==#  goto help
+setlocal
+set script="%MTEX\bin\a2l.sed"
+iff #%1==#-t then 
+	set script="%MTEX\bin\t2l.sed"
+	shift
+elseiff #%1==#-a then 
+	shift
+endiff
+if not #%2==# (set out=%2) else (set out=%@path[%1]%@name[%1].tex)
+sed -f %script %1 > "%out"
+quit
+
+:help
+echo This tool can convert text file to LaTeX file. Support Chinese!
+echo Usage1: %0 [-a] txtfile [texfile] ==) use script a2l.sed (long  lines wrapped)
+echo Usage2: %0 -t txtfile [texfile] ==) use script t2l.sed (LaTeX verbatim environment)
+quit

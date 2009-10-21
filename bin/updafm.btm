@@ -1,0 +1,26 @@
+@echo off
+setlocal
+if #%1==# goto upd_all
+for %a in (%&) do gosub upd_dir %a
+quit
+
+:upd_f [f]
+if exist %@replace[.pfb,.afm,%f] return
+type1afm %f
+return
+
+:upd_dir [d]
+if not isdir %d return
+echo Making *.afm in [%d] ...
+pushd %d
+for %z in (*.pfb) do gosub upd_f %z
+popd
+return
+
+
+:upd_all
+iff %@cdrom[%MTEX]==0 then
+for /a:d /h %x in (%MTEX\fonts\pfb\*.*) do gosub upd_dir %x
+endiff
+for /a:d /h %x in (%TMP\fonts\pfb\*.*) do gosub upd_dir %x
+quit

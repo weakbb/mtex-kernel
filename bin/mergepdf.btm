@@ -1,0 +1,41 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set out=_Merged_.pdf
+iff #%1==#-o then
+  set out=%1 
+  shift
+endiff
+iff #%1==#-p then
+  input "Save merged pdf file to:" %%ask
+  if not #%ask==# set out=%ask
+  shift
+endiff
+del %out >& nul
+iff isdir %UTILS\mbtpdfasm then
+  gosub mbtpdfasm
+elseiff isdir %UTILS\pdftk then
+  gosub pdftk
+endiff
+echo Merged pdf file is [%out].
+quit
+
+:usage
+echo %0 [-o outfile] [-p] infile1 infile2 ...
+echo Note: By default, outfile is "_Merged_.pdf".
+quit
+
+
+:mbtpdfasm
+set in=
+for %a in (%&) set in=%in;%a
+echo Running: mbtpdfasm -M%in -d%out
+call util mbtpdfasm -M%in -d%out
+return
+
+:pdftk
+set in=
+for %a in (%&) set in=%in %a
+echo Running: pdftk %in cat output %out
+call util pdftk %in cat output %out verbose
+return

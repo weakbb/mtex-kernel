@@ -1,0 +1,187 @@
+@echo off
+iff not isdir %UTILS\context then
+  iff not isdir %UTILSLOCAL\context then
+	call add_util.btm context
+  endiff
+endiff
+
+iff not isdir %UTILS\context then
+  iff not isdir %UTILSLOCAL\context then
+    call notfind context %UTILS\context
+	quit
+  endiff
+endiff
+
+if #%1==#  goto usage
+setlocal
+apath %UTILS\pdftex
+apath %UTILSLOCAL\pdftex
+set dvi=0
+set mode=screen
+set out=
+set in=
+set arg=
+set _pass=
+del ___.*>&nul
+
+
+if "%1"=="%@unquotes[%1]" goto start
+
+DO  WHILE #%@wild[%1,-*]==#1
+  set _v=%@word["=",1,%1]
+  switch %@word["=",0,%1]
+  case --once
+    set _pass=1
+  case --passes
+    set _pass=%_v
+  case --pdf
+    set dvi=0
+  case --dvi
+    set dvi=1
+  case --dvipdf
+    set dvi=2
+  case --mode
+    set mode=%_v
+  case --out
+    set out=%_v
+  case --arrange
+    echo \setuparranging[%_v]>>___.tex
+  case --color
+    echo \setupcolors[\c!state=\v!start]>>___.tex
+  case --nomp
+    echo \runMPgraphicsfalse>>___.tex
+  case --fastmode
+    echo \fastmode>>___.tex
+  case --seperate
+    echo \setupcolors[\\c!split=%_v]>>___.tex
+  case --dir
+    echo \setupsystem[\c!directory={%_v}]>>___.tex
+  case --papersize
+    set _v1=%_v
+    set _v2=%_v1
+    echo \setuppapersize[%_v1][%_v2]>>___.tex
+  case --background
+    echo \defineoverlay[whatever][{\externalfigure[%_v][\c!factor=\v!max]}]>>___.tex
+    echo \setupbackgrounds[\v!page][\c!background=whatever]>>___.tex
+  case --centerpage
+    echo \setuplayout[\c!location=\v!middle,\c!marking=\v!on]>>___.tex
+  case --nomap
+    echo \disablemapfiles>>___.tex
+  case --noarrange
+    echo \setuparranging[\\v!disable]>>___.tex
+  case --arrange
+    echo \setuparranging[%_v]>>___.tex
+  case --random
+    echo \setupsystem[\c!random=%@random[0,1440]]>>___.tex
+  case --args
+    echo \setupenv[%_v]>>___.tex
+  case --input
+    echo \setupsystem[inputfile=%_v]>>___.tex
+  case --mode
+    echo \enablemode[%_v]>>___.tex
+  case --pages
+    iff #%_v==#odd then 
+	echo \chardef\whichpagetoshipout=1>>___.tex
+    elseiff #%_v==#even then
+	echo \chardef\whichpagetoshipout=2>>___.tex
+    else 
+	echo \def\pagestoshipout{%_v}>>___.tex
+    endiff
+  case --module
+    echo \usemodule[%_v]>>___.tex
+  case --environment 
+    echo \environment %_v>>___.tex
+  case --fullscreen
+    echo 
+  case --batch
+    echo \batchmode>>___.tex
+  case --nonstop
+    echo \nonstopmode>>___.tex
+  case --scroll
+    echo \scrollmode>>___.tex
+  case --dos
+    echo \setupsystem[\c!type=mswin]>>___.tex
+  case --papersize
+    set _from=%@word[",",0,%_v]
+    set _to=%@word[",",1,%_v]
+    if #%_to==# set _to=%_from
+    echo \setuppapersize[%_from][%_to]>>___.tex
+    ::echo \setuppapersize[A5][A4]>>___.tex
+  case --pdfminorversion
+    set pdfminver=%_v
+  case --final
+    echo >>___.tex
+  case --figures
+    echo >>___.tex
+  case --
+    echo >>___.tex
+  case --
+    echo >>___.tex
+
+  default
+    set arg=%arg %1
+  endswitch
+  shift
+  if #%1==# goto usage
+  if %@index[%1,"]==0 leave
+ENDDO
+
+
+:start
+cdd %@path[%1]>&nul
+set in=%@name[%1]
+if "%out"=""  set out=%in
+
+set _wpdf=%@exec[call w-close.btm %out.pdf]
+
+del %out.dvi;%out.pdf;missfont.bat>&nul
+if #%pdfminver==#  (set pdfminver=3)
+echo \pdfminorversion=%pdfminver >>___.tex
+if %dvi==0 (echo \setupoutput[pdftex]>>___.tex)
+if %dvi==2 (echo \setupoutput[dvipdfmx]>>___.tex)
+if not #%mode==#  (echo \enablemode[%mode]>>___.tex)
+echo \loadmapfile[pdftex.map]>>___.tex
+echo \input %in>>___.tex
+
+
+pdfetex.exe -fmt=context -int=scrollmode %arg ___.tex %2&
+::pause
+if exist missfont.bat call missfont.bat
+if %dvi==0 (if not exist ___.pdf  goto end) else (if not exist ___.dvi  goto end)
+::if exist ___.tui (tex_util<___.tui>___.tuo)
+iff exist ___*.mp then
+  call mpost.btm ___-mpgraph.mp
+endiff
+if #%_pass==#1 goto next
+set _aux=%@filesize[___.aux]
+pdfetex.exe -fmt=context -int=batchmode %arg ___.tex %2&
+if #%_pass==#2 goto next
+if #%@filesize[___.aux]==#%_aux goto next
+pdfetex.exe -fmt=context -int=batchmode %arg ___.tex %2&
+:next
+iff %dvi==0 then 
+  ren  ___.pdf  %out.pdf>&nul
+elseiff %dvi GT 0 then
+  ren  ___.dvi  %out.dvi>&nul 
+  call makepk %out.dvi
+endiff
+iff %dvi==2 then
+  call dvipdfm -o %out.pdf %out.dvi
+endiff
+:end
+if %_wpdf==1  (call pdfview "%out.pdf")
+copy ___.log %out.log
+::del ___.*>&nul
+del ___-*.*>&nul
+del mpgraph.mp>&nul
+quit
+
+:usage
+echo Usage: %0 [options] file.tex [commands] ==) Compile a ConTeXt file.
+echo Options: --dvi --pdf --dvipdf  --mode=xxx  --out=xxx [context-opts]
+echo Context-opt can be: color,nomp,fastmode,centerpage,nomap,noarrange,random,once,
+echo                     passes=,arrange=,separate=,dir=,papersize=,backaground=,
+echo                     print=,args=,input=,pages=,module=,environment=
+echo Note: you can also use any options of pdfetex.exe. See ConTeXt manual for options.
+quit
+

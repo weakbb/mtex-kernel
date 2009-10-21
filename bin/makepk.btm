@@ -1,0 +1,261 @@
+@echo off
+::[mhb]本程序自动生成缺少的.pk字体。支持从ttf,mf或pfb文件转为点阵字体。
+::支持字体替换。支持虚拟字体。自动用patchdvi或cdvia支持CCT。自动支持gbk*字体。
+setlocal
+
+
+if #%1==#  goto usage
+
+echoerr -- Running: %0 %& --
+
+set TTFONTS=%TtfDIR
+set TTFCFG=%ETC
+set TTF2PKINPUTS=%ETC!!;%MTEX\texinput\ttfcfg;%MTEX\texlocal\ttfcfg
+set TMPDVI=__tmp__.dvi
+md %PKDIR%>&nul
+iff #%1==#--verbose then
+  shift 
+  goto miktexpk
+endiff
+
+
+iff %@wild[%1,-batch*]==1 then
+  set batch_opt=%@instr[6,,%1]
+  shift
+  iff exist %1 then
+    set DVIFILE=%@sfn[%1]
+	shift
+  else
+    set /r "%ETC\dviview.lst"
+  endiff
+  iff exist "%@lfn[%DVIFILE]" then
+    echoerr ***Tring to make pk fonts for [%DVIFILE] ...***
+    set _f=%DVIFILE
+	set _r=600
+    goto start
+  endiff
+endiff
+
+
+set _f=%@unquotes[%1]
+set _r=600
+if #%@left[2,%@name[%_f]]==#-- (goto maketexpk)
+
+:skip_opt
+iff #%@left[1,%@name[%1]]==#- then
+  shift
+  goto skip_opt
+endiff
+
+iff not #%3==# then
+  gosub makepk_font %@name[%1] %2 %3 %@eval[%2/%3] %1
+  quit
+endiff
+set _f=%@replace[/,\,%1]
+iff not exist %_f then
+  set _f=%_f.dvi
+endiff
+
+if not exist %_f (quit)
+if not #%2==#  (set _r=%2)
+if %@left[2,%_r]==-r (set _r=%@instr[2,,%_r])
+
+:start
+set _f=%@sfn[%_f]
+set batch_opt=%3
+del %TMPDVI>&nul
+dvii -f %_f>&_.lst
+type _.lst
+::for /f "tokens=1,2,3" "delims=/]" %a in (_.lst) do gosub makepk_font %b  %@int[%@eval[%_r*%c/1000+0.5]]  %_r  %@eval[%c%/1000]  %b
+for /f "tokens=1,2,3" "delims=/]" %a in (_.lst) do gosub makepk_font %b  %@int[%@eval[%_r*%c/1000+0.5]]  600  %@eval[%c%/1000*%_r/600]  %b
+del _.lst>&nul
+quit
+
+:miktexpk
+::echo Trying to make PK font "%1" (at %2 DPI)...
+::echo Creating "%1.pk"...
+gosub makepk_font %@name[%1] %2 %3 %@eval[%2/%3] %1  1>&2
+echo %@replace[\,/,%PKDIR%/dpi%2/%1.pk]
+quit
+
+:maketexpk
+set _r=600
+set _m=1
+set _d=600
+do
+if #%1==# return
+if %@wild[%1,[-/]*]==0 leave
+switch "%1"
+case "--mfmode"
+    iff not #%@left[2,%2]==#--  then 
+      shift
+    endiff
+case "--bdpi"
+    iff %@eval[1%2]==1%2  then
+      set _r=%2 
+      shift
+    endiff
+case "--mag"
+    iff not #%@left[2,%2]==#--  then
+      set _m=%@eval[%2] 
+      shift
+    endiff
+case "--dpi"
+    iff %@eval[1%2]==1%2 then 
+      set _d=%2 
+      shift
+    endiff
+default
+    shift
+endswitch
+shift
+enddo
+if #%1==#   return
+if #%@eval[%1]==#%1  quit
+iff #%@left[3,%1]==#tmp then
+  set _d=666 
+  echo %PKDIR%/dpi%_d%/%1.pk 
+  return
+endiff
+if #%_m==#0  set _m=1
+set _r=600 
+set _m=%@eval[%_d/600]
+iff not exist %PKDIR%\dpi%_d%\%1.pk  then
+  gosub makepk_font %1 %_d %_r %_m %1  1>&2
+endiff
+echo %@replace[/,\,%PKDIR%/dpi%_d%/%1.pk]
+quit
+
+:cct-patch
+if exist %TMPDVI  (return)
+copy %_f %TMPDVI
+iff not exist %WINDIR%\cctcfg.ini then
+  patchdvi -y %TMPDVI %_f -r%_r
+else
+ cdvia  %TMPDVI %1 -P %PKDIR% -r %_r
+endiff
+return
+
+:ty-makepk
+if not exist tycfnt.tab  return
+iff #%OS==#Windows_NT then
+  set _c=-c%@if[exist "%ETC\pkttf2.cfg",%ETC\pkttf2.cfg,%MTEX\_\pkttf2.cfg]
+else 
+  set _c=
+endiff
+pkttf -F%TTFDIR% %_c
+::pksl -F%UCFonts%
+return
+
+:makepk_font [b d r m out]
+
+iff #%batch_opt==#:dviwin then
+  set fx=%@execstr[xfind "=%b|" %MTEX\utils\dviwin\setup.ini]
+  if not #%fx==# (return)
+endiff
+
+if #%b==#0  return
+if #%@left[5,%b]==#tmp00  return
+if #%b==#ccdummy  goto cct-patch
+if #%@left[5,%b]==#ccfnt  goto cct-patch
+
+iff exist %PKDIR%\dpi%d%\%b.pk then
+  if #%@attrib[%PKDIR%\dpi%d%\%b%.pk,ha]==#0 return
+  del /a:h %PKDIR%\dpi%d%\%b.pk
+endiff
+
+::if %@wild[%1,????[0-9][0-9][0-9][0-9]]==1 goto ectc-makepk
+if #%@left[3,%b]==#ccA goto ty-makepk
+
+set vf=
+mkdir %PKDIR\dpi%d>&nul
+pushd %PKDIR\dpi%d
+iff %@exec[ttf2pk -q -t %b]==0 then
+  set f=%b
+  echo [%b,%d,%m:%f]
+  gosub makettf %b %d
+else
+  set fx=%@execstr[xfind " %b " %ETC\makepk.map]
+  set src=%@word[1,%fx]
+  set opt=%@word[";",1,%fx]
+  set f=%@name[%src]
+  if #%f==#  set f=%b
+  ::if #%@left[3,%f]==#gbk  set f=%@instr[2,,%f]
+  echo [%b,%d,%m:%f]
+
+  switch %@ext[%src]
+  case pfb
+    gosub makepfb %f %d %opt
+  case mf
+    gosub makemf %f %d %m
+  case ttf
+    gosub makettf %f %d
+  case vf
+    echo Virtual font [%b]? No need to makepk for it!
+    goto stop
+  default
+    gosub makemf %f %d %m
+    if not exist %f.pk gosub makepfb %f %d %opt
+  endswitch
+endiff
+
+iff not exist %f.pk then
+  set n=cmr10
+  iff exist %n.pk then
+    set rep=%n.pk
+  else
+    set rep=%@findfirst[*.pk,h]
+  endiff
+  iff #%rep==# then
+    gosub makemf %n %d %m
+    if exist %n.pk  move %n.pk %b.pk
+  else
+    copy /h %rep %b.pk
+  endiff
+  if exist %b.pk  attrib %b.pk +ha -rs>&nul
+elseiff not #%f==#%b then
+  move %PKDIR\dpi%d\%f.pk %PKDIR\dpi%d\%b.pk
+endiff
+
+:stop
+popd
+if not #%vf==# (copy %PKDIR\dpi%d\%b.pk %PKDIR\dpi%d\%vf.pk)
+return
+
+
+:makettf [f d]
+echo Using TTF2PK...
+ttf2pk -q -n %f% %d%
+if %?==2 echo Error! Check whether your TTF file installed in MTEX!
+return
+
+:makemf [f d m]
+echo Using METAFONT...
+MFX %m %f%  1>&2
+del %f%.log;mfput.log;%f%.tfm>&nul
+for %zz in (%f%.[1-9]*) do gftopk %zz% %PKDIR%\dpi%d%\%f%.pk
+del %f%.log %f%.[1-9]*>&nul
+return
+
+:makepfb [f d opt]
+echo Using PS2PK...
+set _pfb=%@execstr[kwhich %f.pfb]
+if #%_pfb==# return
+set _pfb=%@replace[/,\,%_pfb]
+set T1INPUTS=%@path[%_pfb]
+pushd %T1INPUTS
+if not exist %f%.afm type1afm %f%.pfb
+ps2pk -X%d% %opt %f%.pfb %PKDIR%\dpi%d%\%f%.pk
+popd
+set T1INPUTS=
+return
+
+
+:usage
+echo Usage1: makepk --mfmode / --dpi dpi --bdpi res --mag mag fontname ==) Make specified pk font.
+echo Usage2: makepk fontname dpi res [mag mode] ==) Make specified pk font.
+echo Usage3: makepk dvifile [res] ==) Make missing pk fonts. Support long file name.
+echo Usage4: makepk -batch [dvifile] ...==) Make missing pk fonts in batch mode for dvifile
+echo Note: Automatically call ttf2pk/mf/ps2k and Patchdvi/Cdvia if necessary. By default, res=600.
+:end
+quit

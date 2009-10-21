@@ -1,0 +1,10 @@
+!{Title=请选择字体安装,label=z,@=$(TTF_CFG),w=300,select=all};
+/*{label=fd,w=150,checked}生成fd文件;
+*{label=ttf,w=150,checked}更新ttfonts.map;
+/*{label=dvi,w=150,checked}更新dvipdfm.map;
+*{label=pdf,w=150,checked}更新pdftex.map;
+/*{label=tfm,w=150,checked}生成tfm文件;
+*{label=enc,w=150,checked}生成enc文件;
+/*{label=pfb,w=300}生成pfb文件（不推荐而且通常不必要！）;
+/{label=ok}确定;{label=cancel}取消;
+*{w=150,label=x}清除原有字体设置;

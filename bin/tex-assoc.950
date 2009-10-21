@@ -1,0 +1,15 @@
+"{Title=MTeX文件關聯,W=500};
+"{w=500}──請選擇要關聯到MTeX的文件類型──;
+/*{label=texfile,w=500,checked}關聯TeX源文件(tex ctx ty dtx ltx):編輯;
+/*{label=fontfile,w=500,checked}關聯各種字體文件(pfb pfa mf pk gf tfm afm):預覽;
+/*{label=btmfile,w=500,checked}關聯MTeX批處理腳本文件(btm):運行;
+/*{label=dvifile,w=250,checked}關聯dvi文件:預覽;
+*{label=pdffile,w=250,checked}關聯pdf文件:預覽;
+/*{label=psfile,w=250,checked}關聯ps文件:預覽;
+*{label=epsfile,w=250,checked}關聯eps文件:預覽;
+/*{label=tpxfile,w=250,checked}關聯TpX文件(tpx):編輯預覽;
+*{label=asyfile,w=250,checked}關聯Asymptote文件(asy):編譯預覽;
+/*{label=mpfile,w=250,checked}關聯Metapost文件(mp):編譯預覽;
+*{label=gpfile,w=250,checked}關聯Gnuplot文件(plt dem):運行預覽;
+/*{label=lyxfile,w=250,checked}關聯LyX文檔(lyx):編輯預覽;
+/{label=ok,w=250}確定;{label=cancel,w=250}取消;

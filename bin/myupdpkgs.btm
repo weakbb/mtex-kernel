@@ -1,0 +1,257 @@
+@echo off
+setlocal
+echo Running: %0 %&
+
+set days_max=31
+iff #%1==#-m then
+  set days_max=5000
+  shift
+endiff
+set src_dsk=G
+for %_a in (F G H I J K L M N) do if isdir %_a:\m-setup  set src_dsk=%_a
+set mdir=%src_dsk:\m-setup\current\macros
+set pdir=%src_dsk:\tex\ctan
+rem set url=ftp://ftp.quantum.nus.edu.sg/tex-archive
+set url=http://mirror.bitunion.org/CTAN
+set inc=*.sty *.cls *.fd *.fdd *.sfd *.enc *.ini *.cfg *.def *.dat *.pro *.ps *.tex *.clo *.ist *.doc *.mbs *.tss *.new *.ins *.dtx *.can *.abc *.ttf *.oft *.pfb *.mf *.tfm *.vf
+set rar=d:\winrar\rar.exe
+
+eset days_max
+eset url
+eset mdir
+eset pdir
+eset rar
+
+
+pushd %TMP
+copy FILES.lst %pdir\
+?"Download all CTAN *.zip?" gosub ctan_zipfiles
+?"Download \tex\ctan\*.zip via FILES.lst?" gosub down_zipfiles
+?"Process (unzip and striptex) \tex\ctan\*.zip?" gosub proc_zipfiles
+?"Update \m-setup\current\macros\*.rar?" gosub update_pkgs
+?"Update \m-setup\current\macros\texlocal.lst?" gosub update_pkglst
+?"Update \m-setup\current\texinput.rar?" gosub update_texinput
+?"Update \m-setup\current\texlocal.rar?" gosub update_texlocal
+?"Update \m-setup\current\fonts1.rar?" gosub update_fonts 1
+?"Update \m-setup\current\fonts2.rar?" gosub update_fonts 2
+popd
+quit
+
+:ctan_zipfiles
+pushd %pdir
+alias w1=wget -r -N -l 1 -nr --progress=dot -np -nd --accept=zip
+w1 %url/macros/latex/contrib/
+REM w1 %url/macros/plain/contrib/
+w1 %url/macros/generic/
+w1 %url/macros/obsolete/macros/latex/contrib/
+w1 %url/macros/obsolete/macros/latex/expl/
+w1 -O pgf.zip %url/graphics/pgf/base.zip
+w1 -O pstricks.zip %url/graphics/pstricks/base.zip
+w1 %url/graphics/pstricks/contrib/
+w1 %url/graphics/
+popd
+return
+
+
+:down_zipfiles
+pushd %TMP
+iff not %@filedate[FILES.byname,c]==%_ISODATE then
+    del FILES.[bl]* >& nul
+    wget "%url/FILES.*"
+endiff
+sed -n -e "s/|/:/g;/ macros.*\.zip/p;/ fonts.*\.zip/p;/ graphics.*\.zip/p" FILES.byn* | sortu -r > FILES.lst
+start tview.exe FILES.lst
+for %a in (@FILES.lst) do gosub down_zip
+popd
+return
+
+:down_zip
+set d=%@word[":",0,%a]
+set d=%@replace[/,-,%d]
+set f=%@word[":",2,%a]
+set f=%@trim[%f]
+set m=7
+iff "%@left[%m,%d]"=="%@left[%m,%_ISODATE]" then
+echo %a
+echo Running: wget --timestamping --progress=dot "%url/%f"
+wget -nr --timestamping --progress=dot -P %pdir "%url/%f"
+endiff
+return
+
+
+:proc_zipfiles
+iff #%1==# then
+  dir /[d-%days_max] /b %pdir\*.zip /[!*.tds.zip] > _tmp_.lst
+else
+  echos>_tmp_.lst
+  do _arc in /L %&
+    if exist %pdir\%_arc.zip echo %_arc.zip>>_tmp_.lst
+  enddo
+endiff
+for %z in (@_tmp_.lst) do gosub proc
+return
+
+:proc 
+echo ==%z==
+iff exist FILES.lst then
+  sed -n -e "/\%z/{p;q;}" FILES.lst
+endiff
+set odir=%pdir\%@name[%z]
+if not exist %odir.zip  return
+set odate=%@filedate[%odir.zip]
+echo %odir ~~ %odate
+set mask=*.sty;*.cls;*.tex;*.pfb;*.tfm
+iff isdir %odir then
+if #%@descript[%odir]==#%odate return
+endiff
+unzip -j -o -qq %odir.zip %inc -d %odir >& nul
+pushd %odir
+iff not exist *.sty;*.cls then
+  if not exist *.ins call latex-dtx
+  call latex-ins
+endiff
+del *.log;*.ins;*.dtx;*.aux >& nul
+iff exist pict2e-example.cfg then
+  ren pict2e-example.cfg pict2e.cfg
+endiff
+call striptex -s *.tex;*.sty;*.cls;*.def;*.fd;*.fdd;*.sfd;*.clo;*.ml?;*.ist;*.fix
+describe %odir /D"%odate"
+popd
+return
+
+:update_pkgs
+del %TMP\pkgs_tex.lst>&nul
+pushd %pdir
+echo %_CWD
+echos > %TMP\pkgfiles.lst
+iff #%1==# then
+  for /r %y in (*.sty;*.cls;*.def;*.fd;*.fdd;*.sfd;*.clo;*.ml?;*.ist;*.fi;*.mac) do echo %y>>%TMP\pkgfiles.lst
+  type %mdir\texfiles.lst>>%TMP\pkgfiles.lst
+else
+  do _arc in /L %&
+    for /r %y in (%_arc\*.tex;*.sty;*.cls;*.def;*.fd;*.fdd;*.sfd;*.clo;*.ml?;*.ist;*.fi;*.mac) do (echo %y>>%TMP\pkgfiles.lst)
+  enddo
+  list %TMP\pkgfiles.lst
+  set days_max=5000
+endiff
+popd
+pushd %pdir
+for %y in (@%TMP\pkgfiles.lst) do gosub add_file
+popd
+list %TMP\pkgs_tex.lst
+return
+
+:add_file
+echo ** %y **
+if not exist %y return
+set ss=%@word["\",-1,%y]
+if #%ss==#base return
+if not exist %pdir\%ss.zip return
+if #%@filedate[%pdir\%ss.zip]==#%@descript[%mdir\%ss.rar] return
+if %@date[%_DATE] GT %@eval[%@date[%@filedate[%pdir\%ss.zip]]+%days_max] return
+
+set ff=%@name[%y].%@ext[%y]
+iff not #%@ext[%y]==#tex then
+  set res=0
+elseiff #%1==# then
+  set res=0
+else
+  set res=%@len[%@execstr[ffind /K /M /T"\documentclass" %y]]
+endiff
+iff #%res==#0 then
+  echo %_CWD\%ss\%ff ==) %mdir\%ss.rar
+  %rar a %mdir\%ss.rar %ss\%ff
+  iff #%@ext[%y]==#tex then
+    echo %ss\%ff>>%TMP\pkgs_tex.lst
+  endiff
+else
+  echo Deleting %_CWD\%ss\%ff of %mdir\%ss.rar
+  if exist "%mdir\%ss.rar"   %rar d %mdir\%ss.rar %ss\%ff
+endiff
+describe %mdir\%ss.rar /D"%@filedate[%pdir\%ss.zip]"
+return
+
+:update_pkglst
+pushd %mdir
+dir /b *.rar > _tmprar_.tmp
+sed -e "s/\.rar//g" _tmprar_.tmp > texlocal.lst
+del _tmprar_.tmp
+list texlocal.lst
+popd
+return
+
+:update_texinput
+pushd %TMP
+copy %mdir\texinput.lst %TMP\texinput.lst
+mkdir texinput
+cd texinput
+for %z in (@%TMP\texinput.lst) do unrar x -o+ %mdir\%z.rar
+cd ..
+%rar a texinput.rar texinput
+del /S /X /Y /Q /F /E texinput 
+?move texinput.rar %mdir\..\
+popd
+return
+
+:update_texlocal
+pushd %TMP
+iff exist %mdir\texlocal.lst then
+  copy %mdir\texlocal.lst %TMP\texlocal.lst
+else
+  dir /b /os %mdir\*.rar |sed -e "s/\.rar//gp"> %TMP\texlocal.lst
+endiff
+mkdir texlocal
+cd texlocal
+for %z in (@%TMP\texlocal.lst) do (
+set res=%@execstr[ffind /K /M /E"^%z$" %mdir\texinput.lst]
+if #%res==# unrar x -o+ %mdir\%z.rar
+)
+cd ..
+%rar a texlocal.rar texlocal
+del /S /X /Y /Q /F /E texlocal
+?move texlocal.rar %mdir\..\
+popd
+return
+
+:update_fonts [m]
+set fx=fonts%m
+set fdir=%mdir\..\fonts
+pushd %TMP
+del %TMP\%fx.rar
+copy %fdir\%fx.lst %TMP\%fx.lst
+mkdir /S %TMP\%fx\fonts
+del %TMP\%fx\fonts\Fontmap
+alias mf=`echo NOT running: mf %&`
+for %z in (@%TMP\%fx.lst) do gosub proc_font
+cdd %TMP\%fx
+iff %m==1 then
+  copy fonts\Fontmap %TMP\Fontmap1
+else
+  copy %TMP\Fontmap1+fonts\Fontmap %TMP\Fontmap2
+  copy %TMP\Fontmap2 fonts\Fontmap
+endiff
+%rar a %TMP\%fx.rar fonts
+%rar a %TMP\%fx.rar fonts\Fontmap 
+cdd %TMP
+?move %TMP\%fx.rar %fdir\..\
+del /S /X /Y /Q /F /E %fx
+popd
+return
+
+:proc_font
+iff #%fx==#fonts2 then
+  set res=%@execstr[ffind /K /M /E"^%z$" %fdir\fonts1.lst]
+  if not #%res==#  return 
+  REM ffind /K /M /E"%z" %fdir\fonts1.lst
+  REM if not %_?==0  return
+endiff
+echo ==Adding font [%z]==
+pushd %TMP\%fx
+unrar x -o+ %fdir\%z.rar
+call copyfnts.btm -q -d %TMP\%fx\fonts %z
+cdd %z
+pfbnames > _pfbnams_.lst
+sed -n -e "s/\(.*\):\/\([a-zA-Z0-9\-]*\)/\/\2 (pfb\/%z\/\1);/gp" _pfbnams_.lst >> %TMP\%fx\fonts\Fontmap
+popd
+return
+

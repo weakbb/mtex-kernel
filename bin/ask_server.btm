@@ -1,0 +1,39 @@
+@echo off
+setlocal
+set f_sav="%ETC"\mserver.sav
+iff exist %[f_sav] then
+  echos %@line[%[f_sav],0]
+  quit
+endiff
+
+set _file=%1
+iff not exist %1 then
+  set _file=%MTEX\_\mserver.cfg
+endiff
+set _no=0
+msg 0 Default Sever~~
+::msg 936 默认服务器~~
+set _menu=%_msg
+set WASKHINT=%TEMP\server.lst
+echo %_menu=%[SERVER]>"%WASKHINT" 
+do _x in @%_file
+  if %@wild[%x,[*]]==1 (iterate)
+  if %_no GT 100 (leave)
+  set _no=%@inc[%_no]
+  set _menu=%_menu/%_no.
+  echo %_no.=%_x >>"%WASKHINT" 
+enddo
+msg 0 Ready to download missing files? Please choose a server to download file(s) later:~~
+msg 936 是否预备好从网上下载需要的文件？请选择一个用来下载文件的服务器：~~
+set _a=%@exec[wask {120}%_msg//%_menu >& nul]
+del "%WASKHINT" >& nul
+if %_a GT 1 (set SERVER=%@line[%_file,%@eval[%_a-2]])
+iff #%SERVER==#**EOF** then
+  set SERVER=
+endiff
+iff #%SERVER==# then
+  del %[f_sav] >& nul
+else
+  echo %SERVER > %[f_sav]
+endiff
+echos %SERVER

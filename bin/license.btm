@@ -1,0 +1,24 @@
+@echo off
+setlocal
+if #%1==# goto usage
+if not exist %1 goto usage
+set LICENSE_FILE=%@sfn[%1]
+pushd %TMP
+wbox %MTEX\bin\license.%@if[exist %MTEX\bin\license.%LANG,%LANG,0]
+if %?==0 goto end
+set /r wbox.lst
+iff #%b_agree==#1 then
+  echo yes
+elseiff #%b_disagree=#1 then
+  echo no
+endiff
+del wbox.lst;wbox.sav >& nul
+:end
+popd
+quit
+
+:usage
+echoerr Usage: %0 license_file ==) Show license agreement and ask user whether to agree it
+echoerr Note: Output "yes" if agreed, or "no" if disagreed, or "" if canceld.
+echoerr Note: Please set vars UTIL and UTIL_DES to util name and description before calling this command.
+quit

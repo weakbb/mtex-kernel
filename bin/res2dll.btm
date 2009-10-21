@@ -1,0 +1,28 @@
+@echo off
+setlocal
+if #%1==# goto usage
+if #%DCC32==# set DCC32=dcc32.exe
+if not exist %1 goto usage
+gosub gen_dpr > _tmp_.dpr
+%DCC32 _tmp_.dpr
+del _tmp_.dpr
+move _tmp_.dll %@path[%1]%@name[%1].dll
+quit
+
+:gen_dpr
+echo library _tmp_;
+for %a in (%&) do (
+set f_res=%@path[%a]%@name[%a].res
+if exist %f_res echo {$R %f_res}
+)
+echo begin;
+echo end.
+return
+
+:usage
+echo Usage: %0 xxx.res [yyy.res] ==) Convert *.res to xxx.dll.
+echo Note: This tool uses Delphi dcc32.exe to make the conversion!
+echo If your dcc32.exe is not in the PATH, you should set environment var DCC32 to full path of dcc32.exe.
+echo Name of each resource file cannot contain any special chars!
+quit
+

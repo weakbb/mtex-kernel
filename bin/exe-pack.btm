@@ -1,0 +1,18 @@
+@echo off
+setlocal
+set d=%@getdir[.]
+set files=%1 %2 %3
+if %#==0  set files=*.exe;*.dll
+pushd "%d"
+for %a in (%files) do gosub pack-exe
+popd
+quit
+
+:pack-exe
+mpress.exe -b %a |& tee mpress.log
+set res=%@line[mpress.log,7]
+del mpress.log >& nul
+iff exist %a.bak then
+  if %@index[%res,overlay] GT 1  move %a.bak %a
+endiff
+return

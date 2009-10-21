@@ -1,0 +1,11 @@
+@echo off
+setlocal
+if #%1==# goto usage
+if #%2==# (set out=%@path[%1]%@name[%1].txt) else (set out=%2)
+dvi2tty %3& -o%out %1
+quit
+
+:usage
+echo %0 dvifile [txtfile]  =) Convert .dvi file to .txt file
+quit
+

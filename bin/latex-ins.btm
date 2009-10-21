@@ -1,0 +1,13 @@
+@echo off
+for /r %a in (*.ins) do gosub compile %a
+quit
+
+:compile [x]
+pushd
+cdd %@path[%x]
+echo \askforoverwritefalse>docstrip.cfg
+latex --int=batchmode %@name[%x].ins
+del docstrip.cfg
+popd
+return
+

@@ -1,0 +1,3 @@
+@echo off
+call makepk.btm %1
+dviscr -gvga -r600 -z0 %&

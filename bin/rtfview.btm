@@ -1,0 +1,8 @@
+@echo off
+setlocal
+iff exist %1 then
+  set _f=%1
+else
+  set _f="%@path[%1]%@name[%1].rtf"
+endiff
+start "" %_f %2&

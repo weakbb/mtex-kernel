@@ -1,0 +1,37 @@
+@echo off
+if #%1==#  goto usage
+setlocal
+pushd
+::latex --int=batchmode "D:\_tmp\(doc)TpX.tex" -quiet
+set doc_tpx=
+iff %@wild[%&,*(doc)TpX*]==1 .AND. exist "%TMP\(doc)TpX.tex" then
+	set doc_tpx=1
+	cdd "%TMP"
+	set sed_opt=-e "s/\\begin{document}/\\begin{document}\\def\\caption#1{}/"
+	sed %sed_opt "(doc)TpX.tex" > __tpx__.tex
+	move /q "__tpx__.tex" "(doc)TpX.tex"
+endiff
+set xcmd=
+do while not #%1==#
+	iff #%2==#  .AND.  exist %1 then
+		if isdir "%@path[%1]" (cdd "%@path[%1]") 
+		set xcmd=%xcmd %@name[%1].%@ext[%1]
+	else
+		set xcmd=%xcmd %1
+	endiff
+	shift
+enddo
+call %xcmd
+iff #%doc_tpx==#1 .AND. exist "%TMP\(doc)TpX.dvi" then
+	dvips -E (doc)TpX.dvi 
+	GSX jpeg -sOutputFile="(doc)TpX.jpg" -dEPSCrop -r600 "(doc)TpX.ps"
+	pause Press any key to view file "(doc)TpX.jpg" ...
+	call iview  (doc)TpX.jpg  /one
+endiff
+popd
+quit 0
+
+:usage
+echo Usage: %0 cmd [options] "d:\xxx\file.tex" ==) Invoke any TeX/LaTeX compile command
+echo Note: This file can automatically change to file directory.
+quit

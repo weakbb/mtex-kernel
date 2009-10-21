@@ -1,0 +1,31 @@
+@ECHO OFF
+REM PPower4 batch file
+setlocal
+set _d=%UTILS\ppower
+if not isdir "%_d"  (set _d=%UTILSLOCAL\ppower)
+if not isdir "%_d"  (goto error)
+echo Running:%0 %&
+set args=%&
+set _wpdf=
+if #%1==# goto run
+if %@wild[%1,-*]==1 goto run
+set _wpdf=%@exec[call w-close.btm %@name[%1].pdf]
+if not #%2==#  goto run
+move "%@name[%1].pdf" __tmp__.pdf
+set args=__tmp__.pdf %@name[%1].pdf
+:run
+call setjava
+%Java% -jar %_d\pp4p.jar %args
+iff not exist "%@name[%1].pdf" then
+	move __tmp__.pdf "%@name[%1].pdf" 
+endiff
+if #%_wpdf==#1  call pdfview %@name[%1].pdf 
+quit
+
+
+:error
+call notfind.btm pp4p.jar %UTILS\ppower 
+call add_util ppower
+quit
+
+

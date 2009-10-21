@@ -1,0 +1,155 @@
+@echo off
+setlocal
+set opts=
+pushd %ETC
+del wbox.lst;wbox.sav>&nul
+set TTF_CFG=%@if[exist "%ETC\ttfonts.cfg",%ETC\ttfonts.cfg,%MTEX\_\ttfonts.cfg]
+echo Found TTF config file: %TTF_CFG !
+iff #%1==#-auto then
+  goto reset_fonts
+endiff
+if #%1==#-ask goto ask_file
+if #%1==#-wiz (goto wizard) 
+set _wb=%MTEX\bin\tex-font.%@if[exist %MTEX\bin\tex-font.%LANG,%LANG,0]
+wbox %_wb
+if %?==0 goto end
+set /r wbox.lst
+if not #%ok==#1 goto end
+set TTF_CFG=wbox.sav
+set _FNTS_=
+if #%tfm==#1 set _FNTS_=%_FNTS_ maketfm
+if #%ttf==#1 set _FNTS_=%_FNTS_ ttf2pk_map
+if #%fd==#1 set _FNTS_=%_FNTS_ makefd
+::if #%pdf==#1 set _FNTS_=%_FNTS_ pdftex_ttf
+::if #%dvi==#1 set _FNTS_=%_FNTS_ dvipdfm_ttf
+if %pfb#%enc==0#1 set _FNTS_=%_FNTS_ makeenc
+if #%pfb==#1 set _FNTS_=%_FNTS_ makepfb
+if not #%x==#1  goto makefonts
+
+:reset_fonts
+copy %MTEX\_\ttfonts.map %ETC\
+del /e %ETC%\ttf-pdf.map
+if #%_FNTS_==# (set _FNTS_=maketfm ttf2pk_map makefd makeenc pdftex_ttf dvipdfm_ttf)
+if #%x==#1 (set _FNTS_=clear %_FNTS_)
+
+:makefonts
+do a in @%TTF_CFG
+if #%a==#  iterate
+if #%a==#----  goto end
+iff #%@left[2,%a]==#:: then
+  msg 0 To save time, by default I will not configure extra TTF fonts. Do you want to skip configuration for extra TTF fonts?~~
+  msg 936 为了节省时间，默认将不再配置额外的TTF字体。是否确认跳过对额外字体的配置？~~
+  msgbox /T1 YESNO %_msg
+  if %_?==11 (iterate) else (leave)
+endiff
+if #%@left[1,%a]==#:  iterate
+call makefnt %a
+enddo
+
+if #%ttf==#1 set opts=%opts -ttf
+if #%pfb==#1 set opts=%opts -pfb
+if #%pdf==#1 set opts=%opts -pdf
+
+:end
+del /E /Q wbox.lst;wbox.sav
+popd
+::if not #%opts==#  
+call updmap %opts
+quit
+
+
+:wizard
+msg 0 Do you want to search possible Chinese TTF file?~~
+msg 936 是否自动搜索可能的中文TrueType字体文件？~~
+msgbox YESNO %_msg
+if %_?==11 (quit)
+cdd %TTFDIR
+except (sim*.tt?) dir /b /[s900k] *.ttf;*.ttc> __tmp__.lst
+for %a in (@__tmp__.lst) do gosub proc %a
+del __tmp__.lst>&nul
+quit
+
+:proc [x]
+nircmdc.exe killprocess fontview.exe
+start "" /pos=1,1,35,640 %x
+msg 0 Found [%x]! Do you want to configure to use this font? (Also click [NO] if it is not Chinese font!)~~
+msg 936 发现字体文件[%x]。是否配置使用该字体（如果它不是中文字体，也请选否）？~~
+msgbox YESNOCANCEL %_msg
+set z=%_?
+if %z==12 (quit)
+if %z==11 (return)
+ftdump %x>___.tmp
+set n=%@name[%x]
+msg 0 Please specify a short name (no more than 5 chars) for use of this font in LaTeX:~~
+msg 936 为在LaTeX中使用该字体，请起个简短的字体名前缀(少于5个字母)，它也可用于CJK环境中。~~
+querybox /e %_msg %%n
+if %_?==2 (return)
+alias xfind=`ffind /K /M /F /T%1 %&`
+set e=
+set z=%@execstr[xfind "Windows GB2312" ___.tmp]
+iff not #%z==# then
+  set e=GB_EUC
+  goto next
+endiff
+set z=%@execstr[xfind "Windows Big 5" ___.tmp]
+iff not #%z==# then
+  set e=Bg5_Big5 
+  goto next
+endiff
+set z=%@execstr[xfind "Windows Unicode" ___.tmp]
+iff not #%z==# then 
+  set e=UGBK
+  xfind "CHN " ___.tmp>_tmp.tmp
+  xfind "ZHS " ___.tmp>>_tmp.tmp
+  if %@lines[_tmp.tmp]==-1 (set e=Unicode)
+  del _tmp.tmp>& nul
+endiff
+msg 0 Please specify the encoding [UGBK/GB_EUC/Bg5_Big5] of font [%x] since I cannot detect it well.~~ 
+msg 936 未能检测到字体[%x]的编码类型，请您指定[UGBK/GB_EUC/Bg5_Big5]。~~
+iff #%e==# then 
+  querybox %_msg %%e
+  if %_?==2 (return)
+  if #%e==# (return)
+endiff
+:next
+del ___.tmp>&nul
+msg 0 I have detected that font [%x] uses encoding [%e]. Do you want to run command [makefnt %x %n %@name[%x] %e]? You can close the font preview window.~~
+msg 936 检测到字体[%x]编码为[%e]。是否运行命令 [makefnt %x %n %@name[%x] %e]？并请关闭字体预览窗口。~~
+msgbox YESNO %_msg
+if %_?==11 (return)
+echo %x %n %@name[%x] %e>>%ETC\ttfonts.cfg
+call makefnt %x %n %@name[%x] %e
+return
+
+
+:ask_file
+set _wb=%MTEX\bin\tex-font2.%@if[exist %MTEX\bin\tex-font2.%LANG,%LANG,0]
+wbox %_wb
+if %?==0 goto end
+set /r wbox.lst
+if not #%ok==#1 goto end
+set _FNTS_=
+if #%tfm==#1 set _FNTS_=%_FNTS_ maketfm
+if #%fd==#1 set _FNTS_=%_FNTS_ makefd
+if #%ttf==#1 set _FNTS_=%_FNTS_ ttf2pk_map
+if #%pdf==#1 set _FNTS_=%_FNTS_ pdftex_ttf
+if #%dvi==#1 set _FNTS_=%_FNTS_ dvipdfm_ttf
+if %pfb#%enc==0#1 set _FNTS_=%_FNTS_ makeenc
+if #%pfb==#1 set _FNTS_=%_FNTS_ makepfb
+if #%fn1==# goto end
+if #%fn2==# goto end
+if #%fn3==# goto end
+if not exist %fn1 goto end
+copy %fn1 %TTFDIR\
+set e=
+iff #%chn==#0 then
+  set e=* 
+  set fn4=
+endiff
+set a=%e %@name[%fn1].%@ext[%fn1] %fn2 %fn3 %fn4
+if #%save==#1 echo %a>>%ETC\TTFONTS.CFG
+echo Continue to install?  {%a}
+?call makefnt %a
+goto end
+quit
+

@@ -1,0 +1,140 @@
+@echo off
+setlocal
+if #%1==# goto #help
+iff #%1==#- then 
+  set opt=
+  goto #freespell
+endiff
+
+set _sp=%SPELL
+iff #%1==#:? then
+  gosub #choose
+  shift
+endiff
+iff %@wild[%1,:*]==1 then
+  set _sp=%@instr[1,,%1]
+  shift
+endiff
+
+:#start
+if #%_sp==#freespell goto freespell
+if #%_sp==#prospell goto freespell
+if #%_sp==# gosub #detect
+if #%_sp==# goto #error
+
+echo Using spelling-checker [%_sp] ...
+
+set fn=%1
+window RESTORE
+if #%1==# set fn=%@getfile[.]
+msg 0 You did not select any file! I will quit now.~~
+msg 936 您没有选择任何文件！将退出拼写检查。~~
+iff #%fn==# then
+  msgbox OK %_msg
+  quit
+endiff
+set fn=%@sfn[%fn]
+
+iff islabel %_sp then
+	gosub %_sp
+else
+	call util.btm %_sp %fn %2&
+endiff
+quit
+
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+msg 0 Please choose a spell-checker:~~
+msg 936 请选择拼写检查工具~~
+set Ask=%_msg//%SpellCheckers
+wask {80}%Ask
+iff %? GT 0 then
+  set _sp=%@word["/",%?,%Ask]
+else
+  quit
+endiff
+return
+
+:#detect
+set _splist=amspell ispell ispellw aspell 4spell 
+for %a in (%_splist) if not #%@execstr[call %MTEX\bin\search.btm %a.exe %UTILS\%a;%UTILSLOCAL\%a]==# (set _sp=%a)
+if not #%_sp==#  (return)
+iff isdir %MTEX\winedt then
+  set _sp=WinEdt-Spell
+  return
+endiff
+set _wordapp=%@regquery[HKEY_CLASSES_ROOT\Word.Application\CLSID\]
+iff not #%_wordapp==#-1 then
+  set _sp=Word-Spell
+else
+  set _wpsapp=%@regquery[HKEY_CLASSES_ROOT\WPS.Application\CLSID\]
+  iff not #%_wpsapp=# then
+    set _sp=Wps-spell
+  endiff
+endiff
+return
+
+:#help
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+echo Usage1: %0 [:checker] file ==) Spell-checking specified file using a checker.
+echo Supported spellers: %SpellCheckers
+echo To select a speller, just use option ":?".
+echo Usage2: %0 -   ==) Opens FreeSpell/ProSpell to check any text by pressing hotkey. 
+quit
+
+:#error
+msg 0 I cannot find any spell-checker! Please install at least one spell-checker provided by MTeX.~~
+msg 936 没有发现拼写检查工具! 请安装相应组件!~~
+msgbox OK %_msg
+quit
+
+
+:WinEdt-Spell
+if not isdir "%MTEX\winedt" (return)
+%MTEX\winedt\winedt.exe -V "[Open('%fn');CMD('Spell Check');CMD('Exit');]"
+return
+
+:Word-Spell
+set _wordapp=%@regquery[HKEY_CLASSES_ROOT\Word.Application\CLSID\]
+iff #%_wordapp==#-1 then
+  msgbox OK To use Word-Spell, please reinstall Microsoft Office (full version)!
+  return
+endiff
+wscript.exe "%MTEX\bin\word_spell.vbs" "%fn"
+return
+
+:Wps-Spell
+set _wpsapp=%@regquery[HKEY_CLASSES_ROOT\WPS.Application\CLSID\]
+iff #%_wpsapp==#-1 then
+  msgbox OK Please install Kingsoft WPS or run ksomisc.exe in WPS to fix your WPS installation!
+  return
+endiff
+wscript.exe "%MTEX\bin\wps_spell.vbs" "%fn"
+nircmdc.exe waitprocess wps.exe
+return
+
+
+
+
+:#freespell
+msg 0 Please install component [ASpell]!~~
+msg 936 请安装组件ASpell!~~
+set _aspell=%@execstr[call %MTEX\bin\search.btm aspell.exe %UTILS\aspell;%UTILSLOCAL\aspell]
+iff #%_aspell==# then
+  msgbox OK %_msg
+  call util aspell
+endiff
+msg 0 Please choose: [YES]-FreeSpell; [NO]-ProSpell; [CANCEL]-Quit. By FreeSpell or ProSpell, you can press a hot key (Ctrl+Win+F10) to check selected text in any editor!~~
+msg 936 请选择：【是】FreeSpell;【否】ProSpell;【取消】退出。然后您可在任何编辑器中按热键[Ctrl+Win+F10]检查所选文本。~~
+msgbox YESNOCANCEL %_msg
+if %_?==12 quit
+set _sp=%@if[%_?==10,freespell,prospell]
+set opt=/win
+:freespell
+:prospell
+shift
+start %opt %_aspell %&
+quit

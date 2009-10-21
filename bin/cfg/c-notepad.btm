@@ -1,0 +1,14 @@
+for %a in (Editor2 Metapad Win32Pad TedNPad NoteXPad) if isdir %UTILS\%a  gosub #replace-npad
+quit
+
+:#replace-npad
+msg 0 Do you want to replace windows notepad with [%a]? It provides more convenient functions and has less limitations.
+msg 936  是否用[%a]来替换windows自带的记事本？它提供了更多方便的功能，克服了记事本的很多局限。
+::msg 950 琌ノ[%a]ㄓ蠢传windows盿癘ㄆセウ矗ㄑよ獽狝癘ㄆセЫ
+msgbox /T3 YESNO %_msg
+if not #%_?==#10 return
+sfc /cancel
+copy %UTILS\%a\%a.exe %_WINDIR\system32\notepad.exe
+copy %UTILS\%a\%a.exe %_WINDIR\system32\dllcache32\notepad.exe
+sfc /enable
+quit

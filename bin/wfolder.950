@@ -1,0 +1,3 @@
+用途：獲取系統特殊文件夾的路徑，結果按順序保存於文件wfolder.sav。
+格式: WFOLDER [path1] [path2] ...
+每個路徑可以$Desktop,$SendTo,$Programs,$Startup,$Start Menu等開頭。

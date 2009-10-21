@@ -1,0 +1,20 @@
+@echo off
+setlocal
+if #%1==#  *quit
+set _d=%1
+set _a=%@execstr[call %MTEX\bin\search.btm %1 %UTILS\%_d;%MTEX\%_d;%UTILSLOCAL\%_d]
+iff #%_a==# then
+	set _a=%@iniread["%ETC\mtex.ini",Utils,%_d]
+endiff
+iff #%_a==# then
+	echoerr Unknow command "%&"
+	set answer=N
+	inkey /K"YN" /w10 Do you want to install and run util [%1] (Y/N)? [N] %%answer
+else
+	set answer=Y
+endiff
+
+iff #%answer==#Y then
+  call util.btm %&
+endiff
+*quit

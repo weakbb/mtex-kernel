@@ -1,0 +1,75 @@
+@echo off
+setlocal
+set _f0=_tmp_.tex
+
+set frame=false
+set fitpaper=false
+set nup=1x2
+set paper=a4paper
+set orient=auto
+set pages=-
+set landscape=false
+set turn=true
+set noautoscale=false
+set column=false
+set columnstrict=false
+set delta=0 0
+set offset=0 0
+set trim=0 0 0 0
+set scale=1.0
+set openright=false
+set tidy=true
+
+if #%1==# goto usage
+
+set opts=
+do while %@wild[%1,-*]==1
+  set k=%@word["-:",0,%1]
+  set v=%@word["-:",1,%1]
+  set v=%@unquotes[%v]
+  set %[%k]=%v
+  shift
+  iff %@index[orient fitpaper ,%k ] GT 0  then
+    set opts=%opts,%k=%v
+  endiff  
+enddo
+iff #%orient=#auto then
+  set x=%@word["x",0,%nup]
+  set y=%@word["x",1,%nup]
+  set fitpaper=true
+  iff %x GT %y then
+    set orient=landscape 
+    set fitpaper=false
+  elseiff %x LT %y then
+    set orient=portrait 
+    set fitpaper=false
+  endiff
+endiff
+
+echo Current settings: [pages:%pages, nup:%nup, landscape:%landscape, frame:%frame, fitpaper:%fitpaper, trim:%trim, delta:%delta, offset:%offset, scale:%scale, turn:%turn, noautoscale:%noautoscale, column:%column, columnstrict:%columnstrict, openright:%openright]
+
+
+set pdfname=%1
+if #%2=# (set out=%@name[%1]-2.pdf) else (set out=%2)
+gosub pdfnup >%_f0
+call pdflatex %_f0
+move %@name[%_f0].pdf %out
+del %@name[%_f0].*>&nul
+echo Nup-ed file is [%out]!
+quit
+
+:pdfnup
+echo \documentclass[%paper,%orient]{article}
+echo \usepackage{pdfpages}
+echo \begin{document}
+echo \includepdfset{%opts}
+echo \includepdf[pages=%pages, nup=%nup, landscape=%landscape, frame=%frame, fitpaper=%fitpaper, trim=%trim, delta=%delta, offset=%offset, scale=%scale, turn=%turn, noautoscale=%noautoscale, column=%column, columnstrict=%columnstrict, openright=%openright]{%pdfname}
+echo \end{document} 
+return
+
+
+:usage
+echo Usage: pdfnup [options] pdffile [outfile] ==) Convert pdf file into N-up pdf.
+echo Default options: -nup:2x2 pages:%pages -landscape:%landscape -frame:%frame -fitpaper:%fitpaper -trim:"%trim" -delta:"%delta" -offset:"%offset" -scale:"%scale" -turn:%turn -noautoscale:%noautoscale -column:%column -columnstrict:%columnstrict -openright:%openright
+quit
+

@@ -1,0 +1,29 @@
+@echo off
+setlocal
+set n=%1
+set f=
+for %a in (@%ETC\virfont.cfg) gosub test %a
+for %a in (@%ETC\vf.cfg) gosub test %a
+echo %n
+quit
+
+:test [x]
+if #%x==# return
+if %@left[1,%x]==; return
+set k=%@word["=",0,%x]
+set v=%@word["=",1,%x]
+if #%k==#%n  goto end
+if %@wild[%n,%k]==1 goto wild
+return
+
+:end
+echo %v
+quit
+
+:wild
+set i=%@index[%k,*]
+set m=%@eval[%@len[%n]-%@len[%k]+%i1+1]
+set s=%@instr[%i,%m,%n]
+set v=%@replace[*,%s,%v]
+echo %v
+quit

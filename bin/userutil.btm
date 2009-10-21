@@ -1,0 +1,46 @@
+@echo off
+setlocal
+set _u=%USERUTIL
+iff #%1==#:? then
+  gosub #choose 
+  shift
+elseiff %@wild[%1,:*]==1 then
+  set _u=%@instr[1,,%1] 
+  shift
+endiff
+iff #%_u==# then
+  gosub #help 
+  quit
+endiff
+
+iff islabel %_u then 
+  gosub %_u 
+else
+  set _p=%@execstr[call %MTEX\bin\search.btm %_u]
+  if #%_p==# (set _p=util %_u)
+  call %_p %&
+endiff
+
+quit
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+msg 0 Please choose an util:~~
+msg 936 请选择用户自定义工具~~
+set Ask=%_msg//%UserUtils
+wask {80}%Ask
+iff %? GT 0 then 
+  set _u=%@word["/",%?,%Ask]
+else 
+  quit
+endiff
+return
+
+:#help
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+echo Usage: %0 [:user_util] [args] ==) Run user_util
+echo User_util list: %UserUtils
+echo To select a user_util, just use option ":?".
+return

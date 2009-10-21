@@ -1,0 +1,36 @@
+@echo off
+setlocal
+if #%1==# (goto usage)
+set tmpfile="%TMP\_sed_.tmp"
+set files=%1
+set opt=
+set script=
+shift
+do while not #%1==#
+		if #%2==# (goto usage)
+		set a_1=%1
+		set a_1=%@replace[,\\,%a_1]
+		set a_1=%@replace[\,\\,%a_1]
+		set a_1=%@replace[*,\*,%a_1]
+		set a_1=%@replace[?,\?,%a_1]
+		set a_1=%@strip[`"`,%a_1]
+		set a_2=%@strip[`"`,%2]
+		set a_2=%@replace[\,\\,%a_2]
+		set a_2=%@replace[*,\*,%a_2]
+		set a_2=%@replace[?,\?,%a_2]
+		set script=%script -e "s/%a_1/%a_2/g"
+		shift
+	shift
+enddo
+for %z in (%files) do (
+	echo sed %script %z
+	sed %opt %script %z > %tmpfile
+	move /q %tmpfile %z
+)
+quit
+
+:usage
+echo Usage: %0 fspec "search11" "replace1" "search12" "replace2" ... ==)search and replace strings in fspec
+echo Note: This tool is used to simulate xchange.exe by sed.exe so as to avoid running NTVDM.
+quit
+

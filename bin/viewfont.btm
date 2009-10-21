@@ -1,0 +1,187 @@
+@echo off
+if #%1==# goto usage
+setlocal
+apath %MTEX\utils\tools
+set _f=%1
+iff exist %1 then 
+  set _f=%@lfn[%1]
+endiff
+set _p=%@path[%_f]
+set _n=%@name[%_f]
+set _e=%@ext[%_f]
+set _x=%@sfn[%_n.%_e]
+set _x=%@name[%_x].%@ext[%_x]
+set _FONTS=
+iff #%_e==# then 
+  set _FONTS=%2& 
+  goto test
+endiff
+iff not exist %_f then
+  set _f=%@replace[/,\,%@execstr[kwhich %_f]]
+  set _p=%@path[%_f]
+endiff
+pushd %_p
+set _x=%@sfn[%_n.%_e]
+set _x=%@name[%_x].%@ext[%_x]
+if islabel %_e  gosub %_e
+if %@numeric[1%_e]==1  gosub gf
+popd
+quit
+
+:test
+if #%3==# (goto fontchart) else (goto testfont)
+quit
+
+
+:fontchart
+pushd %TMP
+del fontchart.dvi
+set _tmp=__tmp__.tmp
+echo %_n>%_tmp
+tex fontchart<%_tmp
+if exist fontchart.dvi (call dviview fontchart.dvi)
+del fontchart.aux;fontchart.log;%_tmp
+popd
+quit
+
+:testfont
+pushd %TMP
+del testfont.dvi
+set _tmp=__tmp__.tmp
+iff #%_FONTS==# then
+  set TESTFONT=\bigtest
+else 
+  set TESTFONT=\sample\digits\math
+endiff
+echo %_n>%_tmp
+echo %TESTFONT>>%_tmp
+for %_a in (%_FONTS) do (
+  echo \init>>%_tmp 
+  echo %_a at 30pt>>%_tmp 
+  echo %TESTFONT>>%_tmp
+)
+echo \bye>>%_tmp
+tex testfont<%_tmp
+del %_tmp testfont.log >& nul
+if #%_e==#mf (del %[_n].tfm %[_n].[1-9]*)
+if exist testfont.dvi (call dviview testfont.dvi)
+del %[_n].log>&nul
+popd
+quit
+
+:chartable
+set _res=at 30pt
+set _res=%@execstr[echo %@full[%_n.%_e]|sed -e "s/.*\\dpi\([0-9]*\).*/\1/g"]
+set _res=%@if[#%_res==#,at 30pt,scaled %@int[%@eval[%_res/600*1000+0.5]]]
+set TESTFONT=\table
+del testfont.dvi
+set _tmp=__tmp__.tmp
+echo %_n %_res>%_tmp
+echo %TESTFONT>>%_tmp
+for %_a in (%_FONTS) do (
+  echo \init>>%_tmp 
+  echo %_a %_res>>%_tmp 
+  echo %TESTFONT>>%_tmp
+)
+echo \bye>>%_tmp
+tex testfont<%_tmp
+del %_tmp testfont.log >& nul
+if #%_e==#mf (del %[_n].tfm %[_n].[1-9]*)
+if exist testfont.dvi (call dviview testfont.dvi)
+del %[_n].log>&nul
+quit
+
+
+:fon
+:ttf
+:ttc
+:otf
+:pfm
+start "" %[_n].%[_e]
+return
+
+:afm
+iff exist "%_n.pfb" then 
+	set _e=pfb
+	set _x=%_n.pfb
+elseiff exist "%_n.pfa" then 
+	set _e=pfa
+	set _x=%_n.pfa
+endiff
+:pfa
+:pfb
+if exist Fontmap (copy Fontmap Fontmap.sav)
+pfbnames %_x
+set psf=%@clip[0]
+echo %psf (%_n.%_e);>Fontmap
+echo %psf (%_n.%_e);
+gswin32c -dPAUSE prfont.ps -c %psf DoFont  quit
+del Fontmap
+if exist Fontmap.sav (move Fontmap.sav Fontmap)
+return
+
+
+:pk
+set m=chartable/testfont/fontchart/pkedit/pktogf/gftype/pk2bm
+msg 0 Please choose a preview method:~~
+msg 936 ÇëÑ¡ÔñÔ¤ÀÀ·½Ê½£º~~
+wask {80}%_msg//%m
+if %? GT 0 gosub %@word["/",%?,chartable/%m]
+return
+
+:pkedit
+vdm
+pkedit %_x
+return
+
+:pktogf
+pktogf %_n.pk %_n.gf
+gftodvi %[_n].gf
+call dviview %_n.dvi
+del %_n.gf
+return
+
+:gf
+gftodvi %[_n].gf
+call dviview %_n.dvi
+return
+
+:gftype
+if not exist %[_n].gf (pktogf %_n.pk %_n.gf)
+gftype -images %[_n].gf>&_tmp_.txt
+list _tmp_.txt
+del _tmp_.txt
+return
+
+
+:pk2bm
+set _c=A
+input Type a char to show: %%_c
+pk2bm -b -c %_c  %_n.pk|&list
+return
+
+:mf
+MFX 1 %_f
+goto test
+return
+
+:tfm
+goto test
+return
+
+:vf
+echo VF "%_n.vf" is mapped to font: %@execstr[vfname %_n.vf]
+pause
+goto test
+return
+
+:map
+list %_n.map
+return
+
+:usage
+echo Usage1: %0 font_file ==) View specified font file.(TTF/TTC/FON/OTC/PFB/PFA/AFM/PFM/TFM/MF/GF/PK)
+echo   Ex: pzdr.pfb
+echo Usage2: %0 font_name ==) Test specified font. (Don't add extension!)
+echo   Ex: %0 "pzdr at 20pt"
+quit

@@ -1,0 +1,13 @@
+@echo off
+if {%1}=={}	goto usage
+if {%gs%}=={}	set gs=gswin32c
+set opt=-q -dNOPAUSE -dBATCH -sDEVICE#pdfwrite
+set f=%2
+if {%2}=={}     set f="%@name[%1].pdf"
+%gs% %opt% -sOutputFile#%f% -c save pop -f %1
+goto end
+
+:usage
+echo "Usage: ps2pdf  input.ps [output.pdf]"
+goto end
+:end

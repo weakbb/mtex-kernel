@@ -1,0 +1,1 @@
+@util bibedit %@if[#%@ext[%1]==#bib,%1,] %2&

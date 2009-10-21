@@ -1,0 +1,131 @@
+@echo off
+setlocal
+if #%1==# goto #usage
+pushd %TMP
+if islabel #%1 (gosub #%1)
+popd
+quit
+
+:#-i
+:#-install
+wbox %MTEX\bin\tex-assoc.%@if[exist %MTEX\bin\tex-assoc.%LANG,%LANG,0]
+set /r wbox.lst
+del wbox.lst >& nul
+if #%cancel==#1  return
+if not exist "%ETC\tex-assoc.sav" (gosub #-backup)
+iff not #%btmfile==#0 then
+  ftype MTeX.btmfile="%MTEX\bin\tex-dos.exe" run "%%1"
+  for %a in (btm) do assoc .%a=MTeX.btmfile
+endiff
+iff not #%texfile==#0 then
+  ftype MTeX.texfile="%MTEX\bin\tex-edt.exe" "%%1"
+  for %a in (tex ctx ty dtx ltx) do assoc .%a=MTeX.texfile
+endiff
+iff not #%dvifile==#0 then
+  ftype MTeX.dvifile="%MTEX\bin\dviview.exe" "%%1"
+  for %a in (dvi) do assoc .%a=MTeX.dvifile
+endiff
+iff not #%psfile==#0 then
+  ftype MTeX.psfile="%MTEX\bin\psview.exe" "%%1"
+  for %a in (ps) do assoc .%a=MTeX.psfile
+endiff
+iff not #%epsfile==#0 then
+  ftype MTeX.epsfile="%MTEX\bin\psview.exe" "%%1"
+  for %a in (eps) do assoc .%a=MTeX.epsfile
+endiff
+iff not #%pdffile==#0 then
+  ftype MTeX.pdffile="%MTEX\bin\pdfview.exe" "%%1"
+  for %a in (pdf) do assoc .%a=MTeX.pdffile
+endiff
+
+iff not #%tpxfile==#0 then
+  ftype MTeX.tpxfile="%MTEX\bin\4nt.exe" /c util.btm tpx "%%1"
+  for %a in (tpx) do assoc .%a=MTeX.tpxfile
+endiff
+iff not #%asyfile==#0 then
+  ftype MTeX.asyfile="%MTEX\bin\4nt.exe" /c util.btm asy "%%1"
+  for %a in (asy) do assoc .%a=MTeX.asyfile
+endiff
+iff not #%mpfile==#0 then
+  ftype MTeX.mpfile="%MTEX\bin\4nt.exe" /c mp2eps.btm -mproof "%%1"
+  for %a in (mp) do assoc .%a=MTeX.mpfile
+endiff
+iff not #%gpfile==#0 then
+  ftype MTeX.gpfile="%MTEX\bin\4nt.exe" /c util.btm gnuplot "%%1"
+  for %a in (dem plt) do assoc .%a=MTeX.gpfile
+endiff
+iff not #%lyxfile==#0 then
+  ftype MTeX.lyxfile="%MTEX\bin\4nt.exe" /c util.btm lyx "%%1"
+  for %a in (lyx) do assoc .%a=MTeX.lyxfile
+endiff
+iff not #%fontfile==#0 then
+  ftype MTeX.fontfile="%MTEX\bin\viewfont.exe" "%%1"
+  for %a in (pfb pfa mf pk gf tfm afm) do assoc .%a=MTeX.fontfile
+endiff
+gosub #-set-icons
+return
+
+:#-u
+:#-uninstall
+gosub #clean-reg>"%TMP\tex-assoc.uni"
+iff %_SHIFT==1 then
+  list "%TMP\tex-assoc.uni"
+endiff
+regedit /s "%TMP\tex-assoc.uni"
+iff exist "%ETC\tex-assoc.sav" then 
+  ?"Restore previous associations?" gosub #-restore
+endiff
+return
+
+:#-set-icons 
+gosub set_icon MTeX.btmfile mtex-btm.ico
+gosub set_icon MTeX.texfile mtex-tex.ico
+gosub set_icon MTeX.dvifile mtex-dvi.ico
+gosub set_icon MTeX.psfile mtex-ps.ico
+gosub set_icon MTeX.pdffile mtex-pdf.ico
+gosub set_icon MTeX.epsfile mtex-eps.ico
+gosub set_icon MTeX.fontfile mtex-font.ico
+gosub set_icon MTeX.tpxfile mtex-tpx.ico
+gosub set_icon MTeX.asyfile mtex-asy.ico
+gosub set_icon MTeX.mpfile mtex-mp.ico
+gosub set_icon MTeX.gpfile mtex-gp.ico
+gosub set_icon MTeX.lyxfile mtex-lyx.ico
+return
+
+:set_icon [key ico]
+echo Setting icon for %key ...
+set _f="%MTEX\bin\%ico"
+set _k=HKEY_CLASSES_ROOT\%key\DefaultIcon\
+iff %@regcreate[%_k]==0 then
+  set _r=%@regset[%_k,REG_SZ,%_f]
+endiff
+set _k=HKEY_LOCAL_MACHINE\SOFTWARE\Classes\%key\DefaultIcon\
+iff %@regcreate[%_k]==0 then
+  set _r=%@regset[%_k,REG_SZ,%_f]
+endiff
+return
+
+:#-backup
+set ext_list=btm tex ctx ty dtx dvi ps eps pdf tpx asy lyx pfb pfa mf pk gf tfm afm mp dem plt 
+echos>"%ETC\tex-assoc.sav"
+for %a in (%ext_list) assoc .%a >> "%ETC\tex-assoc.sav"
+sed -e "/=MTeX\./d" "%ETC\tex-assoc.sav" > "%ETC\tex-assoc.tmp"
+move "%ETC\tex-assoc.tmp" "%ETC\tex-assoc.sav"
+return
+
+:#-restore
+sed -e "/=MTeX\./d" "%ETC\tex-assoc.sav" > "%ETC\tex-assoc.tmp"
+for %x in (@"%ETC\tex-assoc.tmp") do assoc %x
+del "%ETC\tex-assoc.*" >& nul
+return
+
+:#clean-reg
+set ext_list=btm tex ctx ty dtx dvi ps eps pdf tpx asy lyx pfb pfa mf pk gf tfm afm mp dem plt 
+set typ_list=btmfile texfile dvifile psfile pdffile epsfile fontfile tpxfile asyfile mpfile gpfile lyxfile
+for %a in (%ext_list) do assoc .%a= >& nul
+echo REGEDIT4
+REM ~ for %a in (%ext_list) do echo [-HKEY_CLASSES_ROOT\.%a]
+REM ~ for %a in (%ext_list) do echo [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.%a]
+for %a in (%typ_list) do echo [-HKEY_CLASSES_ROOT\MTeX.%a]
+for %a in (%typ_list) do echo [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MTeX.%a]
+return

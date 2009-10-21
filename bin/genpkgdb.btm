@@ -1,0 +1,42 @@
+@echo off
+iff #%1==# goto usage
+iff exist "%ETC\pkgs_db.cfg" then
+  copy "%ETC\pkgs_db.cfg" "%ETC\pkgs_db.old"
+endiff
+
+?"Overwrite previous $ETC\pkgs_db.cfg?" echos>"%ETC\pkgs_db.cfg"
+switch .%@ext[%1]
+case .zip
+  gosub from_zip
+case .rar
+  gosub from_rar
+endswitch
+
+echo Macro package databse file "%ETC\pkgs_db.cfg" has been generated! 
+quit
+
+:from_rar
+for %a in (%1) do gosub proc_rar
+del _tmp_.tmp >& nul
+return
+
+:proc_rar
+echo %a
+echo %@name[%a]:%@name[%a].rar>> "%ETC\pkgs_db.cfg"
+unrar lb %a > _tmp_.tmp
+sed -n -e "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;/\.[cs][lt][sy]/p;" _tmp_.tmp >> "%ETC\pkgs_db.cfg"
+return
+
+:from_zip
+unzip -l %1 *.sty *.ins *.cls > "%TMP\genpkgdb.tmp"
+sed -n -e "s#^Archive:[ ]*\(.*\)\.zip#\1:#gp;s#.*/\([a-z0-9-_]*\.cls\)#\1#gp;s#.*/\([a-z0-9-_]*\.sty\)#\1#gp;s#.*/\([a-z0-9-_]*\)\.ins#\1.sty#gp;" "%TMP\genpkgdb.tmp"|sed -e "/IEEEconf\.sty/s#\.sty#\.cls#gp"|sed -e "$!N;/^\(.*\)\n\1$/!P;D">>"%ETC\pkgs_db.cfg"
+del "%TMP\genpkgdb.tmp"
+return
+
+
+
+:usage
+echo Usage1:%0 *.zip ==) Create $ETC\pkg_db.cfg from *.zip
+echo Usage2:%0 *.rar ==) Create $ETC\pkg_db.cfg from *.rar
+echo Note: This tool is to generate macro package databse from zip archives.
+quit

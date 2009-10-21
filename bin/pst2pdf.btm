@@ -1,0 +1,19 @@
+@echo off
+echo Usage:  %0   =)produces PDF files for all files of the form *-fig*.tex
+echo         %0 FILE   =)only considers FILE-fig*.tex
+echo         %0 file.tex  =)only considers file.tex
+setlocal
+set _x=%@if[#%1==#,*,%1]
+if #%@ext[%_x]==#  set _x=%_x-fig*.tex
+echo Converting [%_x] to pdf files ... 
+for %a in (%_x) do gosub proc %a
+quit
+
+:proc [a]
+set n=%@name[%a]
+call latex -int=batchmode %a
+if exist "%n.dvi" (dvips -E -o %n.eps %n)
+del %n.pdf >& nul
+call gconvert .pdf %n.eps
+del %n.eps;%n.dvi;%n.log;%n.aux >& nul
+return

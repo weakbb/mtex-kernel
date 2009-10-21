@@ -1,0 +1,5 @@
+@echo off
+pushd %@path[%1]
+mpost.exe %@if[#%1==#,,%@name[%1].%@ext[%1]] %2&
+pause
+popd

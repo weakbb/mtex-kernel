@@ -1,0 +1,41 @@
+@echo off
+setlocal
+if #%1==# gosub usage
+
+:merge
+set f=_Merged_.ps
+iff {%1}=={-o}  then
+  set f=%2 
+  shift 
+  shift
+endiff
+echo Merging %& ...
+gosub psmerge_pro >_tmp.ps
+for %a in (%&) do echo _begin_job_ (%a%) run _end_job_>>_tmp.ps
+gswin32c -dNOPAUSE -dBATCH -sDEVICE#pswrite -sOutputFile#%f%  _tmp.ps
+del _tmp.ps
+quit
+
+:psmerge_pro
+text
+/_begin_job_
+{
+        /tweak_save save def
+        /tweak_dc countdictstack def
+        /tweak_oc count 1 sub def
+        userdict begin
+}bind def
+
+/_end_job_
+{
+        count tweak_oc sub{pop}repeat
+        countdictstack tweak_dc sub{end}repeat
+        tweak_save restore
+}bind def
+endtext
+return
+
+:usage
+echo Usage:  %0  [-o outputfile] psfile1 psfile2 ...
+echo This tool merges several .PS or .EPS files into a single file (by default,"_Merged.ps").
+return

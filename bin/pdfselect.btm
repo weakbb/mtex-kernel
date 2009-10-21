@@ -1,0 +1,11 @@
+@echo off
+if #%1==# goto usage
+call pdfnup -nup:1x1 %&
+quit
+
+:usage
+echo Usage: pdfselect [options] -pages:"..." pdffile [outfile]
+echo Examples of pages: -; 2-5; 2-; -5; {2,4,5}
+echo Options can be any option supported by package {pdfpages}.
+quit
+

@@ -1,0 +1,13 @@
+@echo off
+setlocal
+echo Updating [vf.cfg] from VF (virtual font) files ...
+echos>_tmp_.map
+for /r %a in (%MTEX\fonts\vf\*.vf) do gosub proc %a
+
+sortu <_tmp_.map>%ETC\vf.cfg
+del _tmp_.map
+quit
+
+:proc [x]
+echo %@lower[%@name[%a]]=%@execstr[vfname %a]>>_tmp_.map
+return

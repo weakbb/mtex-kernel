@@ -1,0 +1,50 @@
+@echo off
+setlocal
+set _g=%PICUTIL
+iff #%1==#:? then
+  gosub #choose
+  shift
+endiff
+iff %@wild[%1,:*]==1 then
+  set _g=%@instr[1,,%1]
+  shift
+endiff
+if #%_g==# gosub #choose
+iff #%_g==# then
+  gosub #help
+  quit
+endiff
+
+iff islabel %_g then 
+  gosub %_g 
+elseiff exist %MTEX\bin\util\pic\%_g.btm then 
+  call %_g %&
+elseiff exist %MTEX\bin\util\%_g.btm then 
+  call %_g %&
+else
+  call util %_g %&
+endiff
+quit
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+msg 0 Please choose a picture util:~~
+msg 936 ÇëÑ¡ÔñÍ¼¹¤¾ß~~
+set Ask=%_msg//%PicUtils
+set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+wask {80}%Ask
+iff %? GT 0 then 
+  set _g=%@word["/",%?,%Ask]
+else
+  quit
+endiff
+return
+
+:#help
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+echo Usage: %0 [:pic_util] [file] ==) Draw a pciture.
+echo Pic_util supported: %PicUtils
+echo To select a pic_util, just use option ":?".
+return

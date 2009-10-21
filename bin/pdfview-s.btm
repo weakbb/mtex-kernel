@@ -1,0 +1,48 @@
+@echo off
+setlocal
+if not exist %1  goto usage
+set VIEWER=sumatrapdf
+set _d=%@if[isdir %UTILS\%VIEWER,%UTILS\%VIEWER,%UTILSLOCAL\%VIEWER]
+if not isdir %_d  goto usage
+
+set file=%@unquotes[%1]
+set line=%@if[%2==,1,%2]
+if #%line==#1  goto direct_open
+
+set src=%@if[%3==,%@name[%file].tex,%@unquotes[%3]]
+REM ~ iff %@index[%src, ] GT 0 then
+    REM ~ set src=%@sfn[%src]
+REM ~ endiff
+REM ~ iff %@index[%file, ] GT 0 then
+    REM ~ set file=%@sfn[%file]
+REM ~ endiff
+
+title TEX-DOS
+::nircmdc SUMATRAPDF_PDF_FRAME
+nircmdc.exe killprocess sumatrapdf.exe
+::activate "%@name[%1].%@ext[%1]" close >& nul
+start /max "" "%_d\sumatrapdf.exe" -reuse-instance
+::-inverse-search "tex-edt.exe" %%l "%%f" 
+inkey /W1 %%key
+set _tmp=%@sfn[%TMP]\__dde__.tmp
+set fn=%@name[%file].%@ext[%file]
+::echo [ForwardSearch("%file","%src",%line,0,0,0)]>%_tmp
+echo [ForwardSearch("%fn","%src",%line,0,0,0)]>>%_tmp
+type %_tmp
+dde.exe SUMATRA SUMATRA control @%_tmp
+del %_tmp >& nul
+REM ~ dde.exe SUMATRA SUMATRA control "[ForwardSearch("%file","%src",%line,0,0,0)]"
+quit
+
+
+:direct_open
+REM ~ start /max "" "%_d\sumatrapdf.exe" -reuse-instance "%file"
+start /max "" "%_d\sumatrapdf.exe" "%file"
+quit
+
+:usage
+echo Usage: %0 pdffile line_no srcfile ==) Forward search pdf file with Sumatrapdf
+echo Note: Only Sumatrapdf supports pdf forward search!
+quit
+
+

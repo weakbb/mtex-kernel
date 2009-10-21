@@ -1,0 +1,31 @@
+@echo off
+setlocal
+set quiet=
+iff #%1==#/q then
+  set quiet=1
+  shift
+endiff
+iff #%1==# goto usage
+set uninst_wild=unins*.exe;remove*.exe 
+set uninst=%@execstr[dir %1\%uninst_wild /B /S]
+iff #%uninst==# then
+  ?del /XSQY %1\*.*
+else
+  set uninst_cmd="%uninst"
+  echoerr Running: %uninst_cmd
+  start /wait "Uninstall-util" %uninst_cmd
+  gosub finish
+endiff
+quit
+
+:finish
+if #%quiet==#1  return
+msg 0 Have you uninstalled [%1]? Click [OK] to continue.~~
+msg 936 是否已经反安装了[%1]? 点击[OK]继续.~~
+msgbox OK %_msg
+return
+
+:usage
+echo Usage: %0 folder ==) Find a proper uninstaller in specified folder and run it
+echo Note: When I cannot find proper uninstaller, I will prompt you to delete the folder!
+quit

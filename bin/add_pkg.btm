@@ -1,0 +1,138 @@
+@echo off
+setlocal
+if #%1==# (goto usage)
+if #%@ext[%1]==#rar (goto extract)
+if #%@ext[%1]==#zip (goto extract)
+iff exist "%TMP\clatex.$$$" then
+  set /r "%TMP\clatex.$$$"
+endiff
+iff %@index[%_mode,batch] GT 0 then
+  echoerr Are you using CLATEX batchmode compiling? I will quit now...
+  quit
+endiff
+set _arc=%1
+set server=
+set _noask=%@if[exist "%ETC"\mserver.sav,1,]
+gosub query_db 1>&2
+iff not #%@ext[%_arc]==#rar then
+  iff not #%_SHIFT==#1 then
+  net_pkg.exe %_arc %2&
+  quit
+  endiff
+endiff
+set _res=%@execstr[kpsewhich %1]
+iff %server#%_res==# then
+  set _arc=%@name[%1].rar
+  gosub set_server
+  set _url=%[server]macros/%_arc
+  gosub download
+endiff
+quit
+
+:usage
+echo Usage1: %0 xyz.sty ==) Install a macro package from server
+echo Usage2: %0 xyz.rar ==) Install a macro package from a rar/zip achive
+echo Usage3: %0 xyz.zip abc ==) Install a macro package from a rar/zip achive into [%TMP\macros\abc]
+echo Usage4: %0 xyz.zip %MTEX\texlocal\abc ==) Install a macro package from a rar/zip achive into [%MTEX\texlocal\abc]
+quit
+
+:extract
+iff not exist %1 then
+  echoerr File [%1] does not exist!
+  quit
+endiff
+set _dest=%@if[#%@path[%2]==#,"%TMP\macros\%2",%2]
+iff #%@ext[%1]==#rar then
+  set _test=unrar t %1
+  set _extr=unrar x -o+ %1 %_dest
+elseiff #%@ext[%1]==#zip then
+  set _test=unzip -t %1
+  set _extr=unzip -o %1 -d %_dest
+endiff
+%_test
+iff %?==0 then
+  %_extr
+  echoerr Macro package [%1] has been extracted into local macro folder [%_dest]! 
+else
+  echoerr Archive [%1] is corrupted? I will not extract it!
+endiff
+quit
+
+
+:query_db
+set dbfile=%@if[exist %ETC\pkgs_db.cfg,%ETC\pkgs_db.cfg,%MTEX\_\pkgs_db.cfg]
+if not exist "%dbfile" (return)
+set pat=%@lower[%1]
+set res=%@execstr[sed -n -e "/:/h;/^%pat/{g;p;q;}" %dbfile]
+if #%res==# (return)
+set _url=%@word["=",1,%res]
+set res=%@word["=",0,%res]
+set _pkg=%@word[":",0,%res]
+set _arc=%@word[":",1,%res]
+set _lst=%@word[":",2,%res]
+iff %_url#%_arc==# then
+  set _arc=%@name[%_pkg].zip
+elseiff #%_url==# then
+  gosub set_server
+  set _url=%[server]macros/%_arc
+endiff
+if %@len[%_url] GT 0 (gosub download)
+echoerr Found file [%1] in package [%_pkg]:[%_arc] from server [%_url] ...
+return
+
+:set_server
+set server=%@line["%MTEX\_\mserver.cfg",0]
+iff exist "%ETC\mserver.cfg" then
+  set server=%@line["%ETC\mserver.cfg",0]
+endiff
+set server=%@execstr[call ask_server.btm]
+return
+
+:download
+iff not exist "%TMP\macros"\%_arc then
+  iff #%_noask==# then
+    msg 0 Ready to download [%_arc] from server, please confirm the URL and then wait until downloaded.~~ 
+    msg 936 即将下载如下文件，请确认网址。下载文件可能较慢，确认后请耐心等待。~~
+    querybox /E %_msg %%_url
+    if %_?==2 (return)
+  endiff
+endiff
+
+mkdir /s "%TMP\macros" >& nul
+pushd "%TMP\macros"
+
+iff not exist "%TMP\macros"\%_arc then
+  echo Downloading file [%_url] to [%_CWD\%_arc], please wait until finished ...
+  echo Running: down_url "%_arc" "%_url"
+  down_url "%_arc" "%_url"
+  echo Downloading finished? I will test the rar archieve:-)
+endiff
+
+unrar t "%_arc"
+iff %?==0 then 
+  iff #%_noask==# then
+    msg 0  Downloading finished! File [%_arc] is saved in folder [%_CWD]!~~
+    msg 936 下载完毕！文件[%_arc]保存于文件夹[%_CWD]！~~
+    msgbox OK %_msg
+  endiff
+  mkdir /s "%TMP\macros"
+  unrar x -o+ "%_arc" "%TMP\macros"\
+  echo Macro package [%_arc] has been extracted into local macro folder [%TMP\macros]! 
+  ::call tex-pkg -i "%TMP\_new"
+else
+  del "%_arc" >& nul
+  msg 0 Error in downloading? Please make sure the URL is correct! Try another server?~~
+  msg 936 下载似乎有错误！请确认下载地址正确！是否尝试其它服务器？~~
+  msgbox OKCANCEL %_msg
+  iff  %_?==10 then
+    del "%ETC"\mserver.sav >& nul
+	gosub set_server
+    set _url=%[server]macros/%_arc
+    popd
+	goto download
+  endiff
+endiff
+
+popd
+return
+

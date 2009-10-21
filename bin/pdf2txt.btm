@@ -1,0 +1,31 @@
+@echo off
+if #%1==# goto usage
+setlocal
+for %f in (%&) do gosub pdf2txt %f
+quit
+
+:usage
+echo %0 [files] ==) Convert .pdf or .ps files to text files.
+quit
+
+:pdf2txt
+set e=%@ext[%f]
+set n=%@name[%f]
+set p=%@path[%f]
+pushd %p
+if #%e==#pdf  (call pdf2ps %[n].pdf %[n].ps)
+if exist %[n].ps (gosub ps2txt %[n].ps>%[n].txt)
+popd
+return
+
+:ps2txt [a]
+iff isdir %UTILS\pstotext then 
+  call util :pstotext pstotxt3 %a
+elseiff isdir %UTILSLOCAL\pstotext then 
+  call util :pstotext pstotxt3 %a
+elseiff isdir %UTILS\tools then 
+  call util :tools ps2txt %a
+elseiff isdir %UTILSLOCAL\tools then 
+  call util :tools ps2txt %a
+endiff
+return

@@ -1,0 +1,117 @@
+@echo off
+setlocal
+set _f=
+set _choose=
+if #%UTILSLOCAL==# (set UTILSLOCAL=%UTILS)
+if #%PSVIEW==#  set PSVIEW=#auto
+iff #%1==#:? then
+  set _choose=1
+  shift
+endiff
+iff %@wild[%1,:*]==1 then
+  set PSVIEW=%@instr[1,,%1]
+  shift
+endiff
+
+iff #%_choose==#1 .OR. #%_SHIFT==#1 then
+  gosub #choose
+endiff
+
+iff #%1==# then 
+  gosub #usage 
+else 
+  set _f=%@sfn[%1] %2&
+  if %_f//%#==//1 (notfind %1)
+endiff
+
+:#view
+iff islabel %PSVIEW then
+  gosub %PSVIEW
+else
+  call %PSVIEW %_f
+endiff
+quit
+
+:#usage
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+echo Usage: PSVIEW [:viewer] ps-file
+echo Supported viewers: %PsViewers
+echo To select a viewer, just use option ":?".
+return
+
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+msg 0 Please choose a PS viewer:~~
+msg 936 «Î—°‘Ò‘§¿¿π§æﬂ~~
+set Ask=%_msg//%PsViewers
+wask {80}%Ask
+if %? GT 0 (set PSVIEW=%@word["/",%?,%Ask])
+return
+
+
+
+:#auto
+gosub gsview32
+gosub psv
+gosub rops
+gosub open
+gosub gs
+pause Can't find any PS viewer! 
+quit
+
+:acroread
+if #%ACROREAD==# set ACROREAD=%MTEX\Acrobat\Reader\AcroRd32.exe
+if not exist %ACROREAD return
+start "" /max %ACROREAD% %_f
+quit
+
+:gs
+if #%@execstr[call %MTEX\bin\search.btm gswin32c.exe]==# return
+gswin32c %_f -c quit
+quit
+
+
+:gsview
+:gsview32
+set _d=%@if[isdir %UTILS\gsview,%UTILS\gsview,%UTILSLOCAL\gsview]
+if #%GSVIEW==# set GSVIEW=%_d\gsview32.exe
+if not exist %GSVIEW (return)
+iff not #%@iniread["%USERPROFILE\gsview32.ini",MTeX,MTeX]==#%MTEX then
+  pushd
+  call %_d\_\c-gsview.btm
+  call %_d\_\L-gsview.btm
+  popd
+endiff
+start "" /max %GSView%  %_f
+quit
+
+:rops
+set _d=%@if[isdir %UTILS\rops,%UTILS\rops,%UTILSLOCAL\rops]
+if not isdir "%_d"  return
+if not exist %ETC\rops.reg call %_d\_\c-rops.btm
+start "" /max %UTILS\rops\rops.exe %_f
+quit
+
+:ps2pdf
+set _pdf="%@path[%_f]%@name[%_f].pdf"
+gswin32c -dNOPAUSE -dBATCH -q -sDEVICE=pdfwrite -sOutputFile=%_pdf "%_f"
+call pdfview.btm %_pdf
+quit
+
+:psv
+set _d=%@if[isdir %UTILS\psv,%UTILS\psv,%UTILSLOCAL\psv]
+if not isdir "%_d"  return
+call util.btm psv %_f
+quit
+
+:open
+if #%_f==# (return)
+set _key=%@regquery[HKCR\.ps\]
+if #%_key==#MTeX.psfile (return)
+start "" /max %_f
+if %_?==2  return
+if %?==255  return
+quit

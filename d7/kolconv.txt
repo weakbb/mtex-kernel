@@ -1,0 +1,3 @@
+D:\_LANG\D7\unitx.pas
+D:\_LANG\D7\unitx.dfm
+D:\_LANG\D7\KOLProj\

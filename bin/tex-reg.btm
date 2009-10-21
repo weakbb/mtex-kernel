@@ -1,0 +1,101 @@
+@echo off
+if #%1==# goto usage
+setlocal
+iff #%1==#-- then 
+  shift
+  set quiet=1 
+else 
+  set quiet=
+endiff
+if "%1"=="%@unquotes[%1]" goto regedit
+if not #%@left[1,%1]==#-  goto usage
+
+gosub reg-head>_tex_reg.reg
+if #%1==#-i gosub install>>_tex_reg.reg
+if #%1==#-u gosub uninstall>>_tex_reg.reg
+if #%1==#-uu gosub olduninstall>>_tex_reg.reg
+
+iff exist _tex_reg.reg  then
+  if #%quiet==# list _tex_reg.reg
+  if #%quiet==# ( regedit _tex_reg.reg) else ( regedit /s _tex_reg.reg)
+  ::if #%quiet==# (?del _tex_reg.reg) else (del _tex_reg.reg)
+  del _tex_reg.reg
+endiff
+quit
+
+:usage
+echo Usage: Without option -- , I will let you review the registry changes.
+echo  %0 [--] -i  ==) Write registry to provide convenient menus to use MTeX.
+echo  %0 [--] -u  ==) Uninstall what I wrotes in registry.
+echo  %0 [--] -uu ==) Uninstall what I wrotes in registry in the last version.
+quit
+
+
+:regedit
+regedit /s %1
+quit
+
+:reg-head
+echo REGEDIT4
+echo.
+return
+
+
+:install
+::call regtool --addmenu .dvi 预览Dvi(DviView) tex-dos.exe dviview
+::call regtool --addmenu .dvi CCTWin32 tex-dos.exe start cctwin32.exe
+::if isdir "%UTILS\dviwin"  call regtool --addmenu .dvi DviWin  tex-dos.exe dviwin
+::if isdir "%UTILS\windvi"  call regtool --addmenu .dvi WinDvi  tex-dos.exe windvi
+
+::if isdir "%UTILS\rops"    call regtool --addmenu * 预览Ps(RoPs)  %UTILS\rops\rops.exe
+::call regtool --addmenu * 预览Ps(GsView)  tex-dos.exe GsView
+::call regtool --addmenu .pdf 预览Pdf(AcrobatRead)  tex-dos.exe  AcroRead
+
+::if exist "%EditPlus"             call regtool --addmenu * EditPlus %EditPlus
+::if isdir "%UTILS\sciTE" call regtool --addmenu * SciTE %UTILS\SciTE\SciTE.exe
+::iff isdir "%UTILS\iview" then
+::  call regtool --addmenu * IrfanView %UTILS\iview\i_view32.exe
+::  call regtool --addmenu Folder IrfanView %UTILS\iview\i_view32.exe
+::endiff
+
+::iff isdir "%UTILS\xnview" then
+::  call regtool --addmenu * XnView %UTILS\xnview\xnview.exe
+::  call regtool --addmenu Folder XnView %UTILS\xnview\xnview.exe
+::endiff
+::return
+
+:install
+call regtool --addmenu * 用MTeX智能打开   tex-dos.exe openx
+call regtool --addmenu Folder 用MTeX智能打开   tex-dos.exe openx
+call regtool --addmenu * 工具箱管家   UtilsMan
+call regtool --addmenu * TeX-DOS窗口   4nt.exe %MTEX\bin\4start.btm` %+ cdd %@path[%1]`
+return
+
+:uninstall
+call regtool --delmenu Folder 用MTeX智能打开   openx
+call regtool --delmenu * 用MTeX智能打开   openx
+call regtool --delmenu * 用MTeX智能编辑   openx -edit
+call regtool --delmenu * 用MTeX智能运行   openx
+call regtool --delmenu * 工具箱管家   UtilsMan
+call regtool --delmenu * TeX-DOS窗口   4nt.exe %MTEX\bin\4start.btm
+return
+
+:olduninstall
+call regtool --delmenu .dvi 预览Dvi tex-dos.exe dviview
+call regtool --delmenu .dvi CCTWin32
+call regtool --delmenu .dvi DviWin
+call regtool --delmenu .dvi WinDvi 
+call regtool --delmenu * TEX-EDIT 
+call regtool --delmenu * TEX-DOS 
+call regtool --delmenu * 工具箱...  
+call regtool --delmenu * 预览Ps(RoPs)
+call regtool --delmenu * 预览Ps(GsView)
+call regtool --delmenu .pdf 预览Pdf(AcrobatRead)
+
+call regtool --delmenu * EditPlus
+call regtool --delmenu * SciTE
+call regtool --delmenu * IrfanView
+call regtool --delmenu Folder IrfanView
+call regtool --delmenu * XnView
+call regtool --delmenu Folder XnView
+return

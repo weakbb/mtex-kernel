@@ -1,0 +1,16 @@
+@echo off
+set ETC=%@path[%0]ETC
+mkdir /s %ETC >& nul
+describe "%ETC" /D"%MTEX"
+describe "%ETC\formats" /D"%MTEX"
+if exist "%ETC\mtex.ini" (describe "%ETC\mtex.ini" /D"%MTEX") 
+call %MTEX\bin\makefmts.btm 
+call %MTEX\bin\cfg\c_gbkfonts.btm
+call %MTEX\bin\cfg\c_cct.btm
+call %MTEX\bin\cfg\c-ccmap.btm
+call %MTEX\bin\tex-lnk.btm -SendTo -Programs
+call %MTEX\bin\tex-assoc.btm -i
+call %MTEX\bin\updafm.btm
+call %MTEX\bin\tex-cfg.btm gsview
+start "Send Mail to [mathmhb]" "mailto:mtex.suite@gmail.com?subject=MTeX&body=I am a new user of MTeX!"
+

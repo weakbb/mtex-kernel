@@ -1,0 +1,20 @@
+@echo off
+if #%1==# goto usage
+setlocal
+if not isdir %1 (mkdir %1 /s)
+if not isdir %1 (quit 0)
+set f=%@unique[%1]
+iff exist %f then
+  del /q /e %f
+  quit 1
+else 
+  quit 0
+endiff
+quit
+
+:usage
+echo Usage: %0 [dir] ==) Test whether specified dir is writable.
+echo        Return 0 if not writable; 1 if writable.
+echo Note: If specified dir not exists, I will try to create it first!
+quit
+

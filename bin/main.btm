@@ -1,0 +1,282 @@
+@echo off
+if not #%1==# goto no_menu
+setlocal
+:showmenu
+::window MIN
+set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+msg 0 [Chinese MTeX Suite] Main Menu//TeX IDE/Utils Manager/TeX-DOS/TeX Bitmap/Templates and Symbols/BibX Util/Basic Settings/Reconfigure MTeX/Create Shortcuts/RightMenu+FileAssocs/Configure TTFonts/Install Package or Fonts/Search and Download/Update Font Maps/Filename Database/Preview Font File/MTeX documents/MTeX Read Me!/Choose Editors/Choose Spell Checkers/Choose Picture Utils/Choose User Utils/Choose File Viewers/Try TeX Fmts/Arbitrary File Conversion/Smart Open File/Smart Edit File/Clean Unused Files/Clean Certain Objs/Uninstall/Update MTeX Component/Visit MTeX Group/Visit MTeX Homepage/Support MTeX!/Mathmhb's Homepage/Mathmhb's web-readings~~
+msg 936 【中文MTeX套装】主菜单//TeX集成环境/TeX工具箱管家 /TeX-DOS窗口/TeX位图工具/模板符号选择工具/参考文献提取工具/MTeX基本配置/重新配置MTeX/创建快捷方式/右键菜单+文件关联/TTF字体配置向导/安装宏包与字体/搜索与下载宏包/更新字体map文件/文件名数据库/预览字体文件/查看各种文档/MTeX使用说明/选择文本编辑器/选择拼写检查工具/选择图形图片工具/选择用户定义工具/选择工具查看文件/试验各种排版格式/万能转换工具/智能打开文件/智能编辑文件/清理指定文件夹/清理特定文件夹/反安装MTeX套装/更新升级MTeX组件/访问MTeX论坛/访问MTeX主页/支持MTeX套装!/访问mathmhb的个人主页/看看mathmhb的网文摘抄~~
+wask {140}%_msg
+set _i=%?
+set _x=??
+iff %_i GT 0 then 
+  set _x=%@word["/",%_i,??/texedit/utilsman/texdos/texbmp/tmac/bibx/mtexcfg/texcfg/texlnk/texreg/ttfwiz/instpkg/downpkg/updmap/fndb/viewfnt/opendoc/help/asked/asksp/askpic/askutil/askviewer/asktex/mconv/openx/editx/delx/delobj/uninst/upd_mtex/mtex_group/mtex_homepage/support_mtex/mhb_homepage/mhb_blog]
+  gosub %@if[islabel menu#%_x,menu#%_x,menu#??]
+  goto showmenu
+endiff
+
+quit
+
+:no_menu
+msgbox OK %&
+if islabel menu#%1 (gosub menu#%1) else (call %&)
+quit
+
+:menu#??
+::msg 0 Any problem? Please feel free to contact mathmhb!~~
+::msg 936 有问题吗？请与mathmhb联系！~~ 
+::msgbox OK %_msg
+return
+
+:menu#?
+msg 0 :- Hi, you can customize this menu by modifying [main.btm].~~
+msg 936 本菜单待定，嘿嘿。。。您可以修改main.btm设定您自己的菜单。~~
+msgbox OK %_msg
+return 
+
+:menu#join_mtex
+msg 0 Do you want to join MTeX-suite googlegroup by sending an email to mtex-suite@googlegroups.com? Please instruct your firewall to enable this operation.~~ 
+msg 936 是否愿意加入MTeX套装论坛？点击[确定]将向mtex-suite+subscribe@googlegroups.com发送一个报到邮件。请注意让防火墙允许该操作。~~
+msgbox OKCANCEL %_msg
+iff %_?==10 then 
+  sendmail SMTP:mtex-suite+subscribe@googlegroups.com MTeX "I am a new user of MTeX!"
+endiff
+return
+
+:menu#mtex_group
+start iexplore.exe "http://groups.google.com/group/mtex-suite?hl=zh-CN"
+return
+
+:menu#mtex_homepage
+start iexplore.exe "http://mtex.suite.googlepages.com"
+return
+
+:menu#mhb_homepage
+start iexplore.exe "http://mathmhb.googlepages.com/"
+return
+
+:menu#mhb_blog
+start iexplore.exe "http://my.opera.com/mathmhb"
+return
+
+:menu#support_mtex
+start iexplore.exe "http://mtex.suite.googlepages.com/msupport.html"
+return
+
+:menu#upd_mtex
+call upd_mtex
+return
+
+
+:menu#texedit
+endlocal
+call tex-edit
+quit
+return
+
+:menu#utilsman
+start utilsman.exe ``
+return
+
+:menu#texdos
+start 4nt.exe
+quit
+return
+
+:menu#texbmp
+start tex-bmp.exe
+return
+
+:menu#mtexcfg
+call mtexcfg
+return 
+
+:menu#texlnk
+call tex-lnk -desktop -programs -sendto -quick
+return
+
+:menu#downpkg
+::if not exist %MTEX\pkg.lst call updpkg *
+start net_pkg
+quit
+return
+
+:menu#tmac
+start TMac 
+return 
+
+:menu#bibx
+start BibX
+return 
+
+:menu#texcfg
+call tex-cfg
+call mtex-env -clear
+return 
+
+:menu#opendoc
+call doc.btm :?
+return 
+
+:menu#help
+set helpfile=%@findfirst[%MTEX\doc\mtex.*]
+iff #%helpfile==# then
+  start iexplore.exe "http://mtex.suite.googlepages.com/MTeX.htm"
+else
+  start "MTeX Help" "%helpfile"
+  if %_?==2 (call openx.btm "%helpfile")
+endiff
+return 
+
+:menu#texreg
+msg 0 {160}Please choose an operation (Modify Registry!): //Add MTeX right mouse menu/Delete MTeX right mouse menu/Associate MTeX files/Clear file associations~~
+msg 936 {160}请选择一个操作（将修改注册表！）：//添加鼠标右键菜单/删除鼠标右键菜单/关联MTeX相关文件/清除MTeX文件关联~~
+wask %_msg
+set _a=%?
+if %_a==1 set _cmd=tex-reg -- -i
+if %_a==2 set _cmd=tex-reg -- -u
+if %_a==3 set _cmd=tex-assoc -i
+if %_a==4 set _cmd=tex-assoc -u
+call %_cmd
+return 
+
+:menu#ttfwiz
+msg 0 Please choose one way to configure TrueType fonts://Manual configure TTF/TTF Configuration wizard/TTF Configuration dialog~~
+msg 936 请您选择一种配置TrueType字体的方式：//手动配置字体/自动搜索字体向导/字体单独配置对话框~~
+wask {140}%_msg 
+set _a=%?
+if %_a==-1 return
+if %_a==0 return
+call tex-font %@word["/",%_a,#/ /-wiz/-ask]
+return 
+
+:menu#asked
+call tex-edit :?
+quit
+return 
+
+:menu#asksp
+call spell :?
+return 
+
+:menu#askpic
+call picutil :?
+quit
+return 
+
+:menu#askutil
+call userutil :?
+quit
+return 
+
+:menu#askviewer
+call openx :? %@getfile[c:\,*.*]
+quit
+return 
+
+:menu#asktex
+set file=%@getfile[%MTEX\demo\,*.tex;*.dtx;*.ctx;*.ty]
+pushd %@path[%file]
+call clatex :? %@name[%file]
+popd
+return 
+
+:menu#mconv
+call m-conv :?
+return 
+
+:menu#openx
+call openx %@getfile[c:\,*.*]
+quit
+return 
+
+:menu#editx
+call openx -edit %@getfile[c:\,*.*]
+quit
+return 
+
+:menu#viewfnt
+call viewfont %@getfile[%MTEX\fonts,*.*]
+return
+
+:menu#instpkg
+msg 0 Click [OK] to choose a folder containing macro packages or fonts.~~ 
+msg 936 点击[确定]选择包含宏包或字体的文件夹。~~
+::msg 950 翴阑[谔﹚]匡拒Щ┪蔨ゅンЖ
+msgbox OKCANCEL %_msg
+if %_?==12  return
+call tex-pkg -i %@getfolder[c:\]
+return
+
+:menu#delx
+set EXT_LIST=aux log tmp bbl toc idx out ind tui tmp ilg blg dlg lot lof snm nav bak fls tab cut cpy 4ct 4tc idv lg $$$
+msg 0 Please input the extensions of files to be cleaned, or Click [OK] to browse a folder to be cleaned.~~
+msg 936 请输入清理文件的扩展名列表，点击[确定]选择需要清理的文件夹。~~
+querybox /E %_msg %%EXT_LIST
+if %_?==2 return
+set dir_opt=
+msg 0 Do you want to clean all subfolders?~~
+msg 936 是否同时清理所有子文件夹？~~
+msgbox YESNO %_msg
+if %_?==10 set dir_opt=/S
+set d=%@sfn[%@getfolder[c:\]]
+if #%d==# return
+call delx.btm %dir_opt %d 
+return
+
+:menu#delobj
+msg 0 Please choose an object to be cleaned://Faked pk files/All pk files/All afm files/Demo folder/Start menu shortcuts/Desktop shortcuts/SendTo shortcuts/Mouse right-key menu/Whole MTeX folder/Windows rubbishes
+msg 936 请选择清理的对象：//替代的点阵字体/所有点阵字体/所有afm字体文件/演示例子文件夹/开始菜单快捷方式/桌面快捷方式/发送到快捷方式/鼠标右键菜单/整个MTeX文件夹/Windows垃圾文件
+::msg 950 叫匡拒睲瞶癸禜//蠢翴皚蔨/┮Τ翴皚蔨/┮Τafm蔨ゅン/簍ボㄒゅンЖ/秨﹍垫虫е倍よΑ/е倍よΑ/祇癳е倍よΑ/公夹龄垫虫/俱MTeXゅンЖ/Windows︰Вゅン
+wask {140}%_msg
+set ask=%?
+msg 0 You did not choose any operation! I will quit now.~~
+msg 936 没有选择任何操作，即将退出！~~
+iff %ask==0 .OR. %ask==-1 then
+  msgbox OK %_msg
+  return
+endiff
+set op=%@word["/",%ask,#/-pk/-allpk/-afm/-demo/-programs/-desktop/-sendto/-reg/-clean/-windows]
+call delx %op
+return
+
+:menu#updmap
+msg 0 Please choose://Reset ttfonts.map/Updmap:all fonts/Updmap:Type1 fonts/Updmap:TrueType fonts/Updmap:Pixel fonts/Refresh XeTeX font-cache
+msg 936 请选择操作：//重置ttfonts.map/更新所有字体map/更新Type1字体map/更新TrueType字体map/更新点阵字体map/更新XeTeX字体缓存~~
+wask {140}%_msg
+SWITCH %?
+case 1
+copy %MTEX\_\ttfonts.map %ETC\
+?"Continue to update all fonts?" call updmap -pfb -ttf -pdf -pk -xetex
+case 2
+call updmap -pfb -ttf -pdf -pk -xetex
+case 3
+call updmap -pfb -pdf
+case 4
+call updmap -ttf -pdf
+case 5
+call updmap -pk
+case 6
+apath %UTILS\xetex
+apath %UTILSLOCAL\xetex
+fc-cache -f -v 
+fc-list >& "%TMP\xetex-fonts.log"
+start notepad "%TMP\xetex-fonts.log"
+ENDSWITCH
+return
+
+:menu#fndb
+msg 0 MTeX does not need file names database (ls-R) although it is also supported to speed up file searching. Choose [YES] to create or update ls-R, [NO] to delete ls-R, or [CANCEL] to quit now.~~
+msg 936 MTeX虽然不需要文件名数据库，但仍支持使用它来加速文件搜索。选择【是】创建或更新ls-R,【否】删除ls-R,【取消】不进行操作。~~
+msgbox YESNOCANCEL %_msg
+iff %_?==10 then
+  call mktexlsr %@if[%@cdrom[%MTEX]==1,%ETC,]
+elseiff %_?==11 then
+  del %ETC\ls-R;%MTEX\ls-R>&nul
+endiff
+return
+
+:menu#uninst
+call uninstall
+return 
+

@@ -1,0 +1,25 @@
+@echo off
+setlocal
+set url=%1
+iff #%url==# then
+  msg 0 Please input the http url of SVN source:~~
+  msg 936 请输入SVN源的http网址：~~
+  querybox /E %_msg %%url
+  if %_?==2  quit
+endiff
+set name=%2
+iff #%name==# then
+  msg 0 Please input a folder name (or package name) to put the files to download:~~
+  msg 936 请输入放下载文件的文件夹名字（通常取成软件名字）~~
+  querybox /E %_msg %%name
+  if %_?==2  quit
+endiff
+wget -P %name -O rev.txt "%url"
+wget -P %name --progress=dot -e robots=off -r -np -nH --cut-dirs=4 -R index.html "%url"
+quit
+
+:usage
+echo Usage: %0 url name ==) SVN checkout specified url files to folder with specified name
+echo Eg. %0 "http://scite-ru.googlecode.com/svn/trunk/" scite-ru ==) download latest version of scite-ru sources to folder [scite-ru]!
+quit
+ 

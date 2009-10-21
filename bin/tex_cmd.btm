@@ -1,0 +1,26 @@
+@echo off
+if #%1==# goto usage
+setlocal
+gosub findx "\usepackage{fontspec}" xelatex 
+::gosub findx "\XeTeXlinebreak" xetex
+gosub findx "!TEX TS-program = xetex" xetex 
+gosub findx "\directlua" luatex
+gosub findx "\starttext" context 
+gosub findx "\usemodule" context 
+gosub findx "\usepackage[pdftex]" pdflatex
+gosub findx "\begin{document}" latex
+gosub findx "\usepackage" latex 
+echo tex
+quit
+
+
+
+:findx [x b]
+set _x=%@execstr[ffind /K/M/T%x %1]
+if #%_x==#  return
+echo %b
+quit
+
+:usage
+echo Usage: %0 texfile ==) Determine type of texfile: tex/latex/context
+quit

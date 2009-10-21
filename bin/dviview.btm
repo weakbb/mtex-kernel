@@ -1,0 +1,156 @@
+@echo off
+setlocal
+
+set _mk=
+set _fwd=
+set _choose=
+if #%UTILSLOCAL==# (set UTILSLOCAL=%UTILS)
+if #%1==#  (gosub #help)
+iff #%1==#:? then
+  shift 
+  set _choose=1
+elseiff %@wild[%1,:*]==1 then
+  set Dviview=%@instr[1,,%1] 
+  shift
+endiff
+
+iff #%_choose==#1 .OR. #%_SHIFT==#1 then
+  gosub #choose
+endiff
+
+iff #%1==#-s then
+  set _fwd=%2
+  shift
+  shift
+endiff
+
+
+iff #%1==#- then
+  shift 
+  set _mk=0
+endiff
+iff #%1==#-makepk then
+  shift 
+  gosub #makepk 
+  set _mk=0
+endiff
+
+if %#==1 gosub #check_file
+
+for %a in (%DviView) do gosub #proc
+goto cctwin32
+quit
+
+:#help
+echo Usage: %0 [:viewer] [-s "## texfile"] [-] dvifile ==) View dvifile.
+echo Note: You can specify viewer, supporting yap,windvi,dviwin,dviout,cctwin32,dviscr.
+echo Option "-" can prevent making pk fonts for dvi viewers without virtual font support.
+echo Option "-s" supports forward searching (only for yap/dviout/dviwin). "##" denotes line number.
+echo To select a viewer, just use option ":?".
+return
+
+:#proc
+iff islabel %a then
+  gosub %a 
+else
+  call util %a 
+  quit
+endiff
+return
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+iff exist "%ETC\utils.cfg" then
+  set /r "%ETC\utils.cfg"
+endiff
+msg 0 Please choose a DVI viewer:~~
+msg 936 ÇëÑ¡ÔñÔ¤ÀÀ¹¤¾ß~~
+set Ask=%_msg//%DviViewers
+wask {80}%Ask
+if %? GT 0 (set DviView=%@word["/",%?,%Ask]) else (set DviView=Yap)
+return
+
+:#check_file
+set DVIFILE=%@path[%1]%@name[%1].dvi
+if not exist "%DVIFILE" (notfind "%DVIFILE") else (set DVIFILE=%@sfn[%DVIFILE])
+echo DVIFILE=%DVIFILE>"%ETC\dviview.lst"
+return
+
+:#auto
+for %a in (Yap Dviwin Windvi Dviout cctwin32) do (
+iff islabel %a then
+  gosub %a
+else
+  call %a 
+  quit
+endiff
+)
+return
+
+:#makepk
+if #%_mk==#0 return
+if #%1==#  return
+set DVIFILE=%@path[%1]%@name[%1].dvi
+echo Generating missing fonts for file [%DVIFILE]... (Please wait ...)
+set TMPDVI=__tmp__.dvi
+dvicopy "%DVIFILE" %TMPDVI>&nul
+move %TMPDVI "%DVIFILE">&nul
+echo File [%DVIFILE] has been updated to remove virtual fonts.
+call makepk.btm "%DVIFILE"
+return
+
+:windvi
+set _d=%@if[isdir %UTILS\windvi,%UTILS\windvi,%UTILSLOCAL\windvi]
+if not isdir %_d (call add_util.btm windvi)
+if not isdir %_d return
+set HOME=%@if[exist "%ETC\windvi.cnf",%ETC,%_d]
+start /max %_d\windvi.exe %&
+quit
+
+:dviwin
+set _d=%@if[isdir %UTILS\dviwin,%UTILS\dviwin,%UTILSLOCAL\dviwin]
+if not isdir %_d (call add_util.btm dviwin)
+if not isdir %_d return
+iff #%1==# then
+  start /max %_d\dviwin.exe 
+  quit
+endiff
+if not #%_fwd==# (set _fwd=-s %_fwd)
+start /max %_d\dviwin.exe -1 %_fwd %@sfn[%&]
+quit
+
+:cctwin32
+:cctwin
+gosub #makepk
+start /max cctwin32.exe %&
+quit
+
+:dviscr
+gosub #makepk
+start dviscr.exe -gvga -r600 -z0 %&
+quit
+
+:dviout
+set _d=%@if[isdir %UTILS\dviout,%UTILS\dviout,%UTILSLOCAL\dviout]
+if not isdir %_d (call add_util.btm dviout)
+if not isdir %_d return
+iff not #%_fwd==# then
+  set _fwd=%@replace[",,%_fwd]
+  set _delim=" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  set _lineno=%@word[%_delim,0,%_fwd]
+  set _texfile=%@instr[%@len[%_lineno],,%_fwd]
+  set _fwd=# %_lineno %_texfile
+endiff
+echo %_d\dviout.exe %& %_fwd
+start /max %_d\dviout.exe -1 %& %_fwd
+quit
+
+:yap
+set _d=%@if[isdir %UTILS\yap,%UTILS\yap,%UTILSLOCAL\yap]
+if not isdir %_d return
+apath %_d
+apath %_d\miktex\bin
+if not #%_fwd==# (set _fwd=-s %_fwd)
+start yap0.exe -1 %_fwd %&
+start yap1.exe %1
+quit

@@ -1,0 +1,1 @@
+@util iconv -c -f BIG-5 -t GBK  %&
