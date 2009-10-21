@@ -1,0 +1,140 @@
+@echo off
+setlocal
+set _f=
+set _choose=
+if #%PDFVIEW==#  set PDFVIEW=#auto
+iff #%1==#:? then
+  set _choose=1
+  shift
+endiff
+iff %@wild[%1,:*]==1 then
+  set PDFVIEW=%@instr[1,,%1]
+  shift
+endiff
+
+iff #%_choose==#1 .OR. #%_SHIFT==#1 then
+  gosub #choose
+endiff
+
+iff #%1==# then
+  gosub #usage
+else
+  set _line=
+  iff %@numeric[1%1]==1 then
+    set _line=%1
+	set PDFVIEW=sumatrapdf
+	shift
+  endiff
+  if %@sfn[%1]//%#==//1 (notfind %1)
+::  set _f=%@sfn[%1] %2&
+  set _f="%@lfn[%1]" %2&
+endiff
+
+:#view
+if #%UTILSLOCAL==# (set UTILSLOCAL=%UTILS)
+iff islabel %PDFVIEW then
+  gosub %PDFVIEW
+else
+  call util %PDFVIEW %_f
+endiff
+quit
+
+:#usage
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+echo Usage: PDFVIEW [:viewer] pdf-file
+echo Supported viewers: %PdfViewers
+echo To select a viewer, just use option ":?".
+return
+
+:#choose
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+msg 0 Please choose one pdf viewer:~~
+msg 936 ÇëÑ¡ÔñÔ¤ÀÀ¹¤¾ß~~
+set Ask=%_msg//%PdfViewers
+wask {80}%Ask
+set PDFVIEW=%@word["/",%?,%Ask]
+return
+
+:#auto
+set /r "%MTEX\_\utils.cfg"
+set /r "%ETC\utils.cfg" >& nul
+set viewers=%PdfViewers
+set viewers=%@replace[/, ,%viewers]
+set viewers=%@replace[#Auto,,%viewers]
+for %VIEWER in (%viewers) do gosub %@if[islabel %VIEWER,%VIEWER,#run]
+return
+
+
+:#run
+set _d=%@if[isdir %UTILS\%VIEWER,%UTILS\%VIEWER,%UTILSLOCAL\%VIEWER]
+if not isdir "%_d"  return
+iff %@wild[%VIEWER,pdfread]==1 then
+  activate "*Foxit Reader*" MAX
+  start /max %_d\%VIEWER -Noregister %_f
+else
+  start /max %_d\%VIEWER %_f
+endiff
+quit
+
+
+:acroread
+if #%ACROREAD==# (set ACROREAD=%MTEX\Acrobat\Reader\AcroRd32.exe)
+if not exist "%ACROREAD" return
+start "" /max "%ACROREAD%" %_f
+quit
+
+:gs
+if #%@execstr[call %MTEX\bin\search.btm gswin32c.exe]==# return
+gswin32c %_f -c quit
+quit
+
+:gsview32
+:gsview
+set _d=%@if[isdir %UTILS\gsview,%UTILS\gsview,%UTILSLOCAL\gsview]
+if #%GSVIEW==# set GSVIEW=%_d\gsview32.exe
+if not exist %GSVIEW (return)
+iff not #%@iniread["%USERPROFILE\gsview32.ini",MTeX,MTeX]==#%MTEX then
+  pushd
+  call %_d\_\c-gsview.btm
+  call %_d\_\L-gsview.btm
+  popd
+endiff
+start "" /max %GSView%  %_f
+quit
+
+:open
+set _key=
+set _key=%@regquery[HKCR\.pdf\]>&nul
+if #%_key==# (return)
+if #%_key==#MTeX.pdffile (return)
+iff not #%_f==#  then
+  start "" /max %_f
+  if %_?==2  return
+  if %?==255  return
+  quit
+endiff
+quit
+
+:AdobeAcrobat
+set acroexe=
+set acroexe=%@regquery["HKLM\SOFTWARE\Classes\Software\Adobe\Acrobat\Exe\"]>&nul
+if #%acroexe==#-1 return
+if #%acroexe==# return
+if not exist "%acroexe"  return
+for %_wt in ("Adobe Reader" "Acrobat Reader" "Adobe Acrobat") do (
+  activate "*%@name[%_wt]*" RESTORE
+  if %_?==0 (goto pdfopen)
+)
+start /max %@sfn[%acroexe]
+delay 2
+
+:pdfopen
+pdfopen --file %@sfn[%_f]
+quit
+
+:sumatrapdf-
+
+
+return

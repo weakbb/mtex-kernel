@@ -1,0 +1,267 @@
+@echo off
+::本工具用于方便配置一些编辑器（比如LED)的工具菜单。
+setlocal
+if #%1==# goto usage 
+iff #%2==# then
+  set f=
+  set p=
+  set n=
+  set e=
+else
+  set f=%2
+  set p=%@path[%2]
+  set n=%@name[%2]
+  set e=%@ext[%2]
+  cdd %p>&nul
+  set /r "%[p]%[n].set">&nul
+  iff #%_lscape==#1 then
+   set DVIPDFM_OPT=-l %DVIPDFM_OPT
+   set DVIPS_OPT=-t landscape %DVIPS_OPT
+  endiff
+  iff not #%_psize==# then
+   set DVIPDFM_OPT=-p %_psize %DVIPDFM_OPT
+   set DVIPS_OPT=-t %_psize %DVIPS_OPT
+   set PS2PDF_OPT=-sPAPERSIZE=%_psize %PS2PDF_OPT
+  endiff  
+endiff
+if islabel %@name[%1] goto %@name[%1]
+quit
+
+:usage
+echo Usage: %0 CMD  "path\file.ext" 
+echo CMD can be: run,tex-dos,utilsman,clatex,ctex,pdflatex,pdftex,platex,ptex,context,ppower,
+echo             setclatex,dvips,dvipdf,pspdf,l2h,l2w
+quit
+
+:run
+call run %f
+quit
+
+:tex-dos
+cdd %@path[%f]>&nul
+start 4nt.exe
+quit
+
+:main
+:mainmenu
+call main
+quit
+
+:utilsman
+start utilsman %f
+quit
+
+:clatex
+call clatex %@if[exist "%n.set",,-all] %f
+quit
+
+:clatexall
+call clatex -all %f
+quit
+
+
+
+:setclatex
+call setclatex %f
+quit
+
+:xetex
+call xetex %f
+return
+
+:xelatex
+call clatex -xelatex %f
+return
+
+:ctex
+call clatex -tex %f
+quit
+
+:pdflatex
+call clatex -pdflatex %f
+quit
+
+:pdftex
+call pdftex %f
+quit
+
+:platex
+call clatex -platex %f
+quit
+
+:ptex
+call ptex %f
+quit
+
+:context
+call context %f
+quit
+
+:ppower
+call ppower %f
+quit
+
+:setclatex
+call setclatex %f
+quit
+
+:dvips
+:dvi2ps
+:dvi-ps
+echo Converting [%n.dvi==).ps], wait please ...
+call %@if[#%_embed==#1,dvi-ps,dvips] "%n.dvi"
+quit
+
+:dvipdf
+:dvipdfm
+echo Converting [%n.dvi==).pdf], wait please ...
+call %@if[#%_embed==#1,dvi-pdf,dvipdfm] "%n.dvi"
+quit
+
+:pspdf
+:ps2pdf
+echo Converting [%n.ps==).pdf], wait please ...
+call %@if[#%_embed==#1,ps-pdf,ps2pdf] "%n.ps" "%n.pdf"
+quit
+
+:l2h
+iff not isdir %UTILS\tex4ht then
+  call l2h %f 
+  quit
+endiff
+iff not isdir %UTILS\l2r then
+  call t4h %f 
+  quit
+endiff
+msg 0 Please choose one converter:~~
+msg 936 请选择转换工具?~~
+wask %_msg//TtH/TeX4Ht
+call %@word["/",%?,none/l2h/t4h] %f
+quit
+
+:l2w
+msg 0 Do you want to convert equations to embedded pictures?~~ 
+msg 936 是否把公式转换为嵌入图片？【是】转为图片，【否】转为EQ域。~~
+msgbox YESNOCANCEL %_msg
+set _a=%_?
+iff  %_a==11 then 
+  call w-close.btm %n.rtf
+  call l2r %f
+elseiff %_a==10 then
+  call w-close.btm %n.rtf
+  set L2W_RES=360
+  msg 0 Please input a number for resolution of embedded pictures (suggest 300 for 10pt,360 for 12pt):~~
+  msg 936 请输入嵌入图片的分辨率设置（建议300 [10pt],360 [12pt]），它决定了公式转换后的图片大小。~~ 
+  querybox /E %_msg %%L2W_RES
+  if %_?==2 (return)
+  set DVI2IMG_OPT=/r%L2W_RES
+  call l2w %f
+endiff
+quit
+
+:tex-bmp
+start tex-bmp %n
+quit
+
+:bibx
+start bibx "%n"
+quit
+
+:bibedit
+iff exist "%n.bib" then
+  call bibedit "%n.bib" 
+  ::call unbib "%n.bib" 
+else 
+  call bibedit
+enddiff
+quit
+
+:un-bibedit
+:unbib
+call unbib "%n.bib" 
+quit
+
+:texaide
+call texaide
+quit
+
+
+:psview
+call psview "%n.ps"
+quit
+
+:pdfview
+call pdfview "%n.pdf"
+quit
+
+:rtfview
+start explorer "%n.rtf"
+quit
+
+:htmlview
+:htmview
+if exist "%n.html" (start explorer "%n.html") else (start explorer "%n.htm") 
+quit
+
+:bibtex
+bibtex --help
+set BIBTEX_OPT=-m=2
+msg 0 Any extra BibTeX commandline options? Click [OK] to use default options.~~
+msg 936 请输入bibtex额外的命令行选项，点击确定使用默认选项。~~
+querybox /E %_msg %%BIBTEX_OPT
+if %_?==2 (return)
+call bibtex "%n"
+if exist "%n.blg"  list "%n.blg"
+del "%n.blg">&nul
+quit
+
+:makeindex
+:mkidx
+makeindex --help
+set MKIDX_OPT=-l
+msg 0 Any extra MakeIndex commandline options? Click [OK] to use default options.~~
+msg 936 请输入MakeIndex额外的命令行选项，点击确定使用默认选项。~~
+querybox /E %_msg %%MKIDX_OPT
+if %_?==2 (return)
+call makeindex "%n"
+if exist "%n.ilg"  list "%n.ilg"
+del "%n.ilg"
+quit
+
+:tmac
+start tmac notepad %Editor
+quit
+
+:latexmac
+start latexmac
+quit
+
+:yap-s
+if not isdir "%UTILS\yap" return 
+apath %UTILS\yap
+start /max yap0.exe -1 -s %3%[n].%[e]  "%n.dvi"
+start yap1.exe %n
+quit
+
+:picutil
+:pic-util
+call picutil.btm
+quit
+
+:viewdvi
+:dviview
+:viewdvi-s
+:dviview-s
+if not exist "%n.dvi"  call latex "%[n].%[e]"
+set _opt=%@if[#%3==#,,-s "%3 %[n].%[e]"]
+echo call dviview.btm %_opt "%n.dvi"
+if exist "%n.dvi" call dviview.btm %_opt "%n.dvi"
+del "%n.log";"%n.aux";"%n.toc"; 
+quit 
+
+
+:mp2eps
+call mp2eps.btm "%n.mp"
+quit
+
+

@@ -1,0 +1,17 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set _tmp=__tmp__.tex
+if not exist %1 goto usage
+set out=%2
+if #%2==# set out=%@name[%1].pdf
+call t2l.btm %1 %_tmp
+call latex %_tmp
+call dvipdfm %@name[%_tmp].dvi
+for %a in (log aux tex dvi) del %@name[%_tmp].%a
+move %@name[%_tmp].pdf "%out"
+quit
+
+:usage
+echo %0 txtfile [pdffile] ==) Convert txtfile to pdffile
+quit

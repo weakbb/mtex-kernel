@@ -1,0 +1,167 @@
+@echo off
+if #%1==# goto #usage
+setlocal
+
+set server=%@line["%MTEX\_\mserver.cfg",0]
+iff exist "%ETC\mserver.cfg" then
+  set server=%@line["%ETC\mserver.cfg",0]
+endiff
+
+iff #%1==#:? then
+  shift
+endiff
+
+set _p=%_CWD
+iff exist %1 then
+  set f=%@sfn[%1]
+else
+	pushd %TMP
+	gosub #gen_docs
+	set n=%@lines[_doc_.tmp]
+	iff %n==-1 then
+	  call add_doc.btm %1
+	  gosub #find %1
+	  set f=%res
+	elseiff %n==0 then
+	  set f=%@line[_doc_.tmp,0]  
+	else
+	  gosub #choose_doc 
+	endiff
+	del _doc_.tmp >& nul
+	popd
+endiff
+
+iff not #%f==# then
+  echo Opening: %f %2&
+  set ext=.%@ext[%f]
+  iff islabel %ext then
+    gosub %ext
+  else
+    call openx.btm %f
+  endiff
+endiff
+
+quit
+
+:.hlp
+set opt=%@if[#%2==#,,-k%2]
+start winhlp32.exe %opt %f
+return
+
+:.chm
+set opt=%@if[#%2==#,,::/%2.htm]
+set cmd=hh.exe
+iff exist %MTEX\bin\keyhh.exe .AND. %@index[%1,-]==-1 then
+  set cmd=%MTEX\bin\keyhh.exe -%@name[%f] %@if[#%2==#,,-#klink %2] 
+  set opt=
+endiff
+start %cmd %[f]%[opt]
+return
+
+:.pdf
+call pdfview.btm %[f]
+return
+
+:#usage
+echo Usage1: %0 docname  ==) Find and open any document matches docname
+echo Usage2: %0 :? [docname] ==) Choose a document from available documents
+echo Note: Documents can be any format and can be put in any folders in %MTEX\doc or $DOCSLOCAL.
+quit
+
+:#gen_docs
+echos>_doc_.tmp
+::for %a in (%MTEX\doc %DOCSLOCAL) do dir /b /s /h /a:-d /o:e /[!*.gid *.cnt *.toc *.chw] %a\%1*.*
+echo /\.[gG][iI][dD]/d;/\.[cC][nN][tT]/d;/\.[tT][oO][cC]/d;/\.[cC][hH][wW]/d; > _doc_.sed
+for %a in (%MTEX\doc %DOCSLOCAL) do cmd.exe /c "dir /a:-d /b /s /o:e %a\%1*.* | sed.exe  -f _doc_.sed  >> _doc_.tmp"
+del _doc_.sed >& nul
+return
+
+:#choose_doc 
+set f=
+msg 0 Please choose a document://Local Docs Folder/Docs in Server/MTeX Mini-Course/TeX-Catalog/TeX-Search/CTEX BBS/LaTeX-123/LaTeX-WikiBook~~
+msg 936 请选择一个文档来打开://本地文档文件夹/服务器上的文档/MTeX迷你教程/TeX-Catalog/TeX-Search/CTEX论坛/LaTeX-123/LaTeX-维基书~~
+echo %_msg > _doc_.mnu
+sed -e "" _doc_.tmp >> _doc_.mnu
+set _i=%@exec[wask {160}@_doc_.mnu > _doc_.ask ]
+set f=%@line[_doc_.ask,0]
+del _doc_.mnu;_doc_.ask >& nul
+
+if %_i LT 0 (return)
+if %_i==1 (goto #local_docs)
+if %_i==2 (goto #net_docs)
+if %_i==3 (goto #net_course)
+if %_i==4 (goto #tex_catalog)
+if %_i==5 (goto #tex_search)
+if %_i==6 (goto #ctex_bbs)
+if %_i==7 (goto #latex_123)
+if %_i==8 (goto #latex_wikibook)
+::set f=%@line[_doc_.tmp,%@eval[%_i-9]]
+return
+
+:#latex_wikibook
+start iexplore.exe "http://en.wikibooks.org/wiki/LaTeX"
+return
+
+:#latex_123
+start iexplore.exe "http://edt1023.sayya.org/tex/latex123/latex123.html"
+return
+
+:#ctex_bbs
+start iexplore.exe "http://bbs.ctex.org/"
+return
+
+
+:#tex_search
+start iexplore.exe "http://tug.ctan.org/find.html"
+return
+
+:#tex_catalog
+start iexplore.exe "http://www.ctan.org/tex-archive/help/Catalogue/brief.html"
+return
+
+
+:#net_course
+start iexplore.exe "http://mtex.suite.googlepages.com/m-course.html"
+return
+
+:#local_docs
+iff isdir "%DOCSLOCAL" then
+  set f=%@getfile[%DOCSLOCAL]
+else
+  set f=%@getfile[%MTEX\doc]
+endiff
+return
+
+:#net_docs
+echo Listing files in server: "%[server]/docs/"
+dir_ftp "%[server]/docs/"
+iff not #%1==# then
+  move .listing _doc_.tmp
+  xfind %1 _doc_.tmp > .listing
+endiff
+echos>_doc_.tmp
+for %x in (@.listing) do echo %@word[-0,%x]>>_doc_.tmp
+del /z /e .listing >& nul
+msg 0 Documents in MTeX server~~
+msg 936 MTeX服务器上的文档~~
+window restore
+set f=%@select[_doc_.tmp,1,5,25,60,%_msg,1]
+if #%f==# (return)
+if #%f==#. (return)
+if #%f==#.. (return)
+set f=%@name[%f]
+gosub #find %f
+iff #%res==# then
+  echoerr Not found local [%f]! Trying to search [%MSETUP] or download from MTeX servers ...
+  call add_doc.btm %f
+  gosub #find %f
+endiff
+set f=%res
+return
+
+:#find [fn]
+set res=%@execstr[dir /b /s "%MTEX"\doc\%fn*.*]
+if not #%res==# (return)
+if #%DOCSLOCAL==# (return)
+set res=%@execstr[dir /b /s "%DOCSLOCAL"\%fn*.*]
+return

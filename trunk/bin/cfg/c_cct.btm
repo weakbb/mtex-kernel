@@ -1,0 +1,1 @@
+sed -e "s/\$(PKDIR)/%@replace[\,\\,$(PKDIR)]/g" "%MTEX\_\cctcfg.ini" > %_WINDIR\cctcfg.ini

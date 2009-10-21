@@ -1,0 +1,21 @@
+@echo off
+setlocal
+pushd %TMP
+echo Updating TFM (tex-font-metric) files...
+del %MTEX\fonts\tfm\vf\*.tfm /s>&nul
+del %TMP\fonts\tfm\vf\*.tfm /s>&nul
+del %TMP\*.tfm >&nul
+iff %@removable[%MTEX]#%@cdrom[%MTEX]==0#0 then
+except (%MTEX\fonts\mf\cc;cm;cmextra;etc;gftodvi;latex;ec) dir %MTEX\fonts\mf\*.mf /b /s|for %a in (@con) do gosub make_tfm
+endiff
+iff isdir "%TMP\fonts\pfb" then 
+dir %TMP\fonts\pfb\*.pfb /b /s|for %a in (@con) do gosub make_tfm
+endiff
+del *.log *.[0-9]*>&nul
+popd
+quit
+
+:make_tfm
+call maketfm %a
+return
+

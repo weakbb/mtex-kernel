@@ -1,0 +1,321 @@
+@echo off
+setlocal
+set dttf="%ETC\dvipdfm.map"
+set pttf="%ETC\ttf-pdf.map"
+set px="%UTILS\pdftex\rawfonts.map"
+set t="%ETC\ttfonts.map"
+set pfb="%ETC\dvips.map"
+set p="%ETC\pdftex.map"
+::set pl=%MTEX\fonts\pfbfonts.lst
+set _lst="%TMP\_tmp_.lst"
+set _tmp="%TMP\_tmp_.map"
+
+set opts=%&
+if #%opts==# (set opts=-pfb  -ttf -pk -pdf)
+
+pushd %ETC
+if not exist %t (copy %MTEX\_\ttfonts.map .)
+for %_z in (%opts) do if islabel %_z (gosub %_z)
+del %_tmp %_lst>&nul
+popd
+quit
+
+
+:-pdf
+echo Updating pdftex.map ...
+set f=%ETC\dvips2.map
+set px2=%UTILS\dvips\dvi-ps.map
+type %px %pfb %f  > %_tmp
+type %MTEX\fonts\map\pdftex\*.map >> %_tmp
+type %TMP\fonts\map\pdftex\*.map >> %_tmp
+sortu %_tmp > %p
+iff %@filesize[%p] LT 100 then
+  copy %_tmp %p
+endiff
+return
+
+
+:-pfb
+echo Updating for PFB fonts ...
+iff exist %MTEX\fonts\dvips.map then
+  REM~ only for cdrom MTeX: using pre-configured dvips.map 
+  copy %MTEX\fonts\dvips.map %pfb
+  echos>%_lst
+else 
+  echos>%pfb
+  echos>%MTEX\fonts\Fontmap
+  dir "%MTEX\fonts\pfb" /b /s /ad > %_lst
+endiff
+md /s "%TMP\fonts" >& nul
+echos>%TMP\fonts\Fontmap
+echo --->>%_lst
+dir "%TMP\fonts\pfb" /b /s /ad >> %_lst 
+set FONTS=%MTEX\fonts
+for %a in (@%_lst) do gosub list_pfb
+
+
+set f=%ETC\dvips2.map
+echos>%_tmp
+md /s "%MTEX\fonts\map\dvips">&nul
+iff isdir "%MTEX\fonts\map\dvips" then
+cdd "%MTEX\fonts\map\dvips"
+for /r %a in (*.map) do (
+  echo Adding %a ... 
+  type %a>>%_tmp
+)
+endiff
+md /s "%TMP\fonts\map\dvips">&nul
+iff isdir "%TMP\fonts\map\dvips" then
+cdd "%TMP\fonts\map\dvips"
+for /r %a in (*.map) do (
+  echo Adding %a ... 
+  type %a>>%_tmp
+)
+endiff
+
+sortu %_tmp > %f
+iff %@filesize[%f] LT 100 then
+  copy %_tmp %f
+endiff
+echo File [%f] is updated!
+
+set f=%ETC\dvipdfm2.map
+echos>%_tmp
+md /s "%MTEX\fonts\map\dvipdfm">&nul
+iff isdir "%MTEX\fonts\map\dvipdfm" then
+cdd "%MTEX\fonts\map\dvipdfm"
+for /r %a in (*.map) do (
+  echo Adding %a ... 
+  type %a>>%_tmp
+) 
+endiff
+md /s "%TMP\fonts\map\dvipdfm">&nul
+iff isdir "%TMP\fonts\map\dvipdfm" then
+cdd %TMP\fonts\map\dvipdfm
+for /r %a in (*.map) do (
+  echo Adding %a ... 
+  type %a>>%_tmp
+) 
+endiff
+
+sortu %_tmp > %f
+iff %@filesize[%f] LT 100 then
+  copy %_tmp %f
+endiff
+echo File [%f] is updated!
+
+return
+
+:-pk
+echo Updating makepk.map ...
+set f=%ETC\makepk.map
+iff exist %MTEX\fonts\makepk.map then
+  REM~ only for MTeX cdrom
+  copy %MTEX\fonts\makepk.map %f
+  for /r %a in (%TMP\fonts\map\dvips\*.map) do (gosub makepk_map %a |tee /A %f)
+else
+  gosub makepk_map %UTILS\dvips\dvi-ps.map |tee %f
+  ::gosub makepk_map %ETC\dvips.map |tee /A %f
+  gosub makepk_map %ETC\dvips2.map |tee /A %f
+  iff isdir "%MTEX\fonts\vf" then
+  dir %MTEX\fonts\vf\*.vf /b /s|for %a in (@con) do (gosub makepk_vf >> %f)
+  endiff
+endiff
+iff isdir "%TMP\fonts\vf" then
+dir %TMP\fonts\vf\*.vf /b /s|for %a in (@con) do (gosub makepk_vf >> %f)
+endiff
+echo File [%f] is updated!
+return
+
+:-xetex
+if #%@execstr[call %MTEX\bin\search.btm fc-cache %UTILS\xetex;%UTILSLOCAL\xetex]==# (return)
+msg 0 Update font cache for XeTeX?~~
+msg 936 是否为XeTeX更新字体缓存？~~
+msgbox /T2 OKCANCEL %_msg
+if %_?==20 .OR. %_?==12 return
+fc-cache -f -v
+return
+
+
+:-ttf
+echo Updating for TTF/TTC fonts ...
+echos>%pttf
+echos>%dttf
+for %a in (@%t) gosub proc_ttf
+echo File [%pttf] is updated!
+echo File [%dttf] is updated!
+gosub context_ttf
+echo File [%ETC\context\gbk.map] is updated!
+return
+
+:context_ttf
+mkdir %ETC\context\ >& nul
+type %MTEX\fonts\map\pdftex\*.map > %_tmp
+type %TMP\fonts\map\pdftex\*.map >> %_tmp
+sortu %_tmp > "%ETC\context\gbk.map"
+iff %@filesize["%ETC\context\gbk.map"] LT 100 then
+  copy %_tmp %p
+endiff
+return
+
+:proc_ttf
+set b=%@word[1,%a]
+if #%@ext[%b]==#  set b=%b.ttf
+if not exist %TTFDIR\%b  return
+echo %a
+set f=%@word[0,%a]
+set n=%@word["@",0,%f]
+set _n=%n
+set sfd=%@word["@",1,%f]
+set od=
+set op=
+set enc=
+do i = 2 to %@dec[%@words[%a]]
+  set x=%@word[%i,%a]
+  set k=%@word["=",0,%x]
+  set v=%@word["=",1,%x]
+  if #%k==#Encoding (set enc=%v)
+  iff #%k==#Slant then
+    set od=-s %v %od 
+    set op=%v SlantFont %op
+  endiff
+  if #%k==#Slant .AND. not #%sfd==# (set _n=%@left[%@dec[%@len[%n]],%n])
+enddo
+::set op=%@trim[%op]
+::if not %@words[%op]==0  set op=" %op "
+set op=
+iff #%sfd==#  then
+  echo %f default %b %od >>%dttf
+  echo %f `<`%enc `<`%b %op >>%pttf
+else
+  set _ENC=UniGB-UCS2-H
+  iff #%sfd==#UGBK then
+    set MAX=94 
+    set _ENC=UniGB-UCS2-H
+  endiff
+  if #%sfd==#EUC  set _ENC=GBK-EUC-H
+  if #%SFD==#Big5  set _ENC=ETen-B5-H
+  if #%SFD==#Unicode  set _ENC=unicode
+  
+  iff not exist %TMP\fonts\map\dvipdfm\%[_n].map then
+    echo %f %_ENC :0:%b  %od>>%dttf
+	echo ----
+  endiff
+  if not #%@ext[%b]==#ttf return
+  if exist %TMP\fonts\map\pdftex\%[_n].map 	return
+  
+  iff exist %MTEX\fonts\enc\cjk\%[_n]??.enc then 
+	set encfiles=%MTEX\fonts\enc\cjk\%[_n]??.enc
+  elseiff exist %TMP\fonts\enc\cjk\%[_n]??.enc then 
+	set encfiles=%TMP\fonts\enc\cjk\%[_n]??.enc
+  else
+	return
+  endiff
+  for %_j in (%encfiles) do (
+    echo %@name[%_j] `<`%@name[%_j].enc `<`%b  %op>>%pttf
+  )
+  ::if not #%op==#  return
+  
+endiff
+return
+
+
+:check_ttf
+set b=%@word[1,%a]
+iff exist %TTFDIR\%b then
+  echo %a >> %_tmp
+endiff
+return
+
+:list_pfb
+iff #%a==#--- then
+  set FONTS=%TMP\fonts 
+  return
+endiff
+echo %a
+set d=%@name[%a]
+if #%d==#cjk goto list_pfb_cjk
+cdd %a
+rem pfbnames.exe automatically puts results in clipboard
+pfbnames
+for %b in (@clip:) do gosub proc_pfb
+cdd -
+return
+
+:proc_pfb 
+if #%b==# return
+
+set f=%@word[":",0,%b]
+set f=%@expand[%f]
+set x=%@lower[%@name[%f]]
+set n=%@word["/",1,%b]
+
+echo /%n (pfb/%d/%f);>>%FONTS\Fontmap
+if isdir "%FONTS\vf\%d"  return
+echo %x %n `<`%f >> %pfb
+return
+
+:list_pfb_cjk
+for %f in (%a\*.pfb) do (
+  set x=%@lower[%@name[%f]]
+  set len=%@len[%x]
+  echo %x %x `<`%x.pfb >> %pfb
+  echo %@left[%@eval[%len-2],%x]sl%@right[2,%x] %x " .25 SlantFont " `<`%x.pfb >> %pfb
+)
+return
+
+:makepk_map [z]
+setdos /x-6
+do a in @%z 
+  set b=%@word[0,%a]
+  set c=%@word["<",-0,%a]
+  set d=%@word["<",-1,%a]
+  iff #%@ext[%c]==#pfb .AND. NOT #%@name[%c]==#%b then
+    set opt=
+    if %@wild[%a,*.167*]==1  set opt=-S.167
+    if %@wild[%a,*.25*]==1  set opt=-S.25
+    if %@wild[%a,*-.1763*]==1  set opt=-S-.1763
+    if %@wild[%a,*.82 ExtendFont*]==1  set opt=-E.82
+    if %@wild[%a,*.85 ExtendFont*]==1  set opt=-E.85
+    if %@wild[%a,*1.2 ExtendFont*]==1  set opt=-E1.2
+    if %@wild[%d,*.enc*]==1  set opt=%opt -e%d
+    echo  %b %c ;%opt
+  endiff
+enddo
+setdos /x0
+return
+
+:makepk_vf [a]
+echo  %@name[%a] .vf ;
+return
+
+
+:-newvf
+set newvf=%ETC\vf.$$$
+set f=%ETC\makepk.map
+echo Adding info of [%newvf] to [%f] ...
+for %a in (@%newvf) do (gosub makepk_vf >> %f)
+del %newvf >&nul
+return
+
+:-newmap
+set new=%ETC\map.$$$
+if not exist %new return
+
+echo Adding [%new] to [%ETC\dvips2.map] ...
+type %new >>%ETC\dvips2.map
+echo Adding [%new] to [%ETC\pdftex.map] ...
+type %new >>%ETC\pdftex.map
+
+set f=%ETC\makepk.map
+echo Adding info of [%new] to [%f] ...
+gosub makepk_map %new >>%f
+del %new >&nul
+return
+
+:-newpfb
+set newpfb=%ETC\Pfbnames.$$$
+if not exist %newpfb return
+type %newpfb |for %b in (@con) gosub proc_pfb
+del %newpfb >&nul
+return

@@ -1,0 +1,20 @@
+@echo off
+setlocal
+set key=%1
+iff #%key==#?? then
+  set key=dir
+  querybox /E Help for what? (Eg. DIR) %%key
+endiff
+iff %@wild[%key,@*]==1 then
+  set key=%@replace[@,f_,%key]
+endiff 
+pushd %@path[%0]
+iff exist "tcmd.chm" then
+  start keyhh.exe -tcmd tcmd.chm%@if[%#==0,,::/%key.htm]
+elseiff exist "4nt.hlp" then
+  start winhlp32.exe %@if[%#==0,,-k%key] %MTEX\bin\4nt.hlp
+else
+  start http://jpsoft.com/help/%@if[%#==0,index.htm,%key.htm]
+endiff
+popd
+quit

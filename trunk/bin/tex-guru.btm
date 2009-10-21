@@ -1,0 +1,214 @@
+@echo off
+setlocal
+if #%1==#  goto usage
+iff #%1==#-r then
+  shift  
+  gosub list_require|list
+elseiff #%1==#-c then
+  shift  
+  gosub list_command|list
+elseiff #%1==#-d then
+  shift  
+  gosub list_texdoc|list
+elseiff #%1==#-f then
+  shift  
+  gosub list_font|list
+elseiff #%1==#-l then
+  shift  
+  gosub list_file
+elseiff #%1==#-s then
+  shift  
+  gosub search_str|list
+elseiff #%1==#-k then
+  shift  
+  gosub kpse_path
+elseiff #%1==#-doc then
+  shift  
+  gosub list_docfile
+elseiff #%1==#-cmd then
+  shift  
+  gosub list_cmd|list
+elseiff #%1==#-pkg then
+  shift  
+  gosub list_pkg
+elseiff #%1==#-pk then
+  shift  
+  gosub list_pk
+elseiff #%1==#-pfb then
+  shift  
+  gosub list_pfb
+elseiff #%1==#-enc then
+  shift  
+  gosub list_enc
+elseiff #%1==#-mf then
+  shift  
+  gosub list_mf
+elseiff #%1==#-tfm then
+  shift  
+  gosub list_tfm
+elseiff #%1==#-vf then
+  shift  
+  gosub list_vf
+elseiff #%1==#-hz then
+  shift  
+  gosub list_hz
+elseiff #%1==#-demo then
+  shift  
+  gosub list_demo
+elseiff #%1==#-set then
+  shift  
+  gosub list_set
+endiff
+if not #%1==# (gosub get_fn)
+quit
+
+:usage
+echo Usage: %0 [option] texfile
+echo Option: -r ==) list required files 
+echo         -c ==) list commands defined
+echo         -d ==) list documents commented 
+echo         -f ==) list fonts defined 
+echo         -l ==) list specified file
+echo         -s "str" ==) search occurrences of specified string 
+echo         -k ==) kpse_search full path of file
+echo The following options need NO extra argument(s):
+echo         -pkg ==) list installed macro packages
+echo         -pfb ==) list installed Type-1 fonts (*.pfb) 
+echo         -enc ==) list installed encoding files (*.enc) of TrueType fonts
+echo         -mf ==) list installed MetaFont files (*.mf) 
+echo         -tfm ==) list installed TexFontMetric files (*.tfm)
+echo         -vf ==) list installed virtual font files (*.vf)
+echo         -hz ==) list installed CCT font files (*.pps) (by Zhang Linbo)
+echo         -cmd ==) list available commands in MTeX
+echo         -doc ==) list available documentations in MTeX
+echo         -demo ==) list available demo/test files in MTeX
+echo         -set ==) list enviroment variables
+
+quit
+
+:get_fn
+set f=%@execstr[kwhich %&]
+iff #%f==# then
+  echoerr Not found! 
+  quit
+endiff
+set f=%@replace[/,\,%f]
+echoerr %f
+return
+
+:list_require
+gosub get_fn
+xfind "\input" %f
+xfind "\include" %f
+xfind "\Require" %f
+xfind "\usepackage" %f
+
+return
+
+:list_command
+gosub get_fn
+xfind "\newcommand" %f
+xfind "\renewcommand" %f
+xfind "\def" %f
+return
+
+:list_font
+gosub get_fn
+xfind "\font\" %f
+xfind "\DeclareFont" %f
+return
+
+:list_texdoc
+gosub get_fn
+xfind "%%%%" %f
+return
+
+:list_file
+gosub get_fn
+list %f
+return
+
+:search_str
+xfind %&
+return
+
+:kpse_path
+setlocal
+set x=%@execstr[kwhich %&]
+if not #%x==# (echo %@replace[/,\,%x ])
+return
+
+:list_pkg
+dir /s /oi /z %MTEX\texinput\*.* | list
+list %MTEX\texlocal\*.lst
+return
+
+:list_pk
+dir /s /oi /z /h /m %PKDIR\*.* | list
+return
+
+
+:list_pfb
+dir /s /oi /z %MTEX\fonts\pfb\*.* | list
+return
+
+:list_enc
+dir /s /oi /z %MTEX\fonts\enc\*.* | list
+return
+
+:list_mf
+dir /s /oi /z %MTEX\fonts\mf\*.* | list
+return
+
+:list_tfm
+dir /s /oi /z %MTEX\fonts\tfm\*.* | list
+return
+
+:list_vf
+dir /s /oi /z %MTEX\fonts\vf\*.* | list
+return
+
+:list_hz
+dir /s /oi /z %MTEX\fonts\hzfonts\*.pps | list
+return
+
+:list_cmd
+echo Please learn commands marked by "====" first. See help file for details.
+echo %@repeat[-,4] Internal commands provided by 4DOS: %@repeat[-,4] 
+?
+echo %@repeat[=,4] Commands defined by aliases: %@repeat[=,4] 
+alias
+echo %@repeat[=,4] Commands written in batch file (*.btm): %@repeat[=,4] 
+dir %MTEX\bin\*.btm /w /b
+echo %@repeat[=,4] Tools in [bin] (*.com;*.exe): %@repeat[=,4] 
+dir %MTEX\bin\*.com;*.exe /w /b
+echo %@repeat[=,4] Additional utilities: (bin\util\*.btm) %@repeat[=,4] 
+dir %MTEX\bin\util\*.btm /w /b /s
+echo %@repeat[=,4] Commands of W32TeX/web2c (*.exe;*.bat): %@repeat[=,4] 
+dir %MTEX\web2c\*.exe;*.bat /w /b
+echo %@repeat[-,4] Additional commands related with CCT: [utils\cct] %@repeat[-,4] 
+dir %UTILS\cct\*.exe /w /b
+echo %@repeat[-,4] Various additional commands: [utils\tools] %@repeat[-,4] 
+dir %UTILS\tools\*.exe;*.com;*.bat;*.btm /w /b
+echo %@repeat[-,4] Additional commands about graphics conversion: [utils\gtools] %@repeat[-,4] 
+dir %UTILS\gtools\*.exe /w /b
+echo %@repeat[=,4] Installed utilities: [utils\*.*] %@repeat[=,4] 
+dir %UTILS\*.* /w /b /ad
+echo %@repeat[-,4] Basic configuration scripts: [bin\cfg\c-*.btm] %@repeat[-,4] 
+dir %MTEX\bin\cfg\c*.btm /w /b 
+echo %@repeat[-,4] Additional configuration scripts for utils: [c-*.btm] %@repeat[-,4] 
+dir %UTILS\c-*.btm /w /b /s
+return
+
+:list_docfile
+if #%1==# (dir /s /oi  %MTEX\doc\*.* | list) else (call runx %MTEX\doc\%&)
+return
+
+:list_demo
+if #%1==# (dir /s /oi  %MTEX\demo\e*.tex;ctx;ty;mp | list) else (call runx %MTEX\demo\%&)
+return
+
+:list_set
+set|list
+return
+

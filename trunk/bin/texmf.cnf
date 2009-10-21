@@ -1,0 +1,273 @@
+#[mhb] -- for MTeX
+myvars = .;$ETC;$PKGDIR;$VAR;{$MTEX/utils,$UTILSLOCAL}/LyX/Resources/tex//;{$MTEX/utils,$UTILSLOCAL}/tex4ht//;$TMP/ht-fonts//;$TMP;{$MIK,$MIKLOCAL}/tex/{latex,plain,generic}//
+mycmap = {$MTEX/fonts,$UTILS/dvipdfm,$UTILSLOCAL/dvipdfm,$UTILS/uptex,$UTILSLOCAL/uptex,$TMP,$VAR/fonts}/cmap
+myfonts = {$MTEX,$UTILS/omega,$UTILS/uptex,$UTILSLOCAL/uptex,$TMP,$VAR}/fonts
+mylocal = {$MTEX,$TMP}/{macros,texinput,texlocal}
+mylatex209 = {$MTEX,$UTILS,$UTILSLOCAL}/latex209//;{$MTEX,$TMP}/{texinput,texlocal}/latex209//
+myfmt = $ETC/formats
+mypdftex = {$MTEX/utils,$UTILSLOCAL}/pdftex
+mycontext = {$MTEX/utils,$UTILSLOCAL}/context
+myxetex = {$MTEX/utils,$UTILSLOCAL}/xetex
+myluatex = {$MTEX/utils,$UTILSLOCAL}/luatex
+myluatexcache={$TMP}/luatex-cache//
+mynts = {$MTEX/utils,$UTILSLOCAL}/nts
+myuptex = {$MTEX/utils,$UTILSLOCAL}/uptex
+myomega = {$MTEX/utils,$UTILSLOCAL}/omega
+mydvipdfm = {$MTEX/utils,$UTILSLOCAL}/dvipdfm
+mydvips = {$MTEX/utils,$UTILSLOCAL}/dvips
+mymetafont = {$MTEX/utils,$UTILSLOCAL}/metafont
+mympost = {$MTEX/utils,$UTILSLOCAL}/metapost
+mybib = $MTEX/emtex/bibtex//; $mylocal/bibtex//; $TEXINPUTS
+myidx = $MTEX/emtex/mkidx//; $mylocal/mkidx//; $TEXINPUTS
+
+TEMP = $TMP
+TEXEDIT = start tex-edt.exe %d "%s"
+TEX_HUSH = none
+TEXMFDBS = $MTEX;$ETC
+TEXMF = $MTEX
+WEB2C = $TEXINPUTS
+
+TEXPOOL = $MTEX\web2c;$myfmt;$mypdftex;$mycontext;$myxetex;$myluatex;$myluatexcache;$mynts;$myvars
+TEXFORMATS = $TEXPOOL
+TEXSOURCES = $mypdftex//;$myvars
+TEXDOCS = $mypdftex//;$myvars
+TEXFONTMAPS = $ETC//;$mypdftex//;$mycontext/map//;$mydvips//;$mydvipdfm//;$mycmap//;$myfonts//;$GSDIR//;$VAR/fonts//;$myvars
+TEXPSHEADERS = $TEXFONTMAPS
+TEXINPUTS = .;$MTEX/texinput/00mtex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$myxetex//;$mycontext//;$myluatex//;$myvars;
+PDFTEXINPUTS = $TEXINPUTS;$MTEX/demo/slides/overlays
+XETEXINPUTS = $TEXINPUTS;$MTEX/demo/slides/overlays
+TTF2PKINPUTS  = .;$TTFONTS;$ETC//;{$MTEX/emtex,$MTEX}/texinput/ttfcfg//;$TEXMFCNF//ttfcfg;$myvars
+TTF2TFMINPUTS = $TTF2PKINPUTS
+DVIPDFMINPUTS  = .;$mydvipdfm//;$TTF2PKINPUTS
+DVIPDFMXINPUTS  = .;$mydvipdfm//;$TTF2PKINPUTS
+DVIPSINPUTS = $mydvips//;$mypdftex//;$myvars
+TEXCONFIG = $mydvips
+
+LUAINPUTS = .;{$mycontext}/lua//;{$mycontext}/base//;{$myluatex}//;$TEXINPUTS
+NTSINPUTS = .;$mynts//;$TEXINPUTS
+OMEGAINPUTS=.;$myomega//;$ETC//
+
+PERLINPUTS     = .;{$mycontext}/perl//;{$mycontext}/base//;{$myluatex}//;$TEXINPUTS
+PYTHONINPUTS     = .;{$mycontext}/python//;{$mycontext}/base//;{$myluatex}//;$TEXINPUTS
+RUBYINPUTS     = .;{$mycontext}/ruby//;{$mycontext}/base//;{$myluatex}//;$TEXINPUTS
+JAVAINPUTS     = .;{$mycontext}/java//;{$mycontext}/base//;{$myluatex}//;$TEXINPUTS
+
+TEXINPUTS.latex209 = .;$mylatex209//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.nts=.;$mynts//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.omega=.;$myomega//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.uptex = .;$myuptex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.uplatex = .;$myuptex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.euptex = .;$myuptex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.euplatex = .;$myuptex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+
+MFBASES  =  $TEXPOOL
+MFPOOL  =  $TEXPOOL
+MFINPUTS = .;$mymetafont//;$myfonts/mf//;$myvars
+MPMEMS  =  $TEXPOOL;$mympost//
+MPPOOL  =  $TEXPOOL;$mympost//
+MPINPUTS = .;$mympost//;{$MTEX/utils,$UTILSLOCAL}/context/metapost;$mycontext/metapost/
+BIBINPUTS = .;$mybib
+BSTINPUTS = .;$mybib
+CSFINPUTS = .;$mybib
+INDEXSTYLE= .;$myidx
+
+
+%VFFONTS.windvi = 
+%VFFONTS.dvipng = 
+VFFONTS = .;$myfonts/vf//;$myvars
+TFMFONTS = .;$myfonts/tfm//;$myvars
+ENCFONTS = .;$mydvipdfm/base;$mydvipdfm/CMap;$myfonts/enc//;$mycontext/enc//;$TTF2PKINPUTS;$myvars
+T1FONTS = .;$myfonts/pfb//;$GSDIR//;$PSDIR//;$TEXINPUTS;$myvars
+AFMFONTS = $T1FONTS
+T1INPUTS = $T1FONTS
+T42FONTS = $T1FONTS
+TTFONTS = $TTFDIR//;$WINDIR/fonts;$myvars
+OPENTYPEFONTS = $TTFONTS
+PKFONTS = $PKDIR//;{$MTEX/fonts/pk,$TMP/fonts/pk}//;$myvars
+MISCFONTS = $PKFONTS
+GLYPHFONTS = $PKFONTS
+SFDFONTS = $TTF2PKINPUTS
+CMAPFONTS = .;$mycmap//
+CMAPINPUTS = $CMAPFONTS
+
+OFMFONTS = .;$myfonts/ofm//;$TFMFONTS
+OPLFONTS = .;$myfonts/opl//
+OVFFONTS = .;$myfonts/ovf//
+OVPFONTS = .;$myfonts/ovp//
+OTPINPUTS = .;$myomega/omega/otp//
+OCPINPUTS = .;$myomega/omega/ocp// 
+
+
+FC_DEFAULT_FONTS = $myxetex/fonts
+FONTCONFIG_FILE = fonts.conf 
+FONTCONFIG_PATH = $ETC
+PKGCACHEDIR = $TMP/cache
+FC_CACHEDIR = $TMP/cache
+TEXINPUTS.xetex = .;$myxetex/tex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+TEXINPUTS.xelatex = .;$myxetex/tex//;$ETC//;$mycmap//;$myfonts/fd//;$mylocal//;$mypdftex//;$mycontext//;$myvars;
+
+OSFONTDIR=$WINDIR/fonts//
+
+
+
+shell_escape  =  1
+allow_multiple_suffixes = f
+openout_any  =  a
+openin_any  =  a
+
+MISSFONT_LOG = missfont.bat
+MT_FEATURES = dosnames nomode
+MKTEXPK  =  1
+MKTEXTFM  =  1
+MKTEXFMT  =  0
+MKTEXTEX  =  1
+MKTEXMF  =  0
+MKOFM = 0
+MKOCP = 0
+
+
+#~ main_memory       =  1000000  
+#~ extra_mem_top     =  100000
+#~ extra_mem_bot     =  100000
+#~ font_mem_size     =  1000000
+#~ font_max          =  1500 
+#~ hash_size         =  100000
+#~ hash_extra        =  250000
+
+#~ pool_size         =  1000000
+#~ string_vacancies  =    25000
+#~ max_strings       =    50000
+#~ pool_free         =   225000
+
+#~ #trie_size         =    164000
+#~ hyph_size         =     1000
+#~ buf_size          =     15000
+#~ nest_size         =      750
+#~ max_in_open       =       30
+#~ param_size        =     10000
+#~ save_size         =     8000
+#~ stack_size        =     15000
+
+#~ dvi_buf_size      =    16384
+
+#~ error_line        =       79
+#~ half_error_line   =       50
+
+#~ trie_size = 300000
+
+%  Part 3: Array and other sizes for TeX (and Metafont and MetaPost).
+% 
+% If you want to change some of these sizes only for a certain TeX
+% variant, the usual dot notation works, e.g.,
+% main_memory.hugetex = 20000000
+% 
+% If a change here appears to be ignored, try redumping the format file.
+
+% Memory. Must be less than 8,000,000 total.
+% 
+% main_memory is relevant only to initex, extra_mem_* only to non-ini.
+% Thus, have to redump the .fmt file after changing main_memory; to add
+% to existing fmt files, increase extra_mem_*.  (To get an idea of how
+% much, try \tracingstats=2 in your TeX source file;
+% web2c/tests/memtest.tex might also be interesting.)
+% 
+% To increase space for boxes (as might be needed by, e.g., PiCTeX),
+% increase extra_mem_bot.
+% 
+% For some xy-pic samples, you may need as much as 700000 words of memory.
+% For the vast majority of documents, 60000 or less will do.
+% 
+main_memory = 1500000 % words of inimemory available; also applies to inimf&mp
+extra_mem_top = 0     % extra high memory for chars, tokens, etc.
+extra_mem_bot = 0     % extra low memory for boxes, glue, breakpoints, etc.
+
+% ConTeXt is a memory hog...
+extra_mem_top.context = 2000000
+extra_mem_bot.context = 4000000
+main_memory.context = 4000000
+% omega
+main_memory.omega = 4000000
+main_memory.lambda = 4000000
+main_memory.omegaj = 4000000
+main_memory.lambdaj = 4000000
+
+% Words of font info for TeX (total size of all TFM files, approximately). 
+% Must be less than 4000000
+font_mem_size = 2000000
+
+% Total number of fonts. Must be >= 50 and <= 2000 (without tex.ch changes).
+font_max = 2000
+
+% Extra space for the hash table of control sequences (which allows 10K
+% names as distributed).
+hash_extra = 50000
+
+% Max number of characters in all strings, including all error messages,
+% help texts, font names, control sequences.  These values apply to TeX and MP.
+pool_size = 1250000
+
+% Minimum pool space after TeX/MP's own strings; must be at least
+% 25000 less than pool_size, but doesn't need to be nearly that large.
+string_vacancies = 90000
+% Maximum number of strings.
+max_strings.context = 150000
+max_strings = 100000
+% min pool space left after loading .fmt
+pool_free = 47500
+
+% Hyphenation trie. As distributed, the maximum is 65535; this should
+% work unless `unsigned short' is not supported or is smaller than 16
+% bits.  This value should suffice for UK English, US English, French,
+% and German (for example).  To increase, you must change
+% `ssup_trie_opcode' and `ssup_trie_size' in tex.ch (and rebuild TeX);
+% the trie will then consume four bytes per entry, instead of two.
+% 
+% US English, German, and Portuguese: 30000.
+% German: 14000.
+% US English: 10000.
+% 
+trie_size = 300000
+
+% Buffer size.  TeX uses the buffer to contain input lines, but macro
+% expansion works by writing material into the buffer and reparsing the
+% line.  As a consequence, certain constructs require the buffer to be
+% very large.  As distributed, the size is 50000; most documents can be
+% handled within a tenth of this size.
+buf_size = 200000
+
+hyph_size = 8191        % number of hyphenation exceptions, 610< and 65535>.
+nest_size = 500		% simultaneous semantic levels (e.g., groups)
+max_in_open = 15	% simultaneous input files and error insertions
+param_size = 5000	% simultaneous macro parameters
+save_size = 5000	% for saving values outside current group
+stack_size = 3000	% simultaneous input sources
+
+% These are Omega-specific.
+ocp_buf_size = 40000	% character buffers for ocp filters.
+ocp_stack_size = 10000	% stacks for ocp computations.
+ocp_list_size = 1000	% control for multiple ocps.
+
+% Parameter specific to MetaPost.
+% Maximum number of knots between breakpoints of a path.
+% Set to 2000 by default.
+path_size.mpost = 10000
+path_size.jmpost = 10000
+
+% These are pdftex-specific.
+dest_names_size = 300000
+obj_tab_size = 300000
+pdf_mem_size = 300000
+
+% These work best if they are the same as the I/O buffer size, but it
+% doesn't matter much.  Must be a multiple of 8.
+dvi_buf_size = 16384 % TeX
+gf_buf_size = 16384  % MF
+
+% It's probably inadvisable to change these. At any rate, we must have:
+% 45 < error_line      < 255;
+% 30 < half_error_line < error_line - 15;
+% 60 <= max_print_line;
+% These apply to Metafont and MetaPost as well.
+error_line = 79
+half_error_line = 50
+max_print_line = 79

@@ -1,0 +1,17 @@
+@echo off
+if #%1==# goto usage
+setlocal
+for %a in (%&) gosub mftoeps %a
+quit
+
+:mftoeps [f]
+MF \yeseps:=1; input %f
+tex \def\inputname{%@name[%f].log}\input spliteps.tex
+del spliteps.log;%@name[%f].log >&nul 
+return
+
+:usage
+echo Usage: %0 mffile ---)Convert mffile to eps file. 
+echo Note:  mffile must use {mftoeps} package correctly!
+echo        File "spliteps" must exist so that TeX can find it! 
+quit

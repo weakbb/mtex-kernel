@@ -1,0 +1,1 @@
+@tex-dos.exe tex-edit.btm %2 %3

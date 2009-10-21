@@ -1,0 +1,11 @@
+@echo off
+setlocal
+pushd %1
+iff exist [1-9a-z]*.tpm then
+  echo Name,Title,Description,>pkg_lst.csv
+  for %a in ([1-9a-z]*.tpm) do tpmread %a pkg_lst.csv
+else
+  echoerr Cannot find any tpm files!
+endiff
+popd
+quit

@@ -1,0 +1,29 @@
+@echo off
+setlocal
+if #%1==#-clear (goto del_env_file)
+echos > "%MTEX\mtex.env"
+iff exist "%MTEX\mtex.env" .AND. %@cdrom[%MTEX]==0 then
+  gosub view_env > "%MTEX\mtex.env"
+else
+  gosub view_env > c:\mtex.env
+endiff
+quit
+
+:del_env_file
+del /q "%MTEX\mtex.env" >& nul
+del /q c:\mtex.env >& nul
+quit
+
+
+:view_env
+for %_a in (COMSPEC TMP TTFDIR PKDIR GSDIR GS_LIB UTILSLOCAL DOCSLOCAL Editor DviView PsView PdfView JAVA UPATH SPELL PICUTIL CCHZPATH CCPKPATH TEXTFM MSETUP NO_TMAC) do echo %_a=%[%_a]
+return
+
+
+:view_env_test
+unset /q CMDLINE COMPUTER* LOGONSERVER NUMBER_OF_PROCESSORS PROCESSOR_* PATHEXT  OS FP_NO_HOST_CHECK
+unset /q HOMEDRIVE HOMEPATH SYSTEMDRIVE SYSTEMROOT PROGRAMFILES CommonProgramFiles 
+unset /q SESSIONNAME CLIENTNAME ALLUSERSPROFILE USERNAME USERPROFILE USERDOMAIN APPDATA
+unset /q _* ? ?? fonts 
+set
+return

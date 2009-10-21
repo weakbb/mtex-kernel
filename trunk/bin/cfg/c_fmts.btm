@@ -1,0 +1,9 @@
+::if isdir "%ETC\formats"  quit
+msg 0 I will create basic formats such as tex,latex,p-tex,p-latex,mptopdf,mf,mpost,mptopdf,context. Please wait for a moment ...
+msg 936 即将创建基本的tex,latex,p-tex,p-latex,mptopdf,mf,mpost,mptopdf,context格式，请稍侯。。。
+::msg 950 盢承膀セtex,latex,p-tex,p-latex,mptopdf,mf,mpost,mptopdf,contextΑ叫祔獼
+msgbox /T1  OKCANCEL %_msg 
+if #%_?==#12  quit
+mkdir "%ETC\formats" >& nul
+echo Making formats for tex,latex,p-tex,p-latex,mptopdf,mf,mpost now ...
+call makefmts.btm mf tex latex p-tex p-latex mptopdf mpost 

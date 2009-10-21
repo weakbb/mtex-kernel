@@ -1,0 +1,29 @@
+iff exist %TTFDIR\simsun.ttc then 
+  cdd %TTFDIR\
+  ttc2ttf simsun.ttc
+  msg 0 Warning: Failure in extracting [simsun.ttf] from [simsun.ttf]! Please check whether folder [%TTFDIR] is writable. 
+  msg 936 警告：从simsun.ttc提取simsun.ttf不成功！请检查文件夹[%TTFDIR]是否有写权限！
+  ::msg 950 牡眖simsun.ttc矗simsun.ttfぃΘ叫浪琩ゅンЖ[%TTFDIR]琌Τ糶舦
+  if not exist simsun.ttf (msgbox OK %_msg)
+  cdd -
+endiff
+msg 0 Do you want to configure latex (CJK:GBK+UTF8) to use 6 common chinese fonts (Song,Hei,Kai,Fang,Li,You) provided by Windows? The configuration needs some time, please wait for a moment ...
+msg 936 是否根据windows自带的TTF字体配置latex(CJK:GBK+UTF8)使用宋、黑、楷、仿、隶、幼等6种常用中文字体？【是】配置；【否】不配置。配置过程可能较慢，请耐心等待。
+::msg 950 琌誹windows盿TTF蔨皌竚latex(CJK:GBK+UTF8)ㄏノШ堵发ラ刘ギ单6销盽ノいゅ蔨琌皌竚ぃ皌竚皌竚筁祘耕篊叫瑻み单
+msgbox /T3 YESNO %_msg
+if %_?==10 .OR. %_?==20  (call tex-font -auto) 
+msg 0 I will update font map files. Choose [YES] to reset fonts and update map files; [NO] to update map files; [CANCEL] to quit now.
+msg 936 即将更新字体map文件，请选择：【是】重设字体配置并更新map文件；【否】只更新map文件；【取消】退出。
+::msg 950 盢穝蔨mapゅン叫匡拒琌砞蔨皌竚穝mapゅン穝mapゅン癶
+msgbox /T3 YESNOCANCEL %_msg
+set _a=%_?
+if #%_a==#12  quit
+if #%_a==#11  goto upd_map
+
+copy %MTEX\_\ttfonts.map %ETC\
+
+:upd_map
+call updmap
+quit
+
+

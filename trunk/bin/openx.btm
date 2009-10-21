@@ -1,0 +1,855 @@
+@echo off
+setlocal
+set _quickopen=
+iff #%1==#-quickopen then
+  set _quickopen=1
+endiff
+if #%1==# goto #usage
+
+unset /q _cmd _opt _xcmd
+iff %@wild[%1,:*]==1 then
+  set _opt=%1 
+  shift
+elseiff %@wild[%_opt,:{*}]==1 then
+  set _len=%@eval[%@len[%_opt]-3]
+  set _opt=%@instr[2,%_len,%_opt]
+endiff
+iff %@wild[%1,-*]==1 then
+  set _xcmd=%@instr[1,,%1]
+  shift
+endiff
+
+set /r "%MTEX\_\openx.cfg" >& nul
+set /r "%ETC\openx.cfg" >& nul
+
+if #%1==# goto #usage
+for %file in (%&) do gosub #proc %file
+quit
+
+:#proc [file]
+set _x=%@name[%file].%@ext[%file]
+iff isdir %file then
+  set _e=AnyFolder
+else
+  set _e=.%@ext[%file]%@if[not #%_xcmd==#,#%_xcmd]
+  iff #%[%_e]==# then
+    iff #%_xcmd==#convert then
+	  set /r "%MTEX\_\utils.cfg"
+	  if exist "%ETC\utils.cfg"  set /r "%ETC\utils.cfg"
+	  set _e=Converters
+	else
+      set _e=.%@ext[%file]
+      if #%[%_e]==# (set _e=AnyFile)
+	endiff
+  endiff
+endiff
+
+set _op=%[%_e]
+iff #%_op==# then
+  set _e=.%@ext[%file]%@if[not #%_xcmd==#,#%_xcmd]
+  iff islabel %_e then
+    gosub %_e %file
+	return
+  elseiff islabel .%@ext[%file] then
+    gosub .%@ext[%file]
+	return
+  else
+    set _op=#start
+  endiff
+endiff
+
+iff #%_quickopen==#1 then
+  set _op=%@word["/",0,%_op]
+elseiff #%_CTRL==#1 then
+  iff %@wild[%_e,Any*]==0 then
+    set op_list=%@replace[/, ,%_op]
+    set _op=%[AnyFile]
+    for %_z in (%op_list) do (
+      iff %@index[/%_op/,/%_z/]==-1 then
+        set _op=%_op/%_z
+      endiff
+    )
+  endiff
+endiff
+
+iff %@words["/",%_op] GT 1 then
+  msg 0 Please choose one operation or convert format for [%_x]:~~
+  msg 936 请对[%_x]选择操作或转换格式:~~
+  ::window min
+  set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+  set _i=%@exec[wask.exe {150}%_msg//%_op]
+  ::window restore
+  if %_i==-1 (return)
+  set _op=%@word["/",%_i,#/%_op]
+endiff
+if #%_op==# (return)
+
+pushd %@path[%file]
+
+set f2=%[!%[_op].out]
+set f2=%@replace[.*,.%@ext[%file],%f2]
+set f2=%@replace[*,%@name[%file],%f2]
+
+set ask=
+iff %@wild[%_op,.*]#%[!%_op]==1# then
+  set ask=%_op
+  set _op=Gconvert
+endiff
+iff #%ask==# then
+  set ask=%[!%_op.ask]
+endiff
+iff %@words["/",%ask] GT 1 then
+  msg 0 Please choose one sub-function or output format:~~
+  msg 936 请选择子功能:~~
+  ::window min
+  set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+  set _i=%@exec[wask.exe {150}%_msg//%ask]
+  set ask=%@if[%_i==-1,,%@word["/",%_i,#/%ask]]
+  ::window restore
+endiff  
+
+set query=%[!%_op.query]
+set querymsg=%[!%_op.querymsg]
+iff #%querymsg==# then
+  msg 0 Options or parameters for operation [%_op]:
+  set querymsg=%_msg
+endiff
+iff not #%@trim[%query]==# then
+  querybox /E %querymsg  %%query 
+endiff
+
+iff not #%[!%_op]==# then
+
+  set _app=%[!%_op]
+
+  set _file=%file
+  iff %@index[%_app,$$] GE 0 then
+    set _app=%@replace[$$,,%_app]
+    set _file=
+  endiff
+  iff %@index[%_app,$N] GE 0 then
+    set _app=%@replace[$N,%@name[%file],%_app]
+    set _file=
+  endiff
+  iff %@index[%_app,$E] GE 0 then
+    set _app=%@replace[$E,%@ext[%file],%_app]
+    set _file=
+  endiff
+  iff %@index[%_app,$P] GE 0 then
+    set _app=%@replace[$P,%@path[%file],%_app]
+    set _file=
+  endiff
+  iff %@index[%_app,$F] GE 0 then
+    set _app=%@replace[$F,%@name[%file].%@ext[%file],%_app]
+    set _file=
+  endiff
+
+  iff #%@left[1,%@trim[%_app]]==#* then
+    set _cmd=%_app %_file
+	set _pre=
+  else
+    set _cmd=%@execstr[call %MTEX\bin\search.btm %@word[0,%_app]]
+    iff #%_cmd==# then
+      call notfind %_app
+	  goto ret
+    endiff
+    set _pre=%@if[%@wild[%@execstr[exetype %_cmd],Win??]==1,start,call]
+  endiff
+
+  set Command=%_pre %_app %_file
+  iff "%@left[2,%_app]"=="  " then
+    set _helpcmd=%[!%_op#helpcmd]
+    iff not #%_helpcmd==# then
+      %_helpcmd
+    endiff
+    eset Command
+  endiff
+  echo Running: %Command
+  %Command
+  if %@wild[%[!%_op], *]=1 (pause)
+elseiff islabel %_op then
+  echo Running: gosub %_op [%file]
+  gosub %_op
+elseiff %@index[%@execstr[which %_op], unknown command] GT 0 then
+  echo Running: call util %_op %file
+  call util %_op %file
+else
+  set _app=%_op
+  set _res=%@execstr[%MTEX\bin\search.btm %_op]
+  iff not %@len[%_res]==0 then
+    set _app=%_res
+  endiff
+  set _pre=%@if[%@wild[%@execstr[exetype %_app],Win??]==1,start,call]
+  echo Running: %_pre %_app %file
+  %_pre %_app %file
+endiff
+
+iff %_xcmd#%#==convert#1 then
+  gosub #view %file
+endiff
+
+:ret
+popd
+return
+
+:#usage
+echo Usage: %0 [:prog] [-edit`|`-compile`|`-convert] file  ==)Open file smartly!
+echo Note: I will choose proper tool via extension of file.
+echo Please edit %ETC\openx.cfg to customize the default behaviors.
+quit
+
+:#view [file]
+dir /m /k /t:c /o-d /[!*.aux;*.log;*.toc;*.bst;*.mnu;*.?lg] "%@name[%file].*"
+iff #%f2==# then 
+  set f2=%@execstr[dir /b /t:c /o-d /[!*.aux;*.log;*.toc;*.bst;*.mnu;*.?lg] "%@name[%file].*"]
+endiff
+iff #%f2==# then 
+  set f2=%@execstr[dir /b /t:c /o-d /[!*.aux;*.log;*.toc;*.bst;*.mnu;*.?lg] *.*] 
+endiff
+
+iff not #%f2==# then 
+  msg 0 I find that file [%f2] is new or updated. Do you want to use openx to view this file?~~
+  msg 936 似乎转换工具生成或修改了文件[%f2],是否用openx打开该文件?~~ 
+  msgbox OKCANCEL %_msg
+  if %_?==10 (call openx "%f2")
+endiff
+return
+
+:#opendir [_dir]
+msg 0 {160}Please choose one action for folder [%_dir]://Explorer/TeX-DOS/Install package/Install fonts/Add to TeX search path/Configure TTF fonts/Strip TeX Files/Anti Virus/Pack Exe Files/Unpack Exe Files/Make ISO Cdrom Image/DOS Prompt~~
+msg 936 {160}请对文件夹[%_dir]选择操作：//资源管理器/TEX-DOS/安装宏包/安装字体/添加到TeX搜索路径/装载TTF字体/清除tex文件注释/扫描病毒/可执行文件减肥/可执行文件还原/制作ISO光盘映像/普通DOS窗口~~
+::window min
+set WASKHINT=%MTEX\bin\waskhint.%@if[exist "%MTEX\bin\waskhint.%LANG",%LANG,0]
+set _i=%@exec[wask.exe %_msg/%AnyFolderUserMenu]
+::window restore
+if #%_i==#-1 (return)
+set _op=%@word["/",%_i,start/explorer/tex-dos/add-pkg/add-font/add-varpath/load-ttf/strip-tex/Anti-Virus/Upx-Dir/Un-Upx-Dir/Make-Iso/DOS-Cmd/%AnyFolderUserMenu]
+iff islabel %_op then
+  gosub %_op
+else
+  ::start %_dir
+  call util.btm %_op
+endiff
+return
+
+
+:#open
+:#run
+set e=%@ext[%file]
+iff islabel .%e#%cmd then
+	gosub .%e#%cmd
+elseiff islabel .%e then
+	gosub .%e
+else
+	gosub #start
+endiff
+return
+
+:#start
+if exist %file (set _x=%@sfn[%file])
+start %_x
+if %_?==2 (call run %file)
+return
+
+:start
+:open
+start %file
+return
+
+:Edit-Openx
+:Edit-openx.cfg
+:Edit-config
+set _f=%@if[exist "%ETC\openx.cfg","%ETC\openx.cfg","%MTEX\_\openx.cfg"]
+start mini_pad.exe %_f
+return
+
+:Run-Exe
+set _app=%@name[%file].exe
+iff exist %_app then
+  echo Running: %_app
+  iff %@wild[%@execstr[exetype %_cmd],Win??]==1 then
+    start %_app
+  else
+    set Command=%_app
+    eset Command
+    call %Command
+    pause
+  endiff
+else
+  pause Not found "%_app"!
+endiff
+return
+
+:Clean-Files
+del *.obj;*.o;*.tds;*.$ln;*.log;*.tmp;*.~res
+? del *.res;
+return
+
+:Copy-To
+iff not isdir "%CopyTo" then
+  set CopyTo=%@getdir[c:\]
+endiff
+copy %@if[isdir %file,/s,] %file %CopyTo\
+return
+
+:Move-To
+iff not isdir "%MoveTo" then
+  set MoveTo=%@getdir[c:\]
+endiff
+move %@if[isdir %file,/s,] %file %CopyTo\
+return
+
+:Send-To
+wlnk.exe %@name[%file].lnk %file
+iff not isdir "%SendTo" then
+  set SendTo=%@getdir[c:\]
+endiff
+iff isdir "%SendTo" then
+  move %@name[%file].lnk "%SendTo"\
+endiff
+return
+
+:Anti-Virus
+if #%AntiVirus==# (set AntiVirus= d:\avp3.5\avpdos32.exe)
+msg 0 Please input command line of AntiVirus main program (You can change default AntiVirus progam in openx.cfg):~~
+msg 936 请在此输入杀毒程序的命令行(请在openx.cfg设置默认的杀毒程序路径及参数):~~
+echo %_msg
+set Command=%AntiVirus %file
+eset Command
+call %Command
+iff exist "Kavdos32.rep" then
+  list "Kavdos32.rep"
+  del "Kavdos32.rep" >& nul
+elseiff %@wild[%AntiVirus, *]=1 then
+  pause
+endiff
+return
+
+:Chm-Decompile
+hh.exe -decompile %@name[%file] %file
+start "" "%@name[%file]
+return
+
+:notepad
+start notepad.exe %file
+return
+
+:scite
+call util scite %@lfn[%file]
+return
+
+:sc1
+call util sc1 %@lfn[%file]
+return
+
+
+:Upx-Dir
+cdd %file
+call util upx *.exe *.dll
+return
+
+:Un-Upx-Dir
+cdd %file
+call util upx -d *.exe *.dll
+return
+
+:Upx
+call util upx %file
+return
+
+:Un-Upx
+:Upx-Undo
+call util upx -d %file
+return
+
+:Make-Iso
+call util mkisofs --help
+set Command=mkisofs -J -duplicates-once -o %@name[%file].iso %file
+eset Command
+call %Command
+pause
+return
+
+:explorer
+start explorer %file
+return
+
+:Make-Shortcut
+wlnk.exe %@name[%file].lnk %file
+iff isdir "%MakeShortcutDir" then
+  move %@name[%file].lnk "%MakeShortcutDir"\
+endiff
+return
+
+:Dos-Cmd
+cdd %file
+start cmd.exe
+return
+
+:tex-dos
+cdd %file
+start 4nt.exe
+return
+
+:add-pkg
+call tex-pkg -i %file
+pause
+return
+
+:add-font
+call copyfnts %file
+pause Press any key to update map files to use Type1 fonts automatically...
+call UpdMap
+return
+
+:add-varpath
+set b=%@sfn[%@full[%file]]
+iff %@index[%VAR,%b]==-1 then
+  if %@iniwrite[%ETC\MTEX.CFG,MTeX,VAR,%VAR;%b//]==-1 echo Error writing MTEX.CFG!
+endiff
+return
+
+:tex-lfn
+echo Running: tex-lfn -L %file\*.*
+call tex-lfn -L %1\*.*
+pause
+return
+
+:load-ttf
+cdd %file
+for %z in (*.ttf;*.ttc;*.fon) do (
+  echo Loading fontfile %z ... 
+  wfont %z
+)
+return
+
+:strip-tex
+cdd %file
+msg 0 Please choose working mode of striptex?//Recursively/Non-recursively/Cancel ~~
+msg 936 请选择工作模式：//对所有子目录清除tex注释/仅对该目录清除tex注释/取消 ~~
+wask {160}%_msg
+switch %?
+case 1
+  call striptex -s *.tex;*.sty;*.cls;*.def;*.fd;*.fdd;*.sfd;*.clo;*.ml?;*.ist;*.fix
+case 2
+  call striptex *.tex;*.sty;*.cls;*.def;*.fd;*.fdd;*.sfd;*.clo;*.ml?;*.ist;*.fix
+endswitch
+return
+
+:dviview
+call dviview %_opt %file
+return
+
+:psview
+call psview %_opt %file
+return
+
+:pdfview
+call pdfview.btm %_opt %file
+return
+
+:tex-edit
+call tex-edit %_opt 1 %file
+return
+
+:mini_pad
+start mini_pad.exe %file
+return
+
+:batch
+call %file
+return
+
+:batch-cmd
+cmd.exe /c %file
+return
+
+:sketch
+call util sketch %file > %@name[%file].sk.tex
+start tview.exe %@name[%file].sk.tex
+return
+
+:asymptote
+call tex-cfg asy
+call util asy -vv %file
+iff exist %@path[%file]%@name[%file].eps then
+  call psview %@path[%file]%@name[%file].eps
+elseiff exist %@path[%file]%@name[%file].pdf then
+  call pdfview %@path[%file]%@name[%file].pdf
+endiff
+return
+
+:latex-ins
+call latex-ins %file
+del *.log
+return
+
+:latex-dtx
+call latex-dtx %file
+del *.log
+return
+
+:tex-info
+::set _sig=%@execstr[ffind /T"\input texinfo" %file]
+::set _txi=%@if[#%_sig==#,\input texinfo \input ,]
+pushd "%@path[%file]"
+pdftex %@name[%file].%@ext[%file]
+iff exist "%@name[%file].pdf" then
+  call pdfview.btm "%@path[%file]%@name[%file].pdf"
+else
+  msgbox OK Error in texi file %file?
+  list example.log
+endiff
+for %z in (aux cp fn ky log pg toc tp vr) do (del %@name[%file].%z >& nul)
+popd
+return
+
+:irfanview
+:iview
+set _iview=%@execstr[call %MTEX\bin\search.btm i_view32.exe %UTILS\iview;%UTILSLOCAL\iview]
+iff #%_iview==# then
+  start %file
+else
+  start %_iview %file
+endiff
+return
+
+
+:euphoria
+if #%Eudir==# set Eudir=d:\euphoria
+apath %Eudir\bin
+start %@ext[%file] %@if[#%_xcmd==#edit,ed.ex] %file
+return
+
+:list
+:list-txt
+list %file
+return
+
+
+:list-bin
+list /x %file
+return
+
+:edit-bin
+iff not #%@execstr[call %MTEX\bin\search.btm hexapad]==# then
+  start hexapad %file
+else
+  hex_ed %@sfn[%file]
+endiff
+return
+
+:un-zip
+unzip -t %file
+set ExtractTo=.
+eset ExtractTo
+mkdir /s %ExtractTo
+unzip  %file -d %ExtractTo\
+pause
+return
+
+:zip
+call util.btm zip
+set Options=-r "%@name[%file].zip" %file
+eset Options
+call util.btm zip %Options
+pause
+return
+
+
+:un-rar
+unrar t %file
+set ExtractTo=.
+eset ExtractTo
+mkdir /s %ExtractTo
+unrar x %file %ExtractTo\
+pause
+return
+
+:rar
+call util.btm rar
+set Options=a "%@name[%file].rar" %file
+eset Options
+call util.btm rar %Options
+pause
+return
+
+
+:un-cab
+cabarc L %file
+set ExtractTo=.
+eset ExtractTo
+mkdir /s %ExtractTo
+cabarc X %file %ExtractTo\
+pause
+return
+
+:cab
+cabarc
+set Options=-p -r N "%@name[%file].cab" %[file]%@if[isdir %file,\*.*]
+eset Options
+cabarc %Options
+pause
+return
+
+:un-7z
+call util.btm 7z t %file
+set ExtractTo=.
+eset ExtractTo
+mkdir /s %ExtractTo
+call util.btm 7z x %file %@if[#%ExtractTo==#.,,-o%ExtractTo]
+pause
+return
+
+:7z
+call util.btm 7z
+set Options=a "%@name[%file].7z" %file
+eset Options
+call util.btm 7z %Options
+pause
+return
+
+:7z-sfx
+call util.btm 7z
+set _d=%@iniread["%ETC\mtex.ini",Utils,7z]
+iff #%_d==# then
+  set _d=%@if[exist %MTEX\utils\7z\7z.sfx,%MTEX\utils,%UTILSLOCAL]\7z\
+endiff
+set Command=copy /b "%@path[%_d]7z.sfx"+%file "%@name[%file].exe"
+eset Command
+%Command
+pause
+return
+
+:mount-wim
+call util.btm imagex /INFO %file
+set MountTo=.
+eset MountTo
+mkdir /s %MountTo
+set Options=/MOUNT %file 1 %MountTo
+eset Options
+call util.btm imagex %Options
+pause
+return
+
+:unmount-wim
+call util.btm imagex /?
+set Options=/UNMOUNT %file
+eset Options
+call util.btm imagex %Options
+pause
+return
+
+:dir-wim
+call util.btm imagex /?
+set Options=/DIR %file 1
+eset Options
+call util.btm imagex %Options
+pause
+return
+
+
+:wim
+call util.btm imagex /?
+set Options=/CAPTURE %file "c:\my.wim" "My Windows Image"
+eset Options
+call util.btm imagex %Options
+pause
+return
+
+
+:java-jar
+call setjava
+%Java -jar %file
+pause
+return
+
+:qemu
+SET SDL_VIDEODRIVER=windib
+SET SDL_AUDIODRIVER=dsound
+SET QEMU_AUDIO_DRV=dsound
+SET QEMU_AUDIO_LOG_TO_MONITOR=0
+call util :qemu Kqemu-install.exe /S
+REM ~ net start kqemu
+call util qemu
+iff #%qemu==# then
+set qemu=%@if[exist %UTILS\qemu\qemu.exe,%UTILS,%UTILSLOCAL]\qemu\qemu.exe
+if not exist %qemu  set qemu=.
+endiff
+set opt=-L %@path[%qemu] -m 128 -soundhw all -localtime
+pushd %@path[%file]
+set f=%@name[%file].%@ext[%file]
+iff #%@ext[%f]==#iso then
+  set opt=%opt -boot d -cdrom %f
+elseiff %@filesize[%f,M] LT 3 then
+  set opt=%opt -boot a -fda %f
+else
+  set opt=%opt -boot c -hda %f
+endiff
+eset opt
+echo Running: call util qemu %opt
+call util qemu %opt
+popd
+iff exist "C:\Program Files\Kqemu\uninst.exe" then
+  start "" "C:\Program Files\Kqemu\uninst.exe" /S
+  keystack "Y"
+endiff
+return
+
+:install-inf
+rundll32 setupapi.dll,InstallHinfSection DefaultInstall 128 %file
+return
+
+:Gen-Makefile
+call genmakefile.btm %file
+return
+
+:Iconv
+call util.btm iconv -l
+set ICONV_OPT=-c -f GBK -t UTF-8 
+msg 0 Please edit commandline options of iconv. Options: [-c] [-s] [-f fromcode] [-t tocode]~~
+msg 936 请编辑iconv的命令行选项，可用的选项是：[-c] [-s] [-f 源编码] [-t 新编码]。默认设置从GBK编码转为UTF-8编码。~~
+querybox /E "ICONV Options" %_msg %%ICONV_OPT
+if %_?==2 (return)
+pause %f2
+::set f2="%@name[%f].iconv"
+call util.btm iconv %ICONV_OPT "%file" > "%f2"
+return
+
+:GS-convert
+set _e=.%@left[3,%ASK]
+if #%_e==#.jpe set _e=.jpg
+if #%_e==#.ps2 set _e=.ps
+GSX %ASK -dEPSCrop -dEPSFitPage -sOutputFile="%@name[%file]%_e" "%file"
+return
+
+:dvi2img
+set _e=.%@left[3,%ASK]
+if #%_e==#.jpe set _e=.jpg
+set res=600
+msg 0 Please input the conversion resolution (dpi):~~
+msg 936 请输入转换图片的基本分辨率（dpi）~~
+querybox /E %_msg %%res
+if %_?==2 (return)
+msg 0 Please add ?? before the extension if you want to convert multiple pages; or Click [OK] to convert only one page.~~
+msg 936 如果需要转换多页，请在下面的扩展名前输入??来表示页码，否则直接按回车。~~
+querybox /E %_msg %%_e
+if %_?==2 (return)
+call dvi2img -%ASK "%file"  %@name[%file]%_e  /r%res
+return
+
+:pstoedit
+set f2=%@name[%file].%ASK
+msg 0 Please input file name after conversion:~~
+msg 936 请指定转换后的文件名：~~
+querybox /E "PsToEdit" %_msg %%f2
+if %_?==2 (return)
+msg 0 Please input extra commandline options:~~
+msg 936 请输入命令行的其它参数~~
+querybox /E "PsToEdit" %_msg %%Options
+if %_?==2 (return)
+call pstoedit -f %ASK %Options "%file" "%f2"
+return
+
+
+:dviselect
+set pages=*
+msg 0 Please input the pages list [You can use . as delimiter]:~~
+msg 936  请输入选择的页码列表(可用.分隔各项)。例子：even,odd,2:5,:10,4:,*。~~
+querybox %_msg %%pages
+if %_?==2 (return)
+set f2=%@name[%file]-2.dvi
+msg 0 Please input file name to save to:~~
+msg 936  请输入保存的文件名：~~
+querybox %_msg %%f2
+if %_?==2 (return)
+call dviselect %pages "%file"  "%f2"
+return
+
+:psselect
+set pages=*
+msg 0 Please input the pages list [You can use , as delimiter]:~~
+msg 936  请输入选择的页码列表(可用,分隔各项)。如2-5，2-,-5。还可输入-e,-o,-r等选项分别表示偶数页，奇数页，逆序。~~
+querybox %_msg %%pages
+if %_?==2 (return)
+set f2=%@name[%file]-2.ps
+msg 0 Please input file name to save to:~~
+msg 936  请输入保存的文件名：~~
+querybox %_msg %%f2
+if %_?==2 (return)
+call psselect %pages "%file" "%f2"
+return
+
+:pdfselect
+set pages=*
+msg 0 Please input the pages list [You can use , as delimiter]:~~
+msg 936  请输入选择的页码列表(可用,分隔各项)：如2-5，2-,-5。~~
+querybox %_msg %%pages
+if %_?==2 (return)
+set f2=%@name[%file]-2.ps
+msg 0 Please input file name to save to:~~
+msg 936  请输入保存的文件名：~~
+querybox %_msg %%f2
+if %_?==2 (return)
+call pdfselect -pages="%pages" "%file" "%f2"
+return
+
+
+:dvimerge
+window restore
+set f2=_Merged_.dvi
+except (%file;%f2) select set Files= [*.dvi]
+call dvimerge -o "%f2" "%file" %Files
+return
+
+:psmerge
+window restore
+set f2=_Merged_.ps
+except (%file;%f2)  select set Files= [*.ps]
+call psmerge -o "%f2" "%file" %Files
+return
+
+:pdfmerge
+window restore
+set f2=_Merged_.pdf
+except (%file;%f2)  select set Files= [*.pdf]
+call pdfmerge -o "%f2" "%file" %Files
+return
+
+:dvinup
+set n=4
+set f2=%@name[%file]-%n.dvi
+call dvinup -%n "%file" "%f2"
+return
+
+:psnup
+set n=4
+msg 0 How many pages in per page? (1/2/4/6/8/16)~~
+msg 936  请输入每页包含的页数(1/2/4/6/8/16)：~~
+querybox %_msg %%n
+if %_?==2 (return)
+set f2=%@name[%file]-%n.ps
+call psnup -%n "%file" "%f2"
+return
+
+:pdfnup
+set n=2x2
+msg 0 Please input the layout of each page?~~
+msg 936  请输入每页包含的页面布局：~~
+querybox %_msg %%n
+if %_?==2 (return)
+set f2=%@name[%file]-%n.pdf
+call pdfnup -nup=%n "%file" "%f2"
+return
+
+:vdman
+pushd %@path[%file]
+call util.btm vdman
+activate "Virtual Drive Manager*"
+if %_?==2  return
+keystack /W10 13 "%@unquotes[%file]"
+popd
+inkey /W1 Now you can mount [%file] as a virtural drive :-) %%key
+return
+
+

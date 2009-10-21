@@ -1,0 +1,1 @@
+start rundll32.exe "%Systemroot%\System32\shimgvw.dll",ImageView_Fullscreen %&

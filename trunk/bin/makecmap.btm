@@ -1,0 +1,16 @@
+@echo off
+setlocal
+echo I am making *.cmap files for using package [ccmap]... 
+set d=%MTEX\FONTS\cmap
+if isdir %d  quit
+::mkdir %d>&nul
+iff not isdir %d  then
+  set d=%TMP\cmap
+  mkdir /s %d>&nul
+endiff
+
+pushd %d
+latex \def\cmapEnc{GB}\input{makecmap}
+latex \def\cmapEnc{GBK}\input{makecmap}
+del *.aux;*.dvi;*.log>&nul
+popd

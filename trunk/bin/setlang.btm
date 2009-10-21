@@ -1,0 +1,75 @@
+@echo off
+if #%1==# goto help
+iff %@numeric[1%1]==1 then 
+  set LANG=%1
+  gosub iniw LANG %1
+  shift
+  call mtex-env -clear
+endiff
+setlocal
+echo Current Language CodePage is [%LANG]! 
+gosub set_mtex_lang
+pushd
+iff #%1==#* then
+  for /a:d /h %z in (%UTILS\*) gosub set_util_lang "%z"
+  iff isdir "%UTILSLOCAL" then
+    for /a:d /h %z in (%UTILSLCOAL\*) gosub set_util_lang "%z"
+  endiff
+  gosub set_util_lang "%MTEX\winedt"
+else
+  for %z in (%&) do (gosub setu %z)
+endiff
+popd
+quit
+
+:help
+echo Usage1: %0 codepage [util1 util2 ...] 
+echo   ==) Configure MTeX and specified utils to use specified codepage
+echo Usage2: %0 codepage *  
+echo   ==) Configure MTeX and all utils to use specified codepage
+echo Note: Script file [xxx\_\L-*.btm] is used to configure util [xxx].
+quit
+
+:set_mtex_lang
+pushd %MTEX
+set lc=%@if[exist _%LANG.zip,%LANG,0]
+iff exist _%lc.zip then
+  echo Unzipping language pack [_%lc.zip] ...
+  unzip.exe -o _%lc.zip
+endiff
+popd
+return
+
+:iniw [n v]
+iff %@iniwrite["%ETC\MTEX.ini",MTeX,%n,%v]==-1 then 
+	echo Error writing MTEX.INI:%n=%v
+endiff
+return
+
+:setu [z]
+	iff isdir "%UTILS\%z" then 
+		gosub set_util_lang "%UTILS\%z"
+	elseiff isdir "%MTEX\%z" then 
+		gosub set_util_lang "%MTEX\%z"
+	elseiff isdir "%UTILSLOCAL\%z" then 
+		gosub set_util_lang "%UTILSLCOAL\%z"
+	endiff
+return
+
+:set_util_lang [u]
+if not isdir %u\_ (return)
+cdd %u
+
+echo Configuring util %u ...
+
+set lc=%@if[exist _%LANG.zip,%LANG,0]
+iff exist _%lc.zip then
+  echo --Unzipping language pack [_%lc.zip] ...
+  unzip.exe -o _%lc.zip
+endiff
+
+if not exist _\L-*.btm (return)
+set script=%@findfirst[_\L-*.btm]
+echo --Running script [%script] ...
+call %script
+return

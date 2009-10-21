@@ -1,0 +1,92 @@
+@echo off
+set _edit=%EDITOR
+if #%1==#/? gosub #help
+iff %@wild[#%1,#:*]==1 then
+  set Editor=%@instr[1,,%1]
+  shift
+endiff
+iff %@wild[#%1,--*]==1 then
+  shift
+endiff
+
+if #%Editor==#? .OR. #%Editor==# (gosub #choose)
+set _ed=%@name[%Editor]
+set Editor=%@execstr[call %MTEX\bin\search.btm %_ed.exe %UTILS\%_ed;%MTEX\%_ed;%PATH]
+if #%Editor==# set Editor=%[%Editor]
+if #%Editor==# set Editor=
+
+set _LN=
+set _CN=
+iff %@numeric[%1]==1 then 
+  set _LN=%@eval[%1]
+  shift
+endiff
+
+iff not #%_LN==# then
+iff %@numeric[%1]==1 then 
+  set _CN=%@eval[%1]
+  shift
+endiff
+endiff
+
+if #%_LN==# (set _LN=1)
+if #%_CN==# (set _CN=1)
+
+iff #%1==# then
+  set _fn=
+elseiff exist %1 then
+  set _fn=%@sfn[%1]
+  iff #%_ed==#sc1 .OR. #%_ed==#scite .OR. #%_ed==#sc1ide then
+    set _fn="%@lfn[%1]"
+  endiff
+else
+  set _fn=%1
+  iff #%@path[%1]==# then
+    set _fn="%[_CWDS]%1"
+  endiff
+endiff
+
+alias /r %MTEX\bin\tex-edit.cfg
+iff isalias %_ed then
+  %_ed %_fn %2&
+elseiff exist %MTEX\bin\util\ed\%_ed.btm then
+  call %MTEX\bin\util\ed\%_ed.btm %_LN %_fn %2&  
+elseiff exist %MTEX\bin\util\%_ed.btm then
+  call %MTEX\bin\util\%_ed.btm %_LN %_fn %2&  
+elseiff exist %Editor then
+  start "" /MAX %Editor %_fn %2&
+else
+  call util.btm %_ed %_fn %2&
+endiff
+set Editor=%_edit
+activate "*%_ed*" TOP >& nul
+iff %@index[%NO_TMAC,%_ed]==-1 then
+  start "" %MTEX\bin\TMac.exe %Editor% 
+endiff
+unset /q _ed _fn _LN _edit _t _w
+quit
+
+:#help
+set Editors=%@iniread[%ETC\utils.cfg,utils,Editors]
+iff #%Editors==# then
+  set Editors=%@iniread[%MTEX\_\utils.cfg,utils,Editors]
+endiff
+echo Usage: %0 [:editor] [line_no] files ==) Invoke editor to edit specified files.
+echo Note: You can specify line_no to locate the cursor. By default, line_no=1 and editor is determined automatically.
+echo Supported editors: %Editors
+return
+
+
+:#choose
+set Editors=%@iniread[%ETC\utils.cfg,utils,Editors]
+iff #%Editors==# then
+  set Editors=%@iniread[%MTEX\_\utils.cfg,utils,Editors]
+endiff
+msg 0 Please choose an editor:~~
+msg 936 «Î—°‘Ò±‡º≠π§æﬂ~~
+set Ask=%_msg//%Editors
+wask {80}%Ask
+if %? LE 0  (quit)
+set Editor=%@word["/",%?,%Ask] 
+set _edit=%Editor
+return

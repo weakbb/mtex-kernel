@@ -1,0 +1,309 @@
+@echo off
+if not #%2==#  goto start
+
+:usage
+echo Usage:
+echo %0 simsun.ttf song GB-Song UGBK ==)Install GBK Chinese font [simsun.ttf]
+echo     use in LaTeX:  \begin{CJK}{GBK}{song}......\end{CJK}
+echo %0 simsun.ttf song U-Song Unicode unisong ==)Install Unicode font [simsun.ttf]
+echo     use in LaTeX:  \begin{CJK}{UTF8}{song}......\end{CJK}
+echo %0 cyberbit.ttf cyberb U-cyberbit Unicode cyberb==) Install Unicode font [cyberbit.ttf]
+echo     use in LaTeX:  \begin{CJK}{UTF8}{cyberb}......\end{CJK}
+echo %0 * times ect tnr [timesbd;timesi;timesbi]==)Install fonts [times*.ttf]
+echo     use in TeX: \font\myfont=ect \myfont ......
+echo     use in LaTeX: \fontfamily{tnr}\selectfont ......
+echo Note:  TrueType fonts should be found in $TTFDIR. I will put .TFM files in %FONTS\tfm\cjk and .PFB files in %FONTS.
+quit
+
+
+:start
+setlocal
+set FONTS=%TMP\fonts
+::if %@cdrom[%MTEX]==0 .AND. %@removable[%MTEX]==0 (set FONTS=%MTEX\fonts)
+for %a in (enc pfb tfm) do (
+  mkdir /s %FONTS\%a\cjk >& nul
+  mkdir /s %FONTS\%a\ttf >& nul
+)
+for %a in (dvips dvipdfm pdftex) do (mkdir /s %FONTS\map\%a >& nul)
+
+set TTFONTS=%TTFDIR
+set TTFCFG=%ETC
+set TTF2PKINPUTS=%ETC!!;%MTEX\texinput\ttfcfg;%MTEX\texlocal\ttfcfg
+echo ======Installing font: %1 %2 %3	%4 %5 %6 %7 %8 %9
+if #%@left[1,%1]==#*   goto start_efont
+set f=%1
+set n=%2
+if not exist %1    set f=%TTFDIR\%1
+
+iff #%@ext[%f]==# then
+  iff exist "%f.ttc" .AND. not exist "%f.ttf" then
+    ttc2ttf.exe %f.ttc
+    move "%[f]0.ttf" "%f.ttf"
+    REM ~ breakttc %f.ttc
+    REM ~ if exist font00.ttf  move font00.ttf %@name[%f].ttf
+    REM ~ for %a in (font0[1-9].ttf) do move %a %@replace[font,%@name[%f]_,%a]
+  endiff
+  if exist "%f.ttf" (set f=%f.ttf)
+endiff
+msg 0 I cannot find font file [%f] for CJK family {%n}! Please install it by m-setup or copy it from other simplified Chinese windows.~~
+msg 936 没有找到对应CJK字体族{%n}的字体文件[%f]，请用m-setup下载或从其它中文windows系统拷贝该文件！~~
+iff not exist "%f" .AND. not #%@ext[%1]==#  then
+  msgbox OK %_msg 
+  quit
+endiff
+if not exist "%f" quit
+
+set PRE=gbk
+set SFD=UGBK
+set COD=C19
+set PID=3
+set EID=1
+set MAX=94
+set optX=-gbk -force UGBK
+iff not #%4==# then
+  iff #%4==#GB_EUC then
+    set COD=C10
+    set EID=3
+    set SFD=EUC
+    set MAX=33
+    set PRE=gb
+  elseiff #%4==#Bg5_Big5 then
+    set COD=C00
+    set EID=4
+    set SFD=Big5
+    set MAX=58
+    set PRE=bg5
+  elseiff #%@word["_",0,%4]==#X then
+    iff %@words["_",%4] LT 4 then
+      pause Error Encoding: %4 
+      quit
+    endiff
+    set SFD=%@word["_",1,%4]
+    set EID=%@word["_",2,%4]
+    set COD=%@word["_",3,%4]
+    if #%SFD==#Unicode set MAX=255
+  endiff
+  set optX=-pid %PID -eid %EID
+  iff #%4==#Unicode then
+    set COD=C70
+    set SFD=Unicode
+    set optX=
+  endiff
+endiff
+if #%SFD==#Unicode (set PRE=)
+set T=%5
+if #%T==#  set T=%[PRE]%2
+set opt= -a %optX -c -f %T %f%
+::default opt: -pid 3 -eid 1  -f %3
+
+
+
+iff #%_fnts_==# then
+  set _fnts_=maketfm ttf2pk_map makefd makeenc pdftex_ttf dvipdfm_ttf updmap_ttf
+endiff
+set z=
+for %z in (%_fnts_%) do (
+  echo Doing {%z} 
+  gosub %z%
+)
+quit
+
+:start_efont
+shift
+set fb=%@word[";",0,%4]
+set fi=%@word[";",0,%4]
+set fbi=%@word[";",2,%4]
+if #%fi==# set fi=%1i
+if #%fb==# set fb=%1bd
+if #%fbi==# set fbi=%1bi
+if not exist %TTFDIR\%fb.ttf (set fb=%1b)
+gosub efont_tfm>&nul
+gosub efont_ttf2pk_map>>%ETC%\ttfonts.map
+gosub efont_fd>&nul
+gosub efont_enc>&nul
+gosub efont_pdftex_ttf>>%FONTS\map\pdftex\%2.map
+gosub efont_dvipdfm_ttf>>%FONTS\map\dvipdfm\%2.map
+quit
+
+
+
+:efont_tfm
+if exist %FONTS\tfm\ttf\%2.tfm  return
+ttf2tfm %1 -q -T T1-WGL4.enc %2.tfm
+ttf2tfm %fi -q -T T1-WGL4.enc %2i.tfm
+ttf2tfm %fb -q -T T1-WGL4.enc %2b.tfm
+ttf2tfm %fbi -q -T T1-WGL4.enc %2bi.tfm
+ttf2tfm %1 -q -T T1-WGL4.enc -s .167 %2x.tfm
+ttf2tfm %fb -q -T T1-WGL4.enc -s .167 %2bx.tfm
+move %2*.tfm %FONTS\tfm\ttf
+return
+
+:efont_ttf2pk_map
+echo %2  %1.ttf Encoding=T1-WGL4.enc
+echo %2i  %fi.ttf Encoding=T1-WGL4.enc
+echo %2b  %fb.ttf Encoding=T1-WGL4.enc
+echo %2bi  %fbi.ttf Encoding=T1-WGL4.enc
+echo %2x  %1.ttf Slant=.167 Encoding=T1-WGL4.enc
+echo %2bx  %fb.ttf Slant=.167 Encoding=T1-WGL4.enc
+return
+
+:efont_fd
+if #%3==# return
+mkdir /s %FONTS\fonts\fd\ttf>&nul
+set fd=%FONTS\fonts\fd\ttf\t1%3.fd
+set sed_opt=-e "s/\$(FONTENC)/T1/g" -e "s/\$(FONTBASE)/%2/g" -e "s/\$(FONTFAMILY)/%3/g"
+sed %sed_opt %MTEX\_\ttf.fd > %fd%
+set fd=%ETC\ot1%3.fd
+set sed_opt=-e "s/\$(FONTENC)/T1/g" -e "s/\$(FONTBASE)/%2/g" -e "s/\$(FONTFAMILY)/%3/g"
+sed %sed_opt %MTEX\_\ttf.fd > %fd%
+return
+
+:efont_enc
+if exist %FONTS\enc\ttf\%2.enc return
+ttf2pfb -a %TTFDIR\%1.ttf>&nul
+move stdout.enc %FONTS\enc\ttf\%2.enc
+return
+
+:efont_pfb
+if exist %FONTS\pfb\ttf\%2.pfb return
+ttf2pfb -a %TTFDIR\%1.ttf|t1asm -b>%2.pfb
+move stdout.enc %FONTS\enc\ttf\%2.enc
+move %2.pfb %FONTS\pfb\ttf\
+move %2.afm %FONTS\pfb\ttf\
+return
+
+:efont_dvipdfm_ttf
+echo %2 default %1.ttf
+echo %2i default %fi.ttf
+echo %2b default %fb.ttf
+echo %2bi default %fbi.ttf
+echo %2x default %1.ttf -s .167
+echo %2bx default %fb.ttf -s .167
+return
+
+:efont_pdftex_ttf
+if exist %TTFDIR\%1.ttf    echo %2 `<`%2.enc `<`%1.ttf
+if exist %TTFDIR\%fi.ttf    echo %2i `<`%2.enc `<`%fi.ttf
+if exist %TTFDIR\%fb.ttf    echo %2b `<`%2.enc `<`%fb.ttf
+if exist %TTFDIR\%fbi.ttf    echo %2bi `<`%2.enc `<`%fbi.ttf
+if exist %TTFDIR\%1.ttf    echo %2x `<`%2.enc `<`%1.ttf
+if exist %TTFDIR\%fb.ttf    echo %2bx `<`%2.enc `<`%fb.ttf
+return
+
+:efont_pfb_type42
+if isdir %UTILS\ttf2t42  call ttf2t42 %TTFDIR\%1.ttf
+return
+
+:clear
+del %FONTS\tfm\cjk\%[T]*.tfm>&nul
+del %FONTS\enc\cjk\%[T]*.enc>&nul
+return
+
+
+:maketfm
+del *.tfm>&nul
+if exist %FONTS\tfm\cjk\%[T]*.tfm return
+echo Generating .TFM files ...
+set _c=-E %[EID] -P %[PID]
+if #%SFD=#Unicode (set _c=)
+@echo on
+ttf2tfm %1 %_c -q -w %[T]@%[SFD]@
+ttf2tfm %1 %_c -q -s 0.25 %[T]sl@%[SFD]@
+@echo off
+iff not exist *.tfm then
+  pause Error in creating .tfm files! Wrong encoding? 
+  quit
+endiff
+echo Moving %[T]*.tfm to [%FONTS\tfm\cjk] ...
+move *.tfm %FONTS\tfm\cjk\ >&nul
+echo Moving %[T]*.enc to [%FONTS\enc\cjk] ...
+move *.enc %FONTS\enc\cjk\ >&nul
+return
+
+:makefd
+echo Generating %[COD]%[n].fd ...
+mkdir /s %FONTS\fd\cjk >& nul
+set fd=%FONTS\fd\cjk\%[COD]%[n].fd
+set sed_opt=-e "s/\$(E)/%[COD]/g" -e "s/\$(FONTBASE)/%[T]/g" -e "s/\$(FONTFAMILY)/%[n]/g"
+sed %sed_opt %MTEX\_\cjk.fd > %fd%
+return
+
+:ttf2pk_map
+echo Configuring TTFONTS.MAP to let TTF2PK make .pk fonts automatically...
+if #%PID==#    set PID=3
+if #%EID==#    set EID=1
+gosub ttf2pk_map_fnt %[T]
+::if #%SFD==#UGBK  gosub ttf2pk_map_fnt gbk%2
+::if #%SFD==#UGBK  gosub ttf2pk_map_fnt gb%2
+::if #%SFD==#EUC  gosub ttf2pk_map_fnt gb%[T]
+::if #%SFD==#Big5  gosub ttf2pk_map_fnt bg5%[T]
+::if #%SFD==#Big5  gosub ttf2pk_map_fnt b5%[T]
+return
+
+:ttf2pk_map_fnt [z]
+iff #%SFD==#Unicode then
+  echo %[z]@%[SFD]@ %1 >>%ETC%\ttfonts.map
+  echo %[z]sl@%[SFD]@ %1 Slant=0.25 >>%ETC%\ttfonts.map
+  return
+endiff
+echo %[z]@%[SFD]@ %1 Pid=%[PID] Eid=%EID >>%ETC%\ttfonts.map
+echo %[z]sl@%[SFD]@ %1 Slant=0.25 Pid=%PID Eid=%EID >>%ETC%\ttfonts.map
+return
+
+:dvipdfm_ttf
+set _ENC=UniGB-UCS2-H
+if #%SFD==#EUC  set _ENC=GBK-EUC-H
+if #%SFD==#Big5  set _ENC=ETen-B5-H
+if #%SFD==#Unicode  set _ENC=unicode
+echo %[T]@%[SFD]@ %_ENC :0:%1>%FONTS\map\dvipdfm\%[T].map
+echo %[T]sl@%[SFD]@ %_ENC :0:%1 -s .25>>%FONTS\map\dvipdfm\%[T].map
+return
+
+:pdftex_ttf
+iff not #%@ext[%f]==#ttf then
+  echo Warning: PDFETEX can't support *.%@ext[%f]! 
+  return
+endiff
+echo Generating %[T].map [%T] ...  (ttf: pdftex)
+set fn=%@name[%f].%@ext[%f]
+mkdir /s %FONTS\map\pdftex\ >&nul
+echos>%FONTS\map\pdftex\%[T].map
+for %_j in (%FONTS\enc\cjk\%[T]??.enc) do (
+  set j=%@right[2,%@name[%_j]]
+  echo %[T]%j `<`%[T]%j.enc `<`%@name[%f].%@ext[%f]  >>%FONTS\map\pdftex\%[T].map
+  echo %[T]sl%j `<`%[T]%j.enc `<`%@name[%f].%@ext[%f]  >>%FONTS\map\pdftex\%[T].map
+)
+return
+
+
+:makeenc
+return
+
+
+:makepfb
+if #%3==#  return
+if exist %FONTS\pfb\cjk\%[T]*.pfb return
+echo Generating .PFB files ...  (Please wait ...)
+set g=-GBK
+if #%SFD==#Big5  set g=-BIG5
+do b = 1 to %MAX
+   set c=%@if[%MAX GE 100,%@convert[10,16,%b],%b]
+   if %@len[%c]==1 (set a=0%c) else (set a=%c)
+   echo [%1==)%[T]%a.pfb,%[T]%a.enc]
+   ::echo Running: ttf2pfb -a %g %opt -plane %b% -o %TMP\%[T]%a.ps
+   @echo on
+   ttf2pfb -a %g %opt -plane %b% -o stdout.ps
+   t1asm -b stdout.ps %FONTS\pfb\cjk\%[T]%a.pfb>&nul
+   @echo off
+   move stdout.enc %FONTS\enc\cjk\%[T]%a.enc>&nul
+   del stdout.ps>nul
+enddo
+return
+
+:updmap_ttf
+call updmap -ttf -pdf
+return
+
+:updmap_pfb
+call updmap -pfb -pk
+return

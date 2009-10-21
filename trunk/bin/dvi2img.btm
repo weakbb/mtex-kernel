@@ -1,0 +1,127 @@
+@echo off
+setlocal
+if #%1==# goto usage
+set _e=bmp
+iff %@wild[%1,-*]==1 then
+  set _m=%@instr[1,,%1]
+  if %1==-dvipng (set _e=png)
+  if %@wild[%1,-png*]==1 (set _e=png)
+  if %@wild[%1,-jpeg*]==1 (set _e=jpg)
+  if %@wild[%1,-pcx*]==1 (set _e=pcx)
+  if %@wild[%1,-bmp*]==1 (set _e=bmp)
+  if %@wild[%1,-tiff*]==1 (set _e=tif)
+  if %@wild[%1,-eps*]==1 (set _e=eps)
+  if %@wild[%1,-pdf*]==1 (set _e=pdf)
+  shift
+else
+  set _m=dvi2bmp
+endiff
+
+set in=%1
+if #%@ext[%in]==#  set in=%@name[%in].dvi
+iff not exist %in then 
+  echo Error: Can't found [%in]!!!
+  goto usage
+endiff
+
+set out=%2
+if #%out==#  set out=%@name[%in].%_e
+if #%@ext[%out]==#  set out=%out.%_e
+set _f=%@name[%out].%_e
+set e=%@lower[%@ext[%out]]
+
+set opt=
+set res=600
+for %a in (%3&) do (
+  if %@wild[%a,/r*]==1 (set res=%@instr[2,,%a]) else (set opt=%opt %a)
+)
+
+gosub %_m
+
+iff not #%e==#%_e  then
+  for %a in (%_f) call gconvert.btm -o .%e %a
+endiff
+quit
+
+:bmpmono
+:bmpgray
+:bmpsep1
+:bmpsep8
+:bmp16
+:bmp256
+:bmp16m
+:bmp32m
+:jpeg
+:jpeggray
+:jpegcmyk
+:pngmono
+:pnggray
+:pngalpha
+:png16
+:png256
+:png16m
+:pcxmono
+:pcxgray
+:pcx16
+:pcx256
+:pcx24b
+:tiffgray
+:tifflzw
+:tiffpack
+:tiffsep
+:tiffcrle
+:tiffg3
+:tiffg32d
+:tiffg4
+:tiff12nc
+:tiff24nc
+:tiff32nc
+:epswrite
+:pdfwrite
+set f=%@replace[????,#04d,%_f]
+set f=%@replace[???,#03d,%f]
+set f=%@replace[??,#02d,%f]
+set f=%@replace[?,#01d,%f]
+set f=%@replace[#,`%%`,%f]
+set r=%@eval[0.87*%res]
+dvips -E -o __tmp__.ps  %in
+GSX %_m -sOutputFile="%f" -dEPSCrop -r%r  %opt  "__tmp__.ps"
+del __tmp__.ps >& nul
+return
+
+:dvi2bmp
+:dvibmp
+:dvidot
+set _tmp=__tmp__.cpy
+dvicopy %in %_tmp
+if not exist %_tmp (copy %in %_tmp)
+call makepk.btm %_tmp %res
+echo Running: dvidot bmpwin @bmpwin %_tmp %_f %opt
+call setemtex
+dvidot bmpwin @bmpwin %_tmp  %_f /r%res %opt
+del dvidot.dlg;%_tmp
+return
+
+:dvi2png
+:dvipng
+apath %UTILS\dvipng
+set f=%@replace[????,#04d,%_f]
+set f=%@replace[???,#03d,%f]
+set f=%@replace[??,#02d,%f]
+set f=%@replace[?,#01d,%f]
+set f=%@replace[#,`%%`,%f]
+dvipng.exe -o %f %opt %in 
+return
+
+:usage
+echo Usage1: %0 dvifile outfile  [/r###] [options]  ==) Convert dvi file to graphics file(s) by dvidot.
+echo Usage2: %0 -dvipng dvifile outfile  [/r###] [options]  ==) Convert dvi file to graphics file(s) by dvipng.
+echo Usage3: %0 -fmt dvifile outfile  [/r###] [options]  ==) Convert dvi file to graphics file(s) by dvips+GS.
+echo   [fmt] can be any image device supported by GS: bmpmono,bmp16,bmp256,jpeg,pcx256,... 
+echo Note: outfile can contain ?? to indicate page numbers. /r### specifies base resolution (Default=600).
+echo Usage3 is usually faster and powerful than Usages1-2. Usages1,3 can crop images automatically.
+echo Options for Usage1: 
+echo   /b =) Specify begin page. (Default=/b1)
+echo   /e =) Specify end page. (Default=last page)
+echo Tips: outfile can contain "?" or "??" to convert all pages.
+quit

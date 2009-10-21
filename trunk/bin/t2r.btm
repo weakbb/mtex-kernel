@@ -1,0 +1,33 @@
+@echo off
+setlocal
+if #%1==# (goto usage)
+if not exist %1 (goto usage)
+set _out=%2
+if #%2==# (set _out=%@name[%1].rtf)
+pushd %@path[%1]
+gosub rtf-head > %_out
+gosub rtf-body >> %_out
+gosub rtf-end >> %_out
+popd
+quit
+
+:rtf-head
+text
+{\rtf1\ansi\ansicpg936\deff0\deflang1033\deflangfe2052{\fonttbl{\f0\fmodern\fprq6\fcharset134 \'cb\'ce\'cc\'e5;}}
+{\*\generator MTeX t2r;}\viewkind4\uc1\pard\lang2052\f0\fs20
+endtext
+ return
+ 
+:rtf-end
+text
+}
+endtext
+return
+
+:rtf-body
+sed -f "%MTEX\bin\t2r.sed" %1
+return
+
+:usage
+echo Usage: %0 txtfile [rtffile] ==) Convert txtfile to rtffile
+quit

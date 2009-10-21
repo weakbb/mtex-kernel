@@ -1,0 +1,10 @@
+!{Title=Please select font(s) to install,label=z,@=$(TTF_CFG),w=360,select=all};
+/*{label=fd,w=170,checked}Make fd file;
+*{label=ttf,w=170,checked}Update ttfonts.map;
+/*{label=dvi,w=170,checked}Update dvipdfm.map;
+*{label=pdf,w=170,checked}Update pdftex.map;
+/*{label=tfm,w=170,checked}Make tfm files;
+*{label=enc,w=170,checked}Make enc files;
+/*{label=pfb,w=300}Make pfb files (usually nnecessary);
+/{label=ok}OK;{label=cancel}Cancel;
+*{w=180,label=x}Reset fonts config first;

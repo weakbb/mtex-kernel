@@ -1,0 +1,4 @@
+This tool is used to create the shortcuts. [mhb & qhs] v0.35
+Usage£ºWLnk lnkfile exefile [args workdir iconfile icon_no]
+You can specify $SendTo, $Desktop, $Startup, $Fonts, $Programs in the lnkfile.
+

@@ -1,0 +1,100 @@
+@echo off
+setlocal
+set _dbg=
+iff #%1==#-d then
+  shift 
+  set _dbg=pause
+endiff
+if #%1==# goto usage
+iff not exist %1 then
+  echo ***Error: Can't find file [%1]!*** 
+  goto usage
+endiff
+set _f=%@sfn[%1]
+set _tmp=__tmp__
+gosub ltx-head
+gosub ltx-tail
+gosub ltx-figs
+gosub clean
+quit
+
+:usage
+echo Usage: pdffrag [-d] file.tex ==) Convert eps figures in file.tex to PSFRAGGED *.pdf! 
+echo   Option "-d" is only for debugging purpose. 
+echo Purpose: By this tool you can use pdflatex with package {psfrag} directly!
+echo Note: 
+echo   \psfrag commands must be inside {figure} environment! 
+echo   \includegraphics command must use filename without ".EPS" extension!
+echo   Each {figure} can contain multiple \includegraphics commands.
+quit 
+
+:ltx-head
+sed -n -e "1,/\\begin{document}/p" %_f > %_tmp.beg
+echo \pagestyle{empty}\renewcommand{\caption}[1]{} >>%_tmp.beg
+return
+
+:ltx-tail
+echo \end{document} > %_tmp.end
+return
+
+:ltx-figs
+echos>%_tmp.fig
+ffind /K /M /V /L /T"\begin{figure" %_f  > %_tmp.1
+ffind /K /M /V /L /T"\end{figure" %_f > %_tmp.2
+set figs=%@lines[%_tmp.1]
+
+do i = 0 to %@eval[%figs]
+set _x1=%@line[%_tmp.1,%i]
+set _x2=%@line[%_tmp.2,%i]
+set  _n1=%@word["[]",0,%_x1]
+set  _n2=%@word["[]",0,%_x2]
+echo Found: %_x1,%_x2
+%_dbg
+iff %_n1 LT %_n2 then
+  gosub cut %_n1 %_n2 %_f 
+  gosub proc_fig
+endiff
+enddo
+return
+
+:cut [i1 i2 f]
+echo sed -n -e "%[i1],%[i2]p" %f
+sed -n -e "%[i1],%[i2]p" %f > %_tmp.fig
+%_dbg
+return
+
+:proc_fig
+set _fn=
+ffind  /V /K /M /T"includegraphics" %_tmp.fig>%_tmp.4
+ffind  /V /K /M /T"\psfrag" %_tmp.fig>%_tmp.psf
+do _x in @%_tmp.4
+  if #%_x==#   iterate
+  set _y=%@trim[%_x]
+  set _fn=%@word["{}",1,%_x]
+  echo Processing: %_y ==) %_fn
+  echo \begin{figure}\input %_tmp.psf %_y\end{figure} >%_tmp.fig
+  %_dbg
+  gosub ltx2ps 
+enddo
+return
+
+:ltx2ps
+if #%_fn==# return
+set _out=%@name[%_fn].pdf
+iff exist %_out then
+  echo File [%_out] has existed! There seems no need to re-generate it. 
+  if #%_dbg==#  return
+  echo Please confirm whether to re-generate %_out. Choose YES to do so. 
+  del /P %_out
+endiff
+call latex -int=nonstopmode \input{%_tmp.beg}\input{%_tmp.fig}\input{%_tmp.end}
+if exist %_tmp.dvi call dvips -E %_tmp.dvi
+if exist %_tmp.ps call GSX epswrite -dSAFER -dDEVICEWIDTH#250000 -dDEVICEHEIGHT#250000 -sOutputFile#%_tmp.eps %_tmp.ps 
+if exist %_tmp.eps call gconvert -- %_out .pdf %_tmp.eps
+%_dbg
+return
+
+:clean
+::list %_tmp.*
+del %_tmp.*
+return

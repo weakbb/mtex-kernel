@@ -1,0 +1,180 @@
+@echo off
+if %_pipe!=0 (quit)
+if %_shell!=0 (quit)
+set MTEX=%@sfn[%@path[%0]..]
+if %@numeric[1%LANG]==1 (set LANG=%_CODEPAGE)
+path %MTEX\bin;%MTEX\web2c;%MTEX\bin\util;%MTEX\gs\bin;%PATH
+set PATHEXT=.btm;.bat;.exe;.com;.pif;.jar
+
+pushd
+
+
+iff %@cdrom[%MTEX]==1 then
+  set ETC=c:\_tmp\etc
+elseiff isdir %MTEX\etc then
+  set ETC=%MTEX\etc
+else
+  set ETC=%@left[2,%MTEX]\_tmp\etc
+endiff
+set /r "%MTEX\mtex-etc.ini" >& nul
+
+set TEXMFCNF=%MTEX\bin
+set UTILS=%MTEX\utils
+alias /r "%MTEX\bin\alias.cfg"
+
+iff exist "%MTEX\mtex.env" .AND. %@cdrom[%MTEX]==0 then
+  set /r "%MTEX\mtex.env"
+elseiff exist "c:\mtex.env" then
+  set /r "c:\mtex.env"
+else
+  gosub load_env
+  unset /q _i _a _n _etc
+  call "%MTEX\bin\mtex-env.btm"	
+endiff
+
+iff not isdir "%ETC" then
+	gosub check_etc
+	msg 0 Are you a new user? Please configure MTeX to make it work well.//OK/Cancel~~
+	msg 936 第一次使用MTeX？请进行配置以保证它能正常工作。//确定/取消~~
+	set  _i=%@exec[%MTEX\bin\wask.exe {180}%_msg]
+	if %_i==1 (call "%MTEX\bin\mtexcfg.btm" -config)
+	goto end
+endiff
+
+iff exist "%ETC\mtex.ini" then
+  set /r "%ETC\mtex.ini"
+endiff
+
+iff not #%LANG==#0 then
+  chcp %LANG >& nul
+endiff
+
+iff %_transient==0 then
+  gosub prompt
+  iff  %_4ver GE 9.02 .AND. exist "%MTEX\bin\lua4nt.dll" then
+    plugin /L "%MTEX\bin\lua4nt.dll" 
+  endiff
+else
+  unalias /Q UNKNOWN_CMD
+endiff
+
+for %_a in (%UPATH) do gosub add_path
+
+
+:end
+popd
+unset /q _i _a _n _etc _d _path
+*quit
+
+
+:load_env
+set /r "%MTEX\_\mtex.cfg"
+set COMSPEC=%MTEX\bin\4nt.exe
+set APATH=
+::set APATH=%MTEX\bin;%MTEX\web2c
+::for /a:d /h %_a in (%MTEX\bin\util\*) do (set APATH=%APATH;%_a)
+
+::if not isdir "%ETC" set ETC=
+if #%ETC==# (gosub check_etc)
+if isdir "%ETC"  set ETC=%@sfn[%ETC]
+
+if exist "%ETC\mtex.ini" (set /r "%ETC\mtex.ini")
+if exist "%ETC\texmf.cnf" (set TEXMFCNF=%ETC)
+if exist "%ETC\c-miktex.sav"  (set /r "%ETC\c-miktex.sav")
+
+if #%TMP==# (set TMP=%@left[2,%MTEX]\_tmp)
+::if #%TMP==# (set TMP=%@sfn[%TEMP])
+if %@len[%TMP] LT 4  (set TMP=%ETC)
+if #%WINDIR==#   (set WINDIR=%@sfn[%_WINDIR])
+if #%TTFDIR==#  (set TTFDIR=%_WINDIR\fonts)
+if not isdir "%TTFDIR"  (set TTFDIR=%_WINDIR\fonts)
+iff #%PKDIR==#  then
+  set PKDIR=%TMP\pk
+  if not isdir "%PKDIR" (mkdir /s "%PKDIR")
+endiff
+if isdir "%MTEX\gs"  (set GSDIR=%MTEX\gs)
+
+if isdir "%GSDIR%\bin"  (set APATH=%APATH;%GSDIR%\bin)
+set GS_LIB=.;%GSDIR%;%MTEX\fonts;%TMP\fonts;%TTFDIR
+if not #%TTFDIR==%_WINDIR\fonts (set GS_LIB=%GS_LIB;%_WINDIR\fonts)
+for /a:d /h %_a in (%UTILS\dvips\*.*) do (set GS_LIB=%GS_LIB;%_a)
+for %_a in ("%GSDIR%\Resource" "%GSDIR%\fonts" "%GSDIR%\lib" "%UTILS\tools") do (
+  if isdir %_a (set GS_LIB=%GS_LIB;%@sfn[%_a])
+)
+
+
+set RSXOPT=-Re0
+set CCHZPATH=%MTEX\fonts\HZFONTS
+set CCPKPATH=%PKDIR%\DPI$d
+set TEXTFM=.;%MTEX\fonts\tfm!!
+
+::for %_a in (%UPATH) do gosub add_upath
+
+return
+
+:add_path
+set _d=
+iff isdir "%_a" then
+	set _d=%@sfn[%_a]
+elseiff isdir "%UTILS\%_a" then
+	set _d=%UTILS\%_a
+elseiff isdir "%MTEX\%_a" then
+	set _d=%MTEX\%_a
+elseiff isdir "%UTILSLOCAL" .AND. isdir "%UTILSLOCAL\%_a" then
+	set _d=%UTILSLOCAL\%_a
+endiff
+iff not #%_d==# then
+  PATH %PATH;%_d
+endiff
+return
+
+
+:add_upath
+iff isdir "%_a" then
+	set APATH=%APATH;%_a
+elseiff isdir "%UTILS\%_a" then
+	set APATH=%APATH;%UTILS\%_a
+elseiff isdir "%MTEX\%_a" then
+	set APATH=%APATH;%MTEX\%_a
+elseiff isdir "%UTILSLOCAL" .AND. isdir "%UTILSLOCAL\%_a" then
+	set APATH=%APATH;%UTILSLOCAL\%_a
+endiff
+return
+
+:prompt
+color bri yel on bla
+cls /c
+title TEX-DOS
+iff exist "%MTEX\release" then
+	type "%MTEX\release"
+endiff
+echo MTEX=%MTEX. Editor=%Editor. ETC=%ETC. LANG=%LANG.
+color bri red on bla
+iff exist "%MTEX\bin\4start.%LANG" then
+	sed -e "" "%MTEX\bin\4start.%LANG"
+elseiff exist "%MTEX\bin\4start.0" then
+	sed -e "" "%MTEX\bin\4start.0"
+endiff
+color bri yel on bla
+REM ~ iff not exist "%USERPROFILE\SendTo\ TeX*.lnk" then
+  REM ~ call tex-lnk.btm -SendTo
+REM ~ endiff
+alias UNKNOWN_CMD=call %MTEX\bin\unknown_cmd.btm
+return
+
+:check_etc
+iff isdir %MTEX\etc then
+	set ETC=%MTEX\etc
+	return
+elseiff exist %_windir\mtex-etc.ini then
+	set /r %_windir\mtex-etc.ini
+	if isdir "%ETC" (return)
+elseiff exist %windir\mtex-etc.ini then
+	set /r %windir\mtex-etc.ini
+	if isdir "%ETC" (return)
+elseiff exist %@sfn[%APPDATA]\mtex-etc.ini then
+	set /r %@sfn[%APPDATA]\mtex-etc.ini
+	if isdir "%ETC" (return)
+endiff
+set ETC=%@left[2,%MTEX]\_tmp\etc
+return

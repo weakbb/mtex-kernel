@@ -1,0 +1,36 @@
+BibX --- Reference Extraction Tool v0.55
+Welcome to use, this is a freeware!
+Copyright 2004--2008 Hongbin Ma.
+All rights reserved.
+If you have any question or advice, please join in the MTeX-suite forum.
+BibX --- Reference Extraction Tool [mhb]
+Please select the text corresponding to field [
+] !
+Number of unmatched fields: 
+Do you want to format the author field and make a proper label from author+year?
+You are in the mode of MANUALLY MARKING. Have you marked all bib fields? If you have marked all the bib fields, and have assigned proper bib source and bib type in the dropdown boxes, you can select [YES] to generate bib item automatically and add this format to the settings.
+Do you want to add the following format to the configuration file?
+Save Settings
+Edit Settings
+Please click [...] or input a bib file name!
+Do you want to append the following bib item to file
+Arial,13
+Extract Bib Item
+Paste Reference
+Choose Sendto >>
+Simple Help
+Manually Mark >>
+Send Bib Item
+Append to File
+Please select a file:
+Bib file (*.bib)|*.bib
+Put mouse cursor above any button and you will get some hints in this status bar.
+Click this button to extract bib item automatically from the text in the above box.
+Click this button to manually mark selection in the above box as a bib field and reclick it to finish marking.
+Click this button to let you edit configuration file bibx.ini directly and apply changes.
+Click this button to paste the text in clipboard to the above box.
+Click this button to copy the text in the below box to the clipboard.
+Click this button to show you simple help for using this software.
+Click this button to let you choose a text editor window.
+Click this button to append the generated bib item to the bib file directly.
+Click this button to let you choose a bib file for later appending.

@@ -1,0 +1,23 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set n=1
+iff %@wild[%1,-[1-9]]==1 then
+  set n=%@abs[%1] 
+  shift
+endiff
+iff #%1==#-Z then 
+  shift
+  set opt=-Z -o "%@name[%1].pdf"
+else 
+  set opt=-o "%@name[%1].ps"
+  del "%@name[%1].ps"
+endiff
+for /L %a in (1,1,%n) do call util lout %opt %2& %1
+if exist "%@name[%1].ps" (call ps2pdf  "%@name[%1].ps")
+quit
+
+:usage
+echo Usage: %0 [-passes] xxx.lt [options] ==) lout xxx.lt to xxx.pdf 
+echo Note: passes=1 (default), 2, ..., 9 
+quit

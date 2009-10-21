@@ -1,0 +1,1 @@
+@util :npp notepad++ -n%1 %2&

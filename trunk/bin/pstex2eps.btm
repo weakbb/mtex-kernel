@@ -1,0 +1,109 @@
+@echo off
+setlocal
+set _prog=%0
+set _view=
+set _pdf=
+set _jpg=
+set _packages=
+set _preamble=
+do while %@wild[%1,-*]==1
+  switch %1
+  case -debug
+    set _debug=1
+  case -view
+    set _view=1
+  case -pdf
+    set _pdf=1
+  case -jpg
+    set _jpg=1
+  case -preamble
+    set _preamble=%2
+    shift
+  case -usepackage
+    set _packages=%2
+    shift
+  endswitch
+  shift
+enddo
+
+if #%1==# goto usage
+iff #%@ext[%1]==#  then 
+  set z=%@name[%1].pstex_t
+else
+  set z=%&
+endiff
+set _=
+for %x in (%z) gosub proc %x
+del %@name[%_tmp].log;%@name[%_tmp].aux
+quit
+
+:proc [x]
+set _tmp=_pst2eps_.tex
+set _out=%@name[%x]-export.eps
+gosub make_tex %@name[%x].pstex_t >%_tmp
+call latex %_tmp
+if not #%_debug==#1 del %_tmp
+iff exist "%@name[%_tmp].dvi" then
+dvips -E -o %_out %@name[%_tmp].dvi
+if #%_pdf==#1 call ps2pdf %_out %@name[%_out].pdf -dEPSCrop -dEPSFitPage
+if #%_jpg==#1 GSX jpeg -sOutputFile=%@name[%_out].jpg -dEPSCrop -dEPSFitPage %_out
+del "%@name[%_tmp].dvi"
+endiff
+iff #%_view==#1 then
+iff exist "%@name[%_out].eps" .AND. %_pdf#%_jpg==#  then 
+	call psview "%@name[%_out].eps"
+endiff
+iff exist "%@name[%_out].pdf" .AND. #%_pdf==#1 then 
+	call pdfview "%@name[%_out].pdf"
+endiff
+iff exist "%@name[%_out].jpg" .AND. #%_jpg==#1 then
+	call iview "%@name[%_out].jpg"
+endiff
+endiff
+return
+
+:make_tex [f]
+echo \documentclass{article}
+iff not #%_packages==# then 
+  echo \usepackage{%_packages}
+endiff
+
+text
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{times,mathptmx}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{calc}
+\usepackage{bm}
+\def\Font#1#2{{\font\myfont=#1\myfont#2}}
+
+%\usepackage{pstricks}
+\usepackage{epic,bez123}
+%\usepackage{floatflt}
+%\usepackage{wrapfig}
+
+\def\caption#1{}
+\def\picscale{1}
+
+endtext
+
+echo \begin{document}
+echo \pagestyle{empty}
+echo \input %f
+echo \end{document};
+return
+
+
+:usage
+echo Usage1: %_prog [-view] pstex_file ==) Convert pstex_file to eps file (containing latex eqns). 
+echo Usage2: %_prog -pdf [-view] pstex_file ==) Convert pstex_file to pdf file (containing latex eqns). 
+echo Usage3: %_prog -jpg [-view] pstex_file ==) Convert pstex_file to jpg file (containing latex eqns). 
+
+echo Note: pstex_file *.pstex will be converted to *-export.eps! This can avoid overwritting *.eps.
+echo Options: -view ==) Preview each eps/pdf file.
+echo             -debug ==) Preserve generated tex file.
+echo             -usepackage xx,yy,zz ==) Add command \usepackage{xx,yy,zz} in the preamble
+echo             -preamble \command{args} ==) Add command \command{args} in the preamble
+quit

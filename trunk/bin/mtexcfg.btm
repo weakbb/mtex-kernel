@@ -1,0 +1,230 @@
+@echo off
+setlocal
+call mtex-env -clear
+pushd "%TEMP"
+:start
+if #%ETC==# (goto end)
+if #%TMP==# (set TMP=%@left[2,%MTEX]\_tmp)
+::if #%TMP==# (set TMP=%@sfn[%TEMP])
+if %@len[%TMP] LT 4  (set TMP=%ETC)
+if #%WINDIR==#   (set WINDIR=%_WINDIR)
+if #%TTFDIR==#  (set TTFDIR=%_WINDIR\fonts)
+iff "%MSETUP"=="" then
+  set MSETUP=%_TMP;%@left[2,%MTEX]\m-setup
+endiff
+if not isdir "%TTFDIR"  (set TTFDIR=%_WINDIR\fonts)
+if not isdir "%UTILSLOCAL"  (set UTILSLOCAL=)
+if not isdir "%DOCSLOCAL"  (set DOCSLOCAL=)
+if not isdir "%PKDIR" (set PKDIR=%TMP\pk)
+if isdir "%MTEX\gs"  (set GSDIR=%MTEX\gs)
+if not exist "%Java"  (call setjava.btm -quiet)
+
+set /r "%MTEX\_\utils.cfg"
+if exist "%ETC\utils.cfg"  set /r "%ETC\utils.cfg"
+set Editors=%@replace[/,`,`,%Editors]
+set DviViewers=%@replace[/,`,`,%DviViewers]
+set PsViewers=%@replace[/,`,`,%PsViewers]
+set PdfViewers=%@replace[/,`,`,%PdfViewers]
+set SpellCheckers=%@replace[/,`,`,%SpellCheckers]
+set PicUtils=%@replace[/,`,`,%PicUtils]
+set LANGCODE=[Current:%LANG]
+if #%LC_SET=# (set LC_SET=*)
+
+del wbox.lst
+set _wb=%MTEX\bin\mtexcfg.%@if[exist %MTEX\bin\mtexcfg.%LANG,%LANG,0]
+wbox %_wb
+if not exist wbox.lst  goto end
+if exist wbox.lst  (set /r wbox.lst)
+del wbox.lst>&nul
+
+iff not #%_ETC==# then
+  if not #%@right[4,%_ETC]==#\etc (set _ETC=%_ETC\etc)
+  mkdir /s "%_ETC" >& nul
+endiff
+
+iff not isdir "%_ETC" then 
+  set _ETC=%@left[2,%MTEX]\_tmp\etc
+  msg 0 ETC folder cannot be empty or read-only! Please use [%_ETC] if you are not sure ... Click OK to go back ...~~
+  msg 936 配置文件夹不能为空而且必须可以写文件！如果不能确定，建议使用默认设置[%_ETC]！点击[确定]返回.~~
+  msgbox OKCANCEL %_msg
+  if %_?==10 (goto start) else (goto end)
+endiff
+
+set ETC=%@sfn[%_ETC]
+iff #%ETC==#%MTEX\etc then
+  gosub delete-etc
+elseiff #%ETC==#%@if[%@cdrom[%MTEX]==1,c:,%@left[2,%MTEX]]\_tmp\etc then
+  gosub delete-etc
+else
+  gosub save-etc
+endiff
+
+if #%cancle==#1 goto end
+if #%default==#1 gosub default
+if #%man==#1 gosub man
+if #%edit_utils==#1 gosub edit_utils
+if #%edit_openx==#1 gosub edit_openx
+if #%ok==#1  gosub ok
+iff #%1==#-config then
+  call %MTEX\bin\tex-cfg.btm 
+endiff
+:end
+endlocal
+popd
+quit
+
+:delete-etc
+del /z "%MTeX\mtex-etc.ini" >& nul
+del /z "%_windir\mtex-etc.ini" >& nul
+del /z "%windir\mtex-etc.ini" >& nul
+del /z "%@sfn[%APPDATA]\mtex-etc.ini" >& nul
+return
+
+:save-etc
+echo ETC=%ETC>%MTeX\mtex-etc.ini
+if exist "%MTeX\mtex-etc.ini" (return)
+return
+
+:default
+echo Deleting MTeX config files ...
+del "%ETC"\mtex.ini;*.cfg
+REM ~ echo Resetting files [%ETC\*.cfg] ... 
+REM ~ copy /[!mtex.cfg] "%MTEX\_\*.cfg" "%ETC"\
+return
+
+:man
+iff exist %ETC\mtex.ini then 
+  start Mini_pad %ETC\mtex.ini
+else 
+  start Mini_pad %MTEX\_\mtex.cfg
+endiff
+return
+
+:edit_utils
+iff not exist %ETC\utils.cfg then 
+  REM ~ copy %MTEX\_\utils.cfg %ETC\
+  echo :Please edit this file like $MTEX\_\utils.cfg!>%ETC\utils.cfg
+endiff
+start tview.exe "%MTEX\_\utils.cfg"
+start Mini_pad "%ETC\utils.cfg"
+return
+
+:edit_openx
+iff not exist %ETC\openx.cfg then 
+  REM ~ copy %MTEX\_\openx.cfg %ETC\
+  echo :Please edit this file like $MTEX\_\openx.cfg!>%ETC\openx.cfg
+endiff
+start tview.exe "%MTEX\_\openx.cfg"
+start Mini_pad "%ETC\openx.cfg"
+return
+
+:ok
+cdd %MTEX\bin
+iff "%lc"="#Auto" then
+  set lc=%_CODEPAGE
+  iff %@iniwrite[%ETC\MTEX.ini,MTeX,LANG,%lc]==0 then 
+    echo ***Language is set to %lc now!***
+    echo Warning: Loading language pack [%MTEX\*_%lc.zip] ...
+	iff exist "%MTEX\*_%lc.zip" then
+	  unzip -o "%MTEX\*_%lc.zip" -d "%MTEX"
+	endiff
+  endiff
+else 
+  set lc=%@word["-",0,%lc]
+  echo Running: call setlang.btm %lc %LC_SET
+  call setlang.btm %lc %LC_SET
+  echo ***Language is set to %lc now!***
+endiff
+mkdir /s "%_TMP" >& nul
+if isdir "%_TMP"  gosub iniw TMP %@sfn[%_TMP ]
+if isdir "%_VAR"  gosub iniw VAR %@sfn[%_VAR ]
+if isdir "%_GS"  gosub iniw GSDIR %@sfn[%_GS ]
+if isdir "%_TTF"  gosub iniw TTFDIR %@sfn[%_TTF ]
+mkdir /s "%PKDIR" >& nul
+if isdir "%_PK"  gosub iniw PkDIR %@sfn[%_PK ]
+if isdir "%_PS"  gosub iniw PsDIR %@sfn[%_PS ]
+if isdir "%_UTILSLOCAL"  gosub iniw UTILSLOCAL %@sfn[%_UTILSLOCAL ]
+if isdir "%_DOCSLOCAL"  gosub iniw DOCSLOCAL %@sfn[%_DOCSLOCAL ]
+gosub iniw MSETUPBASE %_MSETUPBASE
+set MSETUPBASE=%_MSETUPBASE
+gosub iniw MSETUP %_MSETUP
+if exist "%_JAVA"     gosub iniw Java %@sfn[%_JAVA ]
+gosub iniw DVIVIEW %DVI
+gosub iniw PSVIEW %PS
+gosub iniw PDFVIEW %PDF
+gosub iniw Editor %ED
+gosub iniw SPELL %SP
+gosub iniw PICUTIL %PIC
+gosub upath
+gosub no_tmac
+gosub mserver
+gosub proxy
+describe "%ETC\mtex.ini" /D"%MTEX"
+msg 0 Your settings have been saved! NOTE that if an util (e.g. pdfxcview) is not pre-installed, you can run "add_util pdfxcview" in TEX-DOS to install it! You can also install any util from MTeX Main Menu. ~~
+msg 936 您的设置已经保存！注意：如果您选择了没有预装的工具(比如pdfxcview)作为默认，请在TEX-DOS中运行add_util pdfxcview来手动安装！也可通过MTeX主菜单来安装任何工具。~~
+msgbox /W5 OK %_msg
+return
+
+:iniw [n v]
+iff %@iniwrite[%ETC\MTEX.ini,MTeX,%n,%v]==-1 then 
+  msgbox OK Error writing %ETC\MTEX.INI:%n=%v
+endiff
+return
+
+:upath
+iff %@iniwrite[%ETC\MTEX.ini,MTeX,UPATH,%UPATH]==-1 then
+  msgbox Error writing %ETC\MTEX.INI:UPATH=%UPATH
+endiff
+return
+
+:no_tmac
+iff %@iniwrite[%ETC\MTEX.ini,MTeX,NO_TMAC,%NO_TMAC]==-1 then
+  msgbox Error writing %ETC\MTEX.INI:NO_TMAC=%NO_TMAC
+endiff
+return
+
+:mserver
+del "%ETC\mserver.cfg">&nul
+msg 0 Do you want to test the selected MTeX server? (I will skip this test by default)~~
+msg 936 是否想测试选择的MTeX服务器？(默认将跳过该测试)~~
+msgbox /T2 OKCANCEL %_msg
+iff  %_?==10 then
+  gosub test_mserver
+endiff
+echo %_MSERVER > "%ETC\mserver.cfg"
+return
+
+:test_mserver
+del .listing >& nul
+dir_ftp "%_MSERVER/"
+iff %@filesize[.listing] LT 50 then
+  msg 0 Error in connecting selected server? Try another server?~~
+  msg 936 连接所选服务器似乎有错误！是否尝试其它服务器？~~
+  msgbox OKCANCEL %_msg
+  iff  %_?==10 then
+    del "%ETC\mserver.sav">&nul
+    set SERVER=%_MSERVER
+    set _MSERVER=%@execstr[call ask_server.btm]
+    goto test_mserver
+  endiff
+endiff
+del .listing >& nul
+return
+
+:proxy
+if not #%_PROXY==# gosub test_proxy
+echo Setting PROXY=%_PROXY  [%@iniwrite[%ETC\MTEX.ini,MTeX,PROXY,%_PROXY]]
+echo Setting PROXYTYPE=%_PROXYTYPE  [%@iniwrite[%ETC\MTEX.ini,MTeX,PROXYTYPE,%_PROXYTYPE]]
+set CURL_OPT=%@if[#%_PROXY==#,,%@if[#%_PROXYTYPE==#HTTP,-x,%@lower[%_PROXYTYPE]] %_PROXY]
+echo Setting CURL_OPT=%CURL_OPT  [%@iniwrite[%ETC\MTEX.ini,MTeX,CURL_OPT,%CURL_OPT]]
+return
+
+:test_proxy
+call chkproxy.btm
+return
+
+:proxy-Wget 
+echo **Warning:It seems that wget has no perfect support to proxy for ftp sites!** 
+echo Setting HTTP_PROXY=%_PROXY  [%@iniwrite[%ETC\MTEX.ini,MTeX,HTTP_PROXY,%_PROXY]]
+echo Setting FTP_PROXY=%_PROXY  [%@iniwrite[%ETC\MTEX.ini,MTeX,FTP_PROXY,%_PROXY]]
+return

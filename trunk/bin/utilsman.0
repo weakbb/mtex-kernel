@@ -1,0 +1,70 @@
+All files (*.*)|*.*|Exe files (*.exe;*.com;*.bat;*.cmd;*.btm)|*.exe;*.com;*.bat;*.cmd;*.btm
+UtilsMan v 0.97 Welcome to use this freeware!
+Copyright 2004-2008 [mhb] All rights reserved.
+If you have any questions, please join MTeX-suite forum. E-mail: mtex-suite@googlegroups.com
+1. Usage£ºYou can select the tool from the combobox, then input the command arguments, click the left-top button to run the tool.
+2. To help you input the command arguments, you can click ... to select a file,  or  click "[¡­]" to select a dir.
+3. If you want to view or modify the selected file before runnint the tool, You can click "Edit" to open a embeded editor, click "Save" to save after editting.
+4. Futhur usage£ºyou can also consider this software as a command shell, you can input commands directly in the right combobox (e.g. DOS command "dir/p"), then click the left-top button to run the command.
+To help you input the command, you can click ".." to select the execuable file, and the button "[..]" is used to select the directories running commands.
+More details about configuration/running of this tool, please refer to the help file or program opened automatically: 
+Please set the following environment variables, click [OK] to save the settings. 
+Please set the following command arguments, click [OK] to apply you setting this time. 
+configuration 
+Settings 
+UtilsMan [mhb]
+Times New Roman,12
+Run Tool!
+Edit
+Settings
+Arguments:
+¡­
+[¡­]
+Help
+Any key after finishing
+Display command list
+Record run results
+Minimize running window
+run as WinExec
+Change the dir before running
+Exit after finishing
+Type command directly
+UtilsMan [mhb&qhs]
+Select files:
+Select a dir:
+Select a file:
+This software provides simple yet powerful method to run various utils, even console programs. 
+Click this button to run the chosen util.
+Click this button to choose a program.
+Click this button to choose a folder for running the util.
+Click this button to enable you to edit the script for the chosen util.
+Click this button to edit configuration file utilsman.ini directly.
+You can enter command-line arguments here directly.
+Click this button to choose file(s) and append to command line.
+Click this button to choose a folder and append it to command line.
+Click this button to enable you to edit command scripts directly.
+Click this button to display simple help information.
+Check it to enable you to watch screen output after running the util. Useful for console utils.
+Check it to show commands before running the util.
+Check it to record the output results into a log file and let you inspect the results after running.
+Check it to run the util in minimized mode.
+Check it to start the util without waiting for termination of the util.
+Check it to change to the folder of the selected file before running the util.
+Check it to quit this software after running the util.
+Check it to enable you to type commands directly in the edit box.
+OK
+Cancel
+Are you sure to save the following settings? If your answer is ok, then you can only edit the settings 
+via editting the settings file.
+You have changed the file, do you save?
+Can not find file 
+Can not find directory 
+It will run the following command [
+You have changed the command, do you save? The command script is as follows:
+Now you can edit the script of current command, then click [Save] in the first row to save.
+Menu for corresponding tool
+Save
+Command line parameters
+Please click [OK] to apply the new settings after finishing the configuration.
+Associate menu
+--Associate menu

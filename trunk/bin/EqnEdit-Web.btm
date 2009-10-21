@@ -1,0 +1,3 @@
+@echo off
+REM ~ start explorer.exe "http://www.tlhiv.org/ltxpreview/"
+start explorer.exe "http://thornahawk.unitedti.org/equationeditor/equationeditor.php"

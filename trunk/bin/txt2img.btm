@@ -1,0 +1,15 @@
+@echo off
+if #%1==# (goto usage)
+setlocal
+set out=%2
+if #%out==# (set out=%@name[%1].jpg)
+if #%@ext[%out]==# (set out=%[out].jpg)
+call txt2eps %1
+call gconvert -o -- %out .%@ext[%out] %@name[%1].eps
+quit
+
+:usage
+echo Usage: %0 infile [outfile]  ==) Convert text file to image file
+echo Note: Can output any common image formats (bmp,jpg,pcx,gif,wmf,tif,...) via extension of outfile.
+echo       Default image format is jpg if no outfile is specified. 
+quit

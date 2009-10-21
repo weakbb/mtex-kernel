@@ -1,0 +1,4 @@
+This tool is used to load Windows font file to memory.
+Usage 1£ºWFont fontfile [fontfilepath]
+Usage 2£ºWFont @fontfilelist [fontfilepath]
+

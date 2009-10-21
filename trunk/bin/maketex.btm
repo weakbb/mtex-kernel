@@ -1,0 +1,35 @@
+@echo off
+setlocal
+if #%1==# goto #usage
+if #%@ext[%1]==# goto #error
+if %@index[ tex sty def , %@ext[%1] ]==-1 goto #error
+iff not #%2==# then
+    del %2 >& nul
+endiff
+set s=%@execstr[kpsewhich.exe %1]
+iff #%s==# then
+    iff not #%_SHIFT==#1 then
+    msg 0 File [%1] is not found! Try to install it on the fly from MTeX servers or CTAN?~~
+    msg 936 没有发现文件[%1]!是否尝试从MTeX服务器或CTAN上飞行下载安装?~~
+    msgbox YESNO %_msg
+    if not %_?==10 goto #error
+    endiff
+    call add_pkg.btm %1 1>&2 
+    set s=%@execstr[kpsewhich %1]
+endiff
+iff #%2==# then
+    echos %s
+else
+    echos %s > %2
+endiff
+quit
+
+:#usage
+echoerr Usage: %0  filename [logfile]==) Install tex file on the fly if it is missing.
+echoerr Note: If logfile is specified, the full path of file installed is saved into logfile.
+echorr Example: %0 pdfslide.sty
+quit
+
+:#error
+echoerr ! Type X to quit or R to Run without stop if LaTeX cannot find file [%1]...
+quit

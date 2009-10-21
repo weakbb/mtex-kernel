@@ -1,0 +1,877 @@
+@ECHO Off
+::[mhb]本程序为MTeX套装核心工具。用于自动编译TeX/LaTeX文件。
+::对非tex文件调用openx.btm -compile来处理。
+::支持长文件名。文件名后缀为.ctx/.ty/.tex时可以省略文件名后缀。
+::自动选择合适的方式加入src-specials,从而使得在dviwin和windvi中能够直接反向搜索。
+::支持 CJK/新版CCT/旧版CCT(.ctx)/天元(.ty) 几种中文系统，自动根据文件名后缀进行相应的处理。
+::对CJK/新版CCT，自动调用cctspace调整正英文间距，cctconv来转换汉字码。
+::支持编译出错时按"E"或"e"键自动进入编辑器并使光标位于出错行。
+::能够自动生成所有缺少的点阵字体，用于预览.dvi文件。
+::编译过程中自动调用bibtex8以及fixbbl以支持参考文献数据库（包括中文）。
+::自动调用mkidx32以支持makeidx宏包自动生成索引。可通过环境变量MKIDX_OPT指定其命令行额外选项。
+::可支持的编译方式：latex,tex,&xxx;pdftex,pdflatex,ptex,platex,context,pdfetex,fmt=xxx;
+::另外支持的后处理程序有dvips,ps2pdf,dvipdfm,ppower。
+::自动支持常见的图形格式插入: *.bmp,*.jpg,*.pcx,*.gif,*.tif,*.eps,*.pdf。
+::自动处理通过\include...,\input包含的文件。
+::修正了Windvi,Acrobat打开的文件不能写的问题。
+::自动判断是否需要多次编译。
+::自动支持metapost图形。
+::可以设置编译选项。
+echo Current Folder: %_CWD
+timer
+setlocal
+unset /q arg _*
+alias deb=`iff #%_debug==#1 then %+ echo ** Running: [%&] ** %+ endiff %+ %&`
+set _bib=1
+set _idx=1
+set _fixbbl=1
+set _gbk2uni=1
+set _like_ctex=
+set /r "%MTEX\_\clatex.cfg"
+iff exist "%ETC\clatex.cfg" then
+  set /r "%ETC\clatex.cfg"
+endiff
+
+gosub get_args
+
+gosub prepare
+
+gosub checksys
+
+
+if islabel #%fe  (gosub #%fe)
+if #%cmd==#  (set cmd=latex)
+if #%cmd==#contex (goto context)
+set _fe=%@if[%@wild[%cmd,pdf*]==1,.pdf,.dvi]
+if #%@left[2,%cmd]#%@index[-no-pdf, %XETEX_OPT]==#xe#-1 (set _fe=.pdf)
+set scan_opt=%@if[%@wild[%cmd,p*]==1,-pdf,-eps]
+REM ~ set TEXEDIT=start tex-edt.exe `%d` `"%s"`
+
+del missfont.bat "%[f0]%[_fe]" >& nul
+del *.aux >& nul
+
+gosub #pre 
+
+gosub compile
+
+gosub #post
+
+gosub #clear
+
+quit 0
+
+:read_set_file
+	set f=%[%#]
+	set f2=%@path[%f]%@name[%f].set
+	iff %@wild[%f,[-:]*]==0 .AND. exist "%f2" then
+		deb set /r "%f2"
+		return 
+	endiff
+return
+
+:read_set_file_old
+for /L %_a in (1,1,%#) do (
+	set f=%[%_a]
+	set f2=%@path[%f]%@name[%f].set
+	iff %@wild[%f,[-:]*]==0 .AND. exist "%f2" then
+		deb set /r "%f2"
+		return 
+	endiff
+)
+return
+
+:ask_cmd
+set cfgfile="%MTEX\_\utils.cfg"
+msg 0 Please choose a format or util to use:~~
+msg 936 请选择一种排版格式或工具:~~
+set Ask=%_msg//%@iniread[%cfgfile,utils,Formats]
+wask {80}%Ask
+if %? GT 0 (set _cmd=%@word["/",%?,%Ask]) else (quit)
+return
+
+:get_args
+if #%1==# goto usage
+set _opts=
+gosub read_set_file
+
+iff %@wild[%1,:*]==1 then
+  set _cmd=%@instr[1,255,%1]
+  if #%_cmd==#? (gosub ask_cmd)
+  shift
+endiff
+
+DO  WHILE %@wild[%1,-*]==1
+  set _k=%@word["=",0,%1]
+  set _v=%@word["=",1,%1]
+  switch %_k
+  case -lscape
+    set _lscape=1
+  case -psize
+    set _psize=%_v
+  case -tpxscale
+    set _tpxscale=1
+  case -xopt
+       set _xopt=1
+  case -noxopt
+       set _xopt=  
+  case -nosrc
+    set _src=
+  case -src
+    set _src=1
+  case -nocct
+    set _cctspace=
+	set _cctconv=
+  case -cct
+    set _cctspace=1
+	set _cctconv=1
+  case -nocctspace
+    set _cctspace=
+  case -cctspace
+    set _cctspace=1
+  case -nocctconv
+    set _cctconv=
+  case -cctconv
+    set _cctconv=1
+  case -noscan
+    set _scan=
+  case -scan
+    set _scan=1
+  case -nocheck
+    set _nocheck=1
+  case -check
+    set _nocheck=
+  case -1
+    set _pass1=1
+  case -3
+    set _pass1=
+  case -embedfont 
+    set _embed=1
+  case -bib 
+    set _bib=1
+  case -nobib 
+    set _bib=
+  case -idx 
+    set _idx=1
+  case -noidx 
+    set _idx=
+  case -gbk2uni 
+    set _gbk2uni=1
+  case -fixbbl 
+    set _fixbbl=1
+  case -nogbk2uni 
+    set _gbk2uni=
+  case -nofixbbl 
+    set _fixbbl=
+  case -epstopdf
+    set _epstopdf=1
+  case -mp
+    set _mp=1
+  case -mf
+    set _mf=1
+  case -emp
+    set _mp=1
+  case -mfpic 
+    set _mf=1
+    set _mp=1
+  case -pdftricks 
+    set _pdftricks=1
+  case -pdf3
+    set _pdfminver=3
+  case -pdf4
+    set _pdfminver=4
+  case -pdf5
+    set _pdfminver=5   
+  case -latex
+    set _cmd=latex
+  case -tex
+    set _cmd=tex
+  case -pdftex
+    set _cmd=pdftex
+  case -pdflatex
+    set _cmd=pdflatex
+  case -ptex
+    set _cmd=ptex
+  case -platex
+    set _cmd=platex
+  case -pdfetex
+    set _cmd=pdfetex
+  case -context
+    set _cmd=context
+  case -xetex
+    set _cmd=xetex
+  case -xelatex
+    set _cmd=xelatex    
+  case -luatex
+    set _cmd=luatex
+
+  case -all
+    set _src=1
+	set _ask_ps=1
+    set _dvips=1
+    set _dvipdf=1
+    set _pspdf=1
+  case -dvicpy
+    set _dvicpy=1
+  case -makepk
+    set _makepk=1
+    set _dvicpy=1
+  case -dvips
+    set _ask_ps=
+    set _dvips=1
+  case -pspdf
+    set _pspdf=1
+  case -ps2pdf
+    set _pspdf=1
+  case -dvipdf
+    set _dvipdf=1
+  case -dvipdfm
+    set _dvipdf=1
+  case -nops
+    set _dvips=
+  case -nopdf
+    set _dvipdf=
+    set _pspdf=
+  case -ppower
+    set _pp4p=1
+  case -clear
+    set _clear=1
+  case -noclear
+    set _clear=
+  case -view
+    set _view=1
+  case -noview
+    set _view=
+  case -pause
+	set _pause=1
+  case -pause2
+	set _pause2=1
+  case -skiperr
+	set _skiperr=1
+  case -like_ctex
+	set _like_ctex=1
+  default
+    if #%@left[4,%1]==#-fmt (set _cmd=pdfetex)   
+    if #%@left[1,%1]==#& (set _cmd=tex)
+    set arg=%arg %1
+  endswitch
+  shift
+  if #%1==# goto usage
+ENDDO
+return
+
+
+:prepare
+cdd %@path[%1]>&nul
+set f0=%@name[%1]
+set fe=%@ext[%1]
+
+if not #%fe==#   set fe=.%fe%
+if #%fe==#       if exist %1.ctx     set fe=.ctx
+if #%fe==#       if exist %1.ty      set fe=.ty
+if #%fe==#       if exist %1.tex     set fe=.tex
+set f=%[f0]%[fe]
+set f_orig=%f
+
+iff %@index[%f0,~] GE 0 then
+	set f0=%@name[%@lfn[%1]]
+endiff
+iff %@index[%f0, ] GE 0 then
+  copy "%f_orig" "___%fe"
+  set f0=___
+endiff
+
+iff #%_tex_exts==# then
+  set _tex_exts=.tex .ctx .ty .ltx .dtx .ins
+endiff
+iff %@index[%_tex_exts ,%fe ]==-1 then
+  deb call openx.btm -compile %f
+  popd
+  quit
+endiff
+
+if not #%_cmd==#  set cmd=%_cmd
+
+iff #%cmd==#  then
+  set cmd=%@execstr[tex_cmd.exe %@sfn[%f]]
+  if %@wild[%cmd,usage*]==1 (set cmd=)
+endiff
+if #%cmd==#   set cmd=latex
+
+set cmd=%@lower[%cmd]
+echo Compiling Mode: %cmd
+
+iff #%_like_ctex==#1 then
+  deb echo WARNING: Entering CTEX-like mode ...
+  set arg=
+  timer
+  deb call %cmd -int=batchmode %f %2&
+  timer
+  quit
+endiff
+
+iff %_embed==1 then
+  if %@left[3,%cmd]==pdf (set arg=%arg \pdfmapfile{pdftex.map}\pdfmapfile{=pdf-tex.map})
+endiff
+
+iff not #%_pdfminver==# then
+  deb set DVIPDFM_OPT=-V %_pdfminver %DVIPDFM_OPT
+  deb set PS2PDF_OPT=-dCompatibilityLevel#1.%_pdfminver %PS2PDF_OPT
+  if %@left[3,%cmd]==pdf (deb set arg=%arg \pdfminorversion=%_pdfminver) 
+endiff
+
+set arg=%arg \input
+
+if %@index[%cmd,latex]==-1 (set _fixbbl=)
+iff %@left[3,%cmd]==pdf then
+  set _dvips=
+  set _dvipdf=
+  set _pspdf=
+endiff
+iff %@left[2,%cmd]==xe then
+  set _dvips=
+  set _dvipdf=
+  set _pspdf=
+  set _gbk2uni=
+  set _fixbbl=
+elseiff %@left[2,%cmd]==up then
+  alias DVIPDFM=`updvipdfmx.exe -f psbase14.map %DVIPDFM_OPT`
+  alias DVIPS=`updvips.exe -f psbase14.map %DVIPDFM_OPT`
+  set _dvips=
+  set _dvipdf=1
+  set _pspdf=
+  set _gbk2uni=
+  set _fixbbl=
+  set _viewfmt=PDF
+elseiff %@index[ omega aleph lambda lamed,%cmd] GT -1 then
+  alias DVIPS=`opdvips.exe -f psbase14.map %DVIPDFM_OPT`  
+endiff
+if #%_pdffrag==#1 (set _dvipdf=)
+
+
+iff #%_lscape==#1 then
+  deb set DVIPDFM_OPT=-l %DVIPDFM_OPT
+  deb set DVIPS_OPT=-t landscape %DVIPS_OPT
+endiff
+
+iff not #%_psize==# then
+  deb set DVIPDFM_OPT=-p %_psize %DVIPDFM_OPT
+  deb set DVIPS_OPT=-t %_psize %DVIPS_OPT
+  deb set PS2PDF_OPT=-sPAPERSIZE=%_psize %PS2PDF_OPT
+endiff
+
+activate "Windvi*" close >& nul
+set _wdvi=%@if[%_?==0,1,0]
+
+set _wpdf=%@exec[call w-close.btm %f0.pdf]
+
+
+for %a in (synctex* bbl toc idx aux log out ind tui tmp ilg blg dlg lot lof snm nav fff) do ( del "%f0.%a" )>&nul
+if not #%[_dvipdf]%[_pspdf]==# ( del "%f0.pdf">&nul )
+
+return
+
+:checksys
+set _d=%@if[%@wild[%cmd,nts*]==1,nts,%@replace[latex,tex,%cmd]]
+
+apath %UTILS\%_d
+apath %UTILSLOCAL\%_d
+
+iff #%@left[1,%cmd]==#p .AND. not isdir %UTILS\pdftex then
+  call add_util.btm %cmd pdftex
+elseiff #%@execstr[call %MTEX\bin\search.btm %cmd]==# then   
+  echo It seems that command [%cmd] is not available. I will guess it and prompt you to install it ...
+  call add_util.btm %cmd %_d
+endiff
+
+apath %UTILS\%_d
+apath %UTILSLOCAL\%_d
+
+iff %@wild[%cmd,*tex]==0 then
+  iff islabel %cmd then
+    gosub %cmd
+  else
+    call %cmd %[%cmd%_OPT] %f
+	gosub #post
+    gosub #clear
+	quit 0
+  endiff
+endiff
+
+return
+
+:#.dtx
+:#.ins
+set cmd=latex
+set _scan=
+return
+
+:#.ctx
+set _makepk=1
+set TEXEDIT=start tex-edt.exe `%d` "%f"
+set fe=.tmp
+deb CCT.EXE %@sfn["%f"] %[f0]%[fe]
+chcp 936
+gosub do_tmp
+return
+
+:#.ty
+set _makepk=1
+set TEXEDIT=start tex-edt.exe `%d` "%f"
+del tycfnt.tab>&nul
+deb tyc -M%MTEX\fonts\tfm\cc\ -P%PKDIR%\ -T. %@name[%@sfn[%f]].ty
+iff not exist %@name[%@sfn[%f]].tex then
+  echo Error in TYC %f!
+  quit
+endiff
+set pk_cfg=pkttf%@if[#%OS==#Windows_NT,2,].cfg
+set pk_cfg=%@if[exist %ETC\%pk_cfg,%ETC\%pk_cfg,%MTEX\_\%pk_cfg]
+deb pkttf -P%PKDIR -c%pk_cfg -F%TTFDIR -T. -N 
+::pksl -F%UCFonts%
+echos \def\ChineseScale{1000}\input tyinput >"%f0.tmp"
+type %@name[%@sfn[%f]].tex >>"%f0.tmp"
+del %@name[%@sfn[%f]].tex>&nul
+set fe=.tmp
+gosub do_tmp
+return
+
+:#.tex
+iff #%_cctspace==#1 .OR. #%_cctconv==#1 then
+  gosub do_cct
+endiff
+gosub do_tmp
+return
+
+:do_cct
+set fe=.tmp
+iff %_cctspace#%_cctconv==1#1 then
+  echo Running cctspace and cctconv ...
+  cctspace < %f | cctconv - %[f0]%[fe]
+elseiff %_cctspace#==1# then
+  echo Running cctspace ...
+  cctspace  %f  %[f0]%[fe]
+elseiff #%_cctconv==#1 then
+  echo Running cctconv ...
+  cctconv  %f   %[f0]%[fe]
+endiff
+
+iff %@filesize[%[f0]%[fe]]==0 then 
+  set fe=.tex
+  set _src=
+  return
+endiff
+return
+
+:do_tmp
+if #%_xopt==#1 gosub xopt
+iff %fe#%_src==.tmp#1 then
+  gosub makesrc
+elseiff %f0#%fe#%_src==___#.tex#1 then
+  gosub makesrc
+endiff
+return
+
+:xopt
+if %@index[%cmd ,latex ]==-1 return
+if not #%fe==#.tmp (copy "%[f0]%[fe]" "%f0.tmp")
+iff #%cmd=#pdflatex then
+  set xopt=pdftex
+elseiff %@index[%cmd ,latex ] GE 0 then
+  set xopt=dvipdfm
+  if %_dvipdf#%_dvips==#1 set xopt=dvips
+endiff
+if #%xopt==# return
+gosub make_xopt 
+set fe=.tmp
+set _src=1
+return
+
+:make_xopt
+if #%_lscape==#1 (set xopt=landscape,%xopt)
+set sed_opt=-e "s/\\documentclass\[/\\documentclass\[%xopt,/g;s/\\documentclass{/\\documentclass\[%xopt\]{/g" 
+sed %sed_opt  %[f0].tmp> __xopt__.tmp
+move __xopt__.tmp %[f0].tmp
+return
+
+:makesrc
+set NO_SRC=1
+if #%_src==# return
+set sed_opt=-e "s/\\begin{document}/\\input{srctex.sty}\\def\\MainFile{%f}\\begin{document}/g"
+sed %sed_opt  %[f0]%[fe]> __src__.tmp
+move __src__.tmp %[f0]%[fe]
+::list %[f0]%[fe]
+return
+
+:proc_fn_space
+set arg=%@trim[%arg]
+iff %@wild[%arg,\input *]==1 then
+  set arg=%@replace[\input,,%arg]
+endiff
+iff #%arg==# then
+  set arg="%[f0]%[fe]"
+  return
+endiff
+set tmpfile=
+iff %@index["%f0", ] GT 0 then
+  set tmpfile=%@unique[.]
+  set tmpfile=%@name[%tmpfile].%@ext[%tmpfile]
+  ::echo \input "%[f0]%[fe]" >%tmpfile
+  copy "%[f0]%[fe]" %tmpfile
+  set arg=-jobname="%f0" %arg %tmpfile
+else
+  set arg=%arg "%[f0]%[fe]"
+endiff
+return
+
+:tex-it [m]
+if #%m==#1 gosub proc_fn_space
+set _mode=
+if not %_skiperr#%m==#1 (set _mode=-int=batchmode)
+echo _mode=%_mode>%TMP\clatex.$$$
+timer
+deb call %cmd% %_mode %arg %2&
+timer
+echo ****Pass %m is done!****
+iff %m#%@wild[%cmd,pdf*]==1#1 then
+iff exist "%[f0].synctex(busy)"  .OR. not exist "%[f0].pdf" then
+  echo **Warning**:"%[f0].synctex(busy)"? I will delete it and recompile the tex file without invoking synctex to avoid problems ...
+  set _SYNCTEX=0
+  iff #%_mode==# then
+    set _mode=-int=batchmode
+  endiff
+  deb call %cmd% %_mode %arg %2&
+  echo ****Pass 1 [nosynctex] is done!****
+endiff
+endiff
+
+deb %[_cmd%m]
+del /q %TMP\clatex.$$$
+if #%_pause==#1 pause
+return
+
+:finish
+iff #%f0==#___ then
+  set _f0=%@name[%f_orig]
+  iff exist %f0.synctex then
+    sed.exe -e "s/:%f0/:%[_f0]/g" "%f0.synctex"  > "%[_f0].synctex"
+    del "%f0.synctex"
+  endiff
+  del "%[f0]%[fe]"
+  move "%f0.*" "%_f0.*"
+  set f0=%_f0
+endiff
+return
+
+
+:compile
+timer
+set _pass2=
+set _pass3=
+echo Compiling [%_CWD\%[f0]%[fe]] ... (please wait a moment ...)
+
+gosub tex-it 1
+
+iff %?#%_nocheck==1# then
+  gosub finish
+  quit
+endiff
+iff not exist "%[f0]%[_fe]" then
+  set _fe2=%@if[#%_fe==#.dvi,.pdf,.dvi]
+  iff exist "%[f0]%[_fe2]" then
+    inkey /W2 /K"YN" Not found "%_CWD\%[f0]%[_fe]", but found "%[f0]%[_fe2]"! Continue?(Yes or No) %%key
+    iff #%key==#Y then
+      gosub finish
+      quit
+    endiff
+    set _fe=%_fe2
+  else
+    pause Not found "%_CWD\%[f0]%[_fe]"! 
+    gosub finish
+    quit
+  endiff
+endiff
+if not #%_pass1==# return
+
+gosub #mid
+
+iff #%_pass2==#1 then
+  gosub tex-it 2
+  gosub #mid2
+  if #%_pass3==#1  gosub tex-it 3
+endiff
+
+gosub finish
+return
+
+
+:#pre 
+if #%_pdftricks==#1 (del "%f0-fig*.pdf" >& nul)
+iff %@left[3,%cmd]#%_epstopdf==pdf#1 then 
+  deb call gconvert.btm .pdf %_figdir\*.eps
+endiff
+if #%_tpxscale==#1 (gosub tpxscale)
+iff %@left[3,%cmd]#%_pdffrag==pdf#1 then 
+  deb call pdffrag "%[f0]%[fe]"
+  set _dvipdf=
+endiff
+iff #%_noscan==#  then 
+  deb call texscan %scan_opt "%[f0]%[fe]
+endiff
+::if %cmd#%@execstr[call %MTEX\bin\search.btm clatex]==latex# (goto emergence)
+::del _texed.bat>&nul
+::set EMTEXED=call TEX-EDIT `%1` %f 
+return
+
+:#mid
+set _pass2=
+set _aux=%@filesize["%f0.aux"]
+if %@filesize["%f0.aux",b] GT 10  set _pass2=1
+if #%_emp==#1  gosub emp
+if #%_mf==#1  gosub mf
+if #%_mp==#1  gosub mp
+if #%_asy==#1  gosub asy
+if %@left[3,%cmd]#%_pdftricks==pdf#1  gosub pdftricks
+
+if not #%_pass1==# return
+
+if #%_bib==#1 gosub bib
+if #%_idx==#1 gosub idx
+iff exist "%f0.tui" then
+  echo Running: tex_util %f0.tui %f0.tuo
+  tex_util<"%f0.tui">"%f0.tuo"
+endiff
+iff exist "%f0-mpgraph.mp" then 
+  deb mpost %f0-mpgraph.mp
+endiff
+
+alias mktexpk=call makepk.btm
+if exist missfont.bat call missfont.bat
+return
+
+:#mid2
+set _pass3=
+if %@filesize[%[f0].bbl,b] GT 0  set _pass3=1
+if not #%@filesize[%[f0].aux]==#%_aux set _pass3=1
+if #%_gbk2uni==#1 gosub gbk2uni
+return
+
+
+
+:#post
+set dvi=%f0.dvi
+iff exist "%dvi" then
+    if #%_dvicpy==#1 gosub dvicpy
+    if #%_makepk==#1 gosub makepk
+    if #%_dvipdf==#1    gosub dvipdf
+    if #%_dvips==#1     gosub dvips
+    if #%_pspdf==#1    if not exist "%f0.pdf"  gosub pspdf
+endiff
+if not #%_pp4p==# (gosub pp4p)
+
+iff not #%_view==# then
+  switch #%_viewfmt
+  case #Dvi
+    deb call dviview - "%f0.dvi"
+  case #Ps
+    deb call psview "%f0.ps"
+  case #Pdf
+    deb call %@if[exist "%f0.synctex",pdfview-s,pdfview] "%f0.pdf"
+  default
+    iff exist "%f0.dvi" .AND. %@wild[%cmd,pdf*]%@wild[%cmd,context*]==00  then 
+	  deb call dviview - "%f0.dvi"
+	elseiff exist "%f0.pdf" then 
+	  deb call %@if[exist "%f0.synctex",pdfview-s,pdfview] "%f0.pdf"
+	elseiff exist "%f0.ps" then
+	  deb call psview "%f0.ps"
+	endiff
+  endswitch
+endiff
+return
+
+:#clear
+del asas >& nul
+del __tmp__.mkt >& nul
+iff #%_clearext==# then
+  set _clearext=aux log tmp bbl toc idx out ind tui tmp thm ilg blg dlg lot lof snm nav fls tab cut cpy 4ct 4tc idv lg $$$
+endiff
+iff not #%_clear==# then
+  for %a in (%_clearext) do (del "%f0.%a")>&nul
+endiff
+for %a in (tui tmp  ilg blg dlg lot lof) do (del "%f0.%a")>&nul
+if #%_pdftricks==#1 (del %f0-fig*.tex;tmp.inputs) 
+if not #%tmpfile==# (del %tmpfile)
+if #%_pause==#1 .OR. #%_pause2==#1  (pause)
+return
+
+:dvicpy
+set TMPDVI=__tmp__.dvi
+echo Updating [%dvi] to remove virtual fonts ...
+deb dvicopy "%dvi" %TMPDVI
+move %TMPDVI %dvi
+return
+
+:makepk
+echo Generating PK fonts for preview ......
+deb call makepk.btm  %@if[#%fe==#.ctx,"%f0.dvi","%dvi"] 
+return
+
+
+:dvips
+if not isdir %UTILS\dvips return
+iff #%_ask_ps==#1 then
+  msg 0 Do you want to generate PS file? If you do not click [YES], I will skip this step since PS file is not needed in most cases.~~
+  msg 936 是否想生成PS文件？如果您不点击[YES]，我将跳过这一步。~~
+  msgbox /T1 YESNO %_msg
+  if not %_?==10  return  
+endiff
+echo Converting [%dvi==)%f0.ps] ...
+iff #%_embed==# then
+  deb call dvips -o "%f0.ps" "%dvi"
+else 
+  deb call dvi-ps -o "%f0.ps" "%dvi"
+endiff
+return
+
+:dvipdf
+if not isdir %UTILS\dvipdfm return
+echo Converting [%dvi==)%f0.pdf] ...
+iff #%_embed==# then
+  deb call dvipdfm "%dvi"
+else 
+  deb call dvi-pdf "%dvi"
+endiff
+return
+
+:pspdf
+if not exist "%f0.ps"  return
+echo Converting [%f0.ps==)%f0.pdf] ...
+iff #%_embed==# then
+  deb call ps2pdf "%f0.ps" "%f0.pdf"
+else 
+  deb call ps-pdf "%f0.ps" "%f0.pdf"
+endiff
+return
+
+:pp4p
+if not exist "%f0.pdf" return
+if not isdir %UTILS\ppower return
+deb call ppower "%f0.pdf" 
+return
+
+
+:bib
+set bibt=%@if[#%_bibtex8==#1,bibtex8.exe,bibtex.exe] %BIBTEX_OPT
+iff %@index[%cmd,latex] GE 0 then 
+  deb %bibt "%f0"
+  iff %@filesize[%[f0].bbl,b] GT 1 .AND. #%_fixbbl==#1 then
+    REM ~ set _gbk=%@execstr[is_gbk.exe "%f0.bbl"]
+    REM ~ echo Detected encoding of "%f0.bbl": %_gbk. I will skip FIXBBL for non-GBK encoding.
+    REM ~ iff #%_gbk==#GBK then
+      REM ~ deb fixbbl "%f0"
+      REM ~ set _pass2=1
+    REM ~ endiff
+    iff not #%@execstr[is_ascii "%f0.bbl"]==#ASCII then
+      deb fixbbl %FIXBBL_OPT "%f0"
+	  set _pass2=1
+    endiff
+  endiff
+endiff
+return
+
+:idx
+set mkidx=%@if[#%_cctmkind==#1,cctmkind.exe %CCTMKIND_OPT,makeindex.exe] %MKIDX_OPT
+iff exist "%f0.idx" then 
+  deb %mkidx "%f0" 
+  set _pass2=1
+endiff
+iff exist "%f0.glo" then 
+  deb %mkidx -s gglo.ist -o "%f0.gls" "%f0.glo"
+  set _pass2=1
+endiff
+return
+
+:gbk2uni
+iff exist "%f0.out"  then
+  REM ~ set _gbk=%@execstr[is_gbk.exe "%f0.out"]
+  REM ~ echo Detected encoding of "%f0.out": %_gbk. I will skip GBK2UNI for non-GBK encoding.
+  REM ~ iff #%_gbk==#GBK then
+    REM ~ deb gbk2uni "%f0.out"
+	REM ~ set _pass3=1
+  REM ~ endiff
+  iff not #%@execstr[is_ascii "%f0.out"]==#ASCII then
+    deb gbk2uni %GBK2UNI_OPT "%f0.out"
+	set _pass3=1
+  endiff
+endiff
+return
+
+
+:mfpic
+:feynmf
+gosub mp
+gosub mf
+return
+
+
+:mp
+for /[d-0] /[t-30] %a in (*.mp) do (
+  echo Processing file [%a] for packages like {emp} ...
+  sed -e "s/verbatimtex/verbatimtex%%\&latex/g"  "%a" >__mp__.tmp
+  move __mp__.tmp "%a"
+  deb mpost %@sfn[%a]
+  del "%@name[%a].log"
+  set _pass2=1
+)
+return
+
+:mf
+for /[d-0] /[t-30] %a in (*.mf) do (
+  deb call MFX 1 %a
+  deb gftopk %@name[%a].600gf %PKDIR\dpi600\%@name[%a].pk
+  del %@name[%a].log;%@name[%a].600gf
+  set _pass2=1
+)
+return
+
+:tpxscale
+ deb call tpxscale.btm %_figdir
+ return
+
+:asy
+for /[d-0] /[t-30] %a in ("%f0*.asy") do (
+  deb call asy %a
+  set _pass2=1
+)
+return
+
+:pdftricks
+deb call pst2pdf %f0
+set _pass2=1
+return
+
+
+:emergence
+pause Sorry, unexpected error due to TEXSCAN. Please use pLaTeX/pdfLaTeX compile...
+quit
+
+:context
+echo Compiling ... (please wait a moment ...)
+deb call context %CONTEXT_OPT %&
+gosub #post
+gosub #clear
+quit 0
+
+
+:usage
+echo ===Clever Agent for TeXing===
+echo Purpose: Compile any TeX file(including CCT/TY/CJK) and help you do a lot.
+echo Usage:   %0 [-PRE] [-CMD] [-MID] [-POST] [-OTHER] file [options]  
+echo Possible PRE:  src,cct,scan,nocheck,epstopdf,tpxscale,1
+echo          CMD:  tex/latex/&F,pdftex/pdflatex/ptex/platex/fmt=F,context
+echo          MID:  mf/mp/nobib/noidx/pdftricks
+echo          POST: all,dvips,dvipdfm,ps2pdf,ppower,clear,view [all--)auto makes .ps,.pdf files]
+echo          OTHER: pdf3,pdf4,pdf5,lscape,a4,letter,pause,pause2
+echo Note: Unless you specify the engine, I will try to recognize the engine required automatically:-)
+echo       E.g. tex,latex,pdftex,pdflatex,xetex,xelatex,luatex,lualatex,context,omega,lamba,...
+echo Tips: When TeX complains error, press "E" to edit automatically,"Q" to ignore errors, "R" to run away, "Ctrl+Z" to abort. (By default,CMD=latex)
+quit
+

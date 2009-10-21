@@ -1,0 +1,128 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set /r "%ETC\clatex.cfg"
+set n=%@path[%1]%@name[%1].set
+set /r "%n">&nul
+
+set _fmt=%@if[#%cmd==#,(auto),%cmd]
+set _sync=%@if[%_SYNCTEX==0,,1]
+set _src=%@if[%_src==1,1,]
+set _xopt=%@if[%_xopt==1,1,]
+set _nops=%@if[%_dvips==1,,1]
+set _nopdf=%@if[%_dvipdf==1,,1]
+set _nopspdf=%@if[%_pspdf==1,,1]
+set _bib=%@if[%_nobib==1,,1]
+set _idx=%@if[%_noidx==1,,1]
+set _pdfver=%@if[%_pdfminver==,,1.%_pdfminver]
+iff #%_clearext==# then
+  set _clearext=aux log tmp bbl toc idx out ind tui tmp thm ilg blg dlg lot lof snm nav fls tab cut cpy 4ct 4tc idv lg $$$
+endiff
+
+WINDOW MIN
+set _wb=%MTEX\bin\clatex.%@if[exist %MTEX\bin\clatex.%LANG,%LANG,0]
+wbox %_wb
+if %?==0 quit
+set /r wbox.lst
+if not exist wbox.lst quit
+del wbox.lst>&nul
+if #%cancel==#1 quit
+
+
+del %n>&nul
+if #%del==#1 quit
+
+gosub write_cfg>"%n"
+iff #%sav==#1 then
+  msg 0 Do you want to overwrite default clatex settings? Caution: They will be loaded when using CLATEX any time!~~
+  msg 936 是否覆盖默认的CLATEX编译设置？注意：默认设置可能影响每一次CLATEX编译！~~
+  msgbox OKCANCEL %_msg
+ if %_?==10  move "%n"  %ETC\clatex.cfg
+endiff
+
+iff #%run==#1 then
+  endlocal
+  WINDOW RESTORE
+  call clatex %1
+endiff
+quit
+
+:usage
+msg 0 Usage: setclatex file ==) Set up comilation options used by CLATEX for specified file.~~
+msg 936 用法：setlatex 文件名  ==) 为当前文件夹内指定的文件设置默认编译选项~~
+msgbox OK %_msg
+quit
+
+:write_cfg
+echo #configuration for compiling %1 by CLATEX
+echo _like_ctex=%@if[%like_ctex==1,1,]
+echo _SYNCTEX=%@if[%sync==1,-1,0]
+echo _src=%@if[%src==1,1,]
+echo _xopt=%@if[%xopt==1,1,]
+echo _cctspace=%@if[%cctspace==1,1,]
+echo _cctconv=%@if[%cctconv==1,1,]
+echo _scan=%@if[%scan==1,1,]
+echo _nocheck=%@if[%nocheck==1,1,]
+echo _bib=%@if[%nobib==1,,1]
+echo _idx=%@if[%noidx==1,,1]
+echo _fixbbl=%@if[%fixbbl==1,1,]
+
+echo _pass1=%@if[%pass1==1,1,]
+
+echo _embed=%@if[%embed==1,1,]
+echo _lscape=%@if[%lscape==1,1,]
+echo _psize=%@if[%psize==a4,,%psize]
+
+echo _pdfminver=%@if[%pdfver==,,%@right[1,%pdfver]]
+echo _mf=%@if[%mf==1,1,]
+echo _mp=%@if[%mp==1,1,]
+echo _asy=%@if[%asy==1,1,]
+echo _pdftricks=%@if[%pdftricks==1,1,]
+
+echo _figdir=%figdir
+echo _epstopdf=%@if[%epstopdf==1,1,]
+echo _tpxscale=%@if[%tpxscale==1,1,]
+echo _pdffrag=%@if[%pdffrag==1,1,]
+
+echo _bibtex8=%@if[%bibtex8==1,1,]
+echo _cctmkind=%@if[%cctmkind==1,1,]
+
+if not #%idx==#  (echo MKIDX_OPT=%idx)
+if not #%bib==#  (echo BIBTEX_OPT=%bib)
+echo _dvicpy=%@if[%dvicpy==1,1,]
+echo _makepk=%@if[%makepk==1,1,]
+
+echo _dvips=%@if[%nops==1,,1]
+echo _dvipdf=%@if[%nopdf==1,,1]
+echo _pspdf=%@if[%nopspdf==1,,1]
+echo _pp4p=%@if[%pp4p==1,1,]
+echo _clear=%@if[%clear==1,1,]
+echo _view=%@if[%view==1,1,]
+echo _viewfmt=%viewfmt
+echo _pause=%@if[%pause==1,1,]
+echo _pause2=%@if[%pause2==1,1,]
+echo cmd=%@if[%fmt==(auto),,%fmt]
+echo _cmd1=%cmd1
+echo _cmd2=%cmd2
+echo _cmd3=%cmd3
+
+echo _debug=%@if[%debug==1,1,]
+echo _skiperr=%@if[%skiperr==1,1,]
+echo _debug=%@if[%debug==1,1,]
+echo _clearext=%clearext
+
+
+echo DVIPS_OPT=%opt_dvips
+echo DVIPDFM_OPT=%opt_dvipdfm
+echo PS2PDF_OPT=%opt_ps2pdf
+echo CONTEXT_OPT=%opt_context
+echo PDFETEX_OPT=%opt_pdfetex
+echo XETEX_OPT=%opt_xetex
+echo LUATEX_OPT=%opt_luatex
+echo TEX_OPT=%opt_tex
+echo MKIDX_OPT=%opt_mkidx
+echo CCTMKIND_OPT=%opt_cctmkind
+echo FIXBBL_OPT=%opt_fixbbl
+echo GBK2UNI_OPT=%opt_gbk2uni
+
+return

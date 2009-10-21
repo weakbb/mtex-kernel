@@ -1,0 +1,22 @@
+@echo off
+if #%1==# goto usage
+gosub %@if[#%2==#,not_find_file,not_find_util]
+window MIN
+msgbox OK %_msg
+quit
+
+:not_find_util
+msg 0 I cannot find [%1] in folder [%2]! Please install this component! %3&~~
+msg 936 没有在目录[%2]中发现工具[%1]！请您安装该组件！%3&~~
+return
+
+:not_find_file
+msg 0 I cannot find file [%1]! Please check it again :-)~~
+msg 936 没有发现文件[%1]! 请检查它是否存在:-)~~
+return
+
+:usage
+echo This is a tool to display some "not-found" message according to MTeX interface language.
+echo Usage1: %0 util utildir [extra_msg] ==) Display util-not-found message.
+echo Usage2: %0 file ==) Display file-not-found message.
+quit

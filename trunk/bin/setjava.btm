@@ -1,0 +1,48 @@
+@echo off
+if exist "%Java" (quit)
+for %_a in (search_reg search_java search_jre) do (
+  if not exist "%Java" (gosub %_a)
+)
+echo Detected: Java=%JAVA
+if exist "%java" (set java=%@sfn[%java])
+if not #%Java==# (quit)
+if #%1==#-quiet (quit)
+msg 0 Please configure Java: Click [OK] to browse file java.exe or jre.exe.~~
+msg 936 没有设置Java，点击[确定]选择java.exe或jre.exe的路径。~~
+msgbox OKCANCEL %_msg 
+if %_?==12 quit
+set Java=%@getfile[c:\,j*.exe]
+set Java=%@sfn[%Java]
+if %@iniwrite[%ETC\mtex.ini,MTeX,Java,%Java]==-1 quit
+call mtex-env -clear
+msg 0 Setting [Java=%Java] has been saved. You need not re-configure it next time unless you choose wrong exe file.~~
+msg 936 已经设置好Java=%Java，下次您将不需要再次设置，除非您选了错误的exe文件。~~
+msgbox OK %_msg
+quit
+
+:search_jre
+set Java=%@execstr[call %MTEX\bin\search.btm jre.exe]
+return
+
+:search_java
+set Java=%@execstr[call %MTEX\bin\search.btm java.exe]
+return
+
+
+:read_ini
+set Java=%@iniread[%ETC\mtex.ini,MTeX,Java]
+return
+
+:search_reg
+set jrekey=HKLM\Software\JavaSoft\Java Runtime Environment
+set jrever=%@REGQUERY["%jrekey\CurrentVersion"]
+if #%jrever==#-1 return
+if #%jrever==# return
+echo Found JRE %jrever !
+set jrekey=%jrekey\%jrever\JavaHome
+set Java=%@REGQUERY["%jrekey"]
+unset jrekey
+if #%Java==#-1 return
+if #%Java==# return
+set Java=%Java\bin\java.exe
+return

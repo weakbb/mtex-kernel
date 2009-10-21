@@ -1,0 +1,15 @@
+"{Title=MTeX文件关联,W=500};
+"{w=500}──请选择要关联到MTeX的文件类型──;
+/*{label=texfile,w=500,checked}关联TeX源文件(tex ctx ty dtx ltx):编辑;
+/*{label=fontfile,w=500,checked}关联各种字体文件(pfb pfa mf pk gf tfm afm):预览;
+/*{label=btmfile,w=500,checked}关联MTeX批处理脚本文件(btm):运行;
+/*{label=dvifile,w=250,checked}关联dvi文件:预览;
+*{label=pdffile,w=250,checked}关联pdf文件:预览;
+/*{label=psfile,w=250,checked}关联ps文件:预览;
+*{label=epsfile,w=250,checked}关联eps文件:预览;
+/*{label=tpxfile,w=250,checked}关联TpX文件(tpx):编辑预览;
+*{label=asyfile,w=250,checked}关联Asymptote文件(asy):编译预览;
+/*{label=mpfile,w=250,checked}关联Metapost文件(mp):编译预览;
+*{label=gpfile,w=250,checked}关联Gnuplot文件(plt dem):运行预览;
+/*{label=lyxfile,w=250,checked}关联LyX文档(lyx):编辑预览;
+/{label=ok,w=250}确定;{label=cancel,w=250}取消;

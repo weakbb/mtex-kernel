@@ -1,0 +1,59 @@
+@echo off
+setlocal
+iff %@eval[1%1]==1%1 then
+  set d=%1 
+  shift
+else
+  set d=
+endiff
+if #%1==#  goto help
+if not exist %1 goto error
+set e=%@ext[%1]
+set in=%@path[%1]%@name[%1].bmp
+iff not #%e==#bmp then
+  call gconvert .bmp %1
+endiff
+iff #%2==# then
+  set out=%@path[%1]%@name[%1]-crop.%e
+else
+  set out=%2
+endiff
+echoerr Cropping %in==)%out ...
+bmpcrop %in %d
+set /r bmpcrop.sav
+del /q bmpcrop.sav
+set _iview=%@execstr[call %MTEX\bin\search.btm i_view32 %UTILS\iview;%UTILSLOCAL\iview]
+iff not #%_iview==# then
+  gosub iview
+else
+  gosub xnview
+endiff
+quit
+
+:iview
+%_iview %in /crop=(%Crop) /convert=%out
+return
+
+:xnview
+set _nconv=%@execstr[call %MTEX\bin\search.btm nconvert %UTILS\xnview;%UTILSLOCAL\xnview]
+set ee=%@ext[%out]
+if #%ee==#jpg (set ee=jpeg)
+if #%ee==#tif (set ee=tiff)
+%_nconv -crop %@replace[,, ,%Crop] -out %ee -o %out %in 
+return
+
+
+:help
+echo Usage1: %0 [d] a.bmp  ==) Auto crop a.bmp to a-crop.bmp  . 
+echo Usage2: %0 [d] a.bmp  b.bmp  ==) Auto crop a.bmp to a.bmp. 
+echo Usage3: %0 [d] a.jpg  ==) Auto crop a.jpg to a-crop.jpg  . 
+echo Usage4: %0 [d] a.jpg  b.gif  ==) Auto crop a.bmp and convert to b.gif. 
+echo Note: You can specify extra edge [d] in pixels.
+echo Tip!: You can use any common format (*.jpg,*.pcx,*.gif,*.tif,*.png,*.wmf) as input/output!
+echo This tool uses bmpcrop.exe to detect blank edges. Non-bitmap files will be converted to *.bmp first for the purpose of edge detection:-)
+quit
+
+:error
+echoerr Error: not found file %in!
+goto help
+quit

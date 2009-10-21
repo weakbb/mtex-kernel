@@ -1,0 +1,41 @@
+@echo off
+msg 0 I will delete the shortcuts and the temporary folder [%TMP]. Click [OK] to confirm the deletion, or [CANCEL] to quit now.~~
+msg 936 下面将删除快捷方式和MTeX的临时文件夹。是否确认？~~
+msgbox OKCANCEL %_msg
+if %_?==10 goto uninstall
+quit
+
+:uninstall
+echo Clearing file associations made by MTeX ...
+call tex-assoc -u
+echo Clearing right mouse menu for MTeX ...
+call tex-reg -- -u
+
+echo Make clearing for utils in MTeX ...
+cdd c:\
+for %a in (%MTEX\bin\cfg\u_*.btm) do call %a
+for /h /a:d %a in ("%UTILS\*" "%UTILSLOCAL\*") do (
+	iff exist %a\_\u-*.btm then 
+	  pushd %a
+	  call %@findfirst[%a\_\u-*.btm]
+	  popd
+	endiff
+)
+
+echo Deleting unused files for MTeX ...
+del /z "%TMP\mtex.mft"
+del /z "c:\mtex.env"
+del /z "%MTEX\mtex.env"
+del /z "%_windir\mtex-etc.ini"
+del /z "%windir\mtex-etc.ini"
+del /z "%@sfn[%APPDATA]\mtex-etc.ini"
+if not #%TMP==# (del "%TMP\*.*" /s /e /x /z /y)
+if not #%ETC==# (del "%ETC\*.*" /s /e /x /z /y)
+if not #%PKDIR==# (del "%PKDIR\*.pk" /s /e /x /z)
+call tex-lnk -clear
+if %@attrib[%TMP,h]==1 (rmdir %TMP)
+cdd c:\
+msg 0 MTeX is a green software, thus you can keep it in your hard disk. When you need it, run [%MTeX\mainmenu.exe] again; when you do not need it completely, you can remove folder [%MTEX] directly.~~
+msg 936 中文MTeX套装是绿色软件，所以请您自己决定它的去留。如果您不再需要它，您可以直接删除文件夹[%MTeX]；您也可以保留它，需要用时运行%MTeX\mainmenu.exe即可。~~
+msgbox OK %_msg
+quit

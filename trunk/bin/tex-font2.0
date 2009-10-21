@@ -1,0 +1,17 @@
+${Title=Please select a TTF file,w=380,label=a0}Please select a TTF file and specify corresponding TeX font-name and LaTeX font-family (no more than 5 letters);
+/"{label=a1,w=100}TTF file:;
+-{label=fn1,w=240};{label=b1,openfiledlg=fn1,w=100}Browse...;
+/"{label=a2,w=100}TeX font-name:;-{label=fn2,w=100};
+"{label=a3,w=140}LaTeX font-family:;-{label=fn3,w=100};
+/*{w=200,label=chn}It is Chinese font file!;
+"{label=a4,w=140}Chinese Encoding:;
+@{label=fn4,w=100,UGBK,GB_EUC,Bg5_Big5,Unicode};
+/*{label=fd,w=190,checked}Make fd file;
+*{label=ttf,w=190,checked}Update ttfonts.map;
+/*{label=dvi,w=190,checked}Update dvipdfm.map;
+*{label=pdf,w=190,checked}Update pdftex.map;
+/*{label=tfm,w=190,checked}Make tfm files;
+*{label=enc,w=190,checked}Make enc files;
+/*{label=pfb,w=300}Make pfb files (usually unnecessary);
+/{label=ok}OK;{label=cancel,dx=25}Cancel;
+*{label=save,dx=25,w=250,checked}Update TTFONTS.CFG also

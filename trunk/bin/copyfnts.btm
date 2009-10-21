@@ -1,0 +1,129 @@
+@echo off
+setlocal
+set pause_opt=/P
+iff #%1==#-q then
+  set pause_opt= 
+  shift
+endiff
+iff #%1==#-d then
+  set font_dir=%2
+  shift
+  shift
+else
+  set font_dir=
+endiff
+
+if #%1==#  goto usage
+if not isdir %1  goto usage
+iff #%font_dir==# then
+  set font_dir=%@if[%@cdrom[%MTEX]==1,%TMP\fonts,%MTEX\fonts]
+endiff
+set pk_dir=%PKDIR
+set tex_dir=%@if[%@cdrom[%MTEX]==1,%TMP\fonts\fd,%MTEX\texlocal\_font]
+pushd %1
+if #%2==# (set d=%@name[%1]) else (set d=%@name[%2])
+set first_tfm=
+set tfm=
+set pfb=
+set mf=
+set pk=
+for /r %a in (*.tfm;*.vf;*.enc) do gosub copy_font %a
+for /r %a in (*.mf;*.pfb;*.afm;*.otf) do gosub copy_font %a
+for /r %a in (*.map) do gosub copy_map %a
+for /r %a in (*.ttf) do gosub copy_ttf %a
+for /r %a in (*.pk) do gosub copy_pk %a
+for /r %a in (*.fd?;*.sty) do gosub copy_tex %a
+iff not "%pause_opt"=="" then
+  iff %pfb#%mf#%pk==## .AND. not #%first_tfm==# then
+    call add_font %@name[%first_tfm] %d
+  endiff
+endiff
+popd
+quit
+
+
+:copy_tex [a]
+mkdir %tex_dir\%d >& nul
+copy %a %tex_dir\%d\
+return
+
+:copy_pk [a]
+set pk=1
+set dpi=600
+set _i=%@index[%a,\dpi]
+iff %_i GE 0 then
+  set _s=%@instr[%@eval[%_i+4],100,%a]
+  set dpi=%@word["\",0,%_s]
+endiff
+mkdir /s "%pk_dir\dpi%dpi" >& nul
+copy %a %pk_dir\dpi%dpi\
+return
+
+:copy_font [a]
+set e=%@lower[%@ext[%a]]
+set ee=%e
+if #%e==#afm  set ee=pfb
+if #%e==#tfm  set tfm=1
+if %e#%first_tfm==tfm#  set first_tfm=%a
+if #%e==#mf  set mf=1
+if #%e==#pfb  set pfb=1
+mkdir /s %font_dir\%ee\%d >& nul
+if #%e==#mf  gosub check_mf
+copy /e %a %font_dir\%ee\%d\
+set b=%font_dir\%e\%d\%@name[%a].%e
+if %tfm#%e==#mf (call maketfm %b)
+if %tfm#%e==#pfb (call maketfm %b)
+return
+
+:check_mf
+xfind input %a > _checkmf_.tmp
+set ss=
+for %ss in (@_checkmf_.tmp) gosub proc_mf
+del _checkmf_.tmp >& nul
+return
+
+:proc_mf
+set sa=%@word[";",0,%ss]
+set sb=%@replace[input ,,%sa]
+set sb=%@trim[%sb]
+if #%sb==#  return
+set sf=%@path[%a]%sb
+iff exist "%sf" then
+  copy /e "%sf" %font_dir\mf\%d\
+endiff
+return
+
+:copy_map [a]
+set d=
+if %@index[%a,dvips] GE 0  set d=dvips
+if %@index[%a,dvipdfm] GE 0  set d=dvipdfm
+if %@index[%a,pdftex] GE 0  set d=pdftex
+iff #%d==# then
+  ffind /K /M /F /T"<" %a
+  if %_?==0  set d=dvips
+endiff
+mkdir %font_dir\map\%d>&nul
+copy %pause_opt %a %font_dir\map\%d\
+return
+
+:copy_ttf [a]
+copy %a %TTFDIR\
+if #%2==# (return)
+set m_cmd=
+iff #%@left[3,%2]==#gbk then
+  set n=%@instr[3,,%2]
+  set run=call makefnt.btm %@name[%a].ttf  %n  %2  UGBK
+elseiff #%@left[3,%2]==#bg5 then
+  set n=%@instr[3,,%2]
+  set run=call makefnt.btm %@name[%a].ttf  %n  %2  Bg5_Big5
+elseiff #%@left[3,%2]==#uni then
+  set n=%@instr[3,,%2]
+  set run=call makefnt.btm %@name[%a].ttf  %n  %2  Unicode
+endiff
+%run
+return
+
+:usage
+echo Usage:%0 [-q] fontdir [family]==) Copy fonts in specified directory into MTeX system.
+echo Note: Option -q does not prompt when copying map files.
+quit

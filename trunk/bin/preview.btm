@@ -1,0 +1,14 @@
+@echo off
+setlocal
+set n=0
+for %a in (%&) gosub view 
+quit
+
+:view 
+set n=%@eval[%n+1]
+iff %n GT 5 then
+  msgbox YESNO Do you want to preview other files?
+  if %_?==11 quit
+endiff
+call openx.btm -quickopen %a
+quit

@@ -1,0 +1,32 @@
+@echo off
+if #%1==# (goto usage)
+setlocal
+set _in=%1
+if not exist %_in (goto usage)
+set _out=%@if[#%2==#,%@path[%_in]%@name[%_in]-crop.eps,%2]
+if #%_out==#%_in (copy %_in %@path[%_in]%@name[%_in]-saved.eps)
+
+set tempfile=tmp0000.eps
+set tempout=tmp0eps
+
+copy %_in "%TEMP"\%tempfile
+pushd "%TEMP"
+gosub crop-eps > %tempout.eps
+del /q %tempfile
+popd
+move "%TEMP"\%tempout.eps %_out
+quit
+
+:usage
+echo Usage1: %0 a.eps b.eps ==) Crop a.eps to b.eps
+echo Usage2: %0 a.eps ==) Crop a.eps to a-crop.eps
+quit
+
+:crop-eps
+text
+%!PS-Adobe-2.0 EPSF-2.0
+endtext
+(GSX bbox %tempfile) |& sed -n -e "/BoundingBox:/{p;}"
+type %tempfile 
+return
+

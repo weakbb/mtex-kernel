@@ -1,0 +1,84 @@
+lua4nt 0.2
+==========
+
+Installation
+------------
+
+The lua4nt zip file should contain the following files:
+  lua4nt.readme        this file
+  lua4nt.dll           Lua plugin dll for 4NT/TCC
+  lua4nt.cpp           source code: cpp file
+  lua4nt.def           source code: def file
+  TakeCmd.*            part of JPSoft's plugin SDK
+  PlugIn.h             part of JPSoft's plugin SDK
+  testdll.bat          batch to check plugin works
+  test1.lua            simple ANSI test script
+  utest1.lua           test script, Unicode
+  testexp.lua          script to test variable expansion
+
+There's no installation as such, just copy the plugin dll to a convenient place or into 4NT/TCC's plugin directory. See the plugin command for details on how to load and use plugins.
+
+The plugin does not change anything in the registry or any other system file. If you delete the files, all's gone.
+
+If you want to get in touch with a bug report or a suggestion, there's either http://thomaslauer.com/start/Contact or you could send an email to idle.script@gmail.com.
+
+The lua4nt plugin, the source code and the documentation come without warranty of any kind. If you use it, you do so at your own responsibility. The source code is in the public domain.
+
+Using the plugin
+----------------
+
+The lua4nt plugin exhibits just three callable items:
+
+* _luaver is an internal variable which returns a string with version information about the underlying Lua interpreter.
+
+  c:\ >echo %_luaver
+  Lua 5.1
+  c:\ >
+
+* @lua is an internal function which executes a snippet of Lau code and returns the result as a string.
+  c:\ >echo %@lua[math.pi*3^2]
+  28.274333882308
+
+  c:\ >echo %@lua[string.upper('print me!')]
+  PRINT ME!
+
+You can call any and all Lua functions (or combination of functions); for details about the functions and modules available in the Lua runtime library please see the Lua documentation.
+
+* ilua is an internal command which will load and execute a Lua script file, optionally accepting command line parameters for and passing them on to the script:
+
+  c:\ >ilua script.lua arg1 arg2 arg3 ...
+
+This loads and executes script.lua, handing it arg1, arg2, arg3 ... as arguments (see the Lua global array arg).
+
+If ilua is called without any parameters, it simply reads stdin and tries to execute the input as a script. If stdin is a console, ilua prints a prompt and accepts commands. To end such an interactive session, use the return statement:
+
+  c:\ >ilua
+  ilua > print(math.pi*4*4) -- print something
+  50.265482457437
+  ilua > return
+
+  c:\ >
+
+If stdin is redirected to a file, the file is loaded and executed as a script:
+
+  c:\ >ilua <script.lua
+
+Things turn a wee bit messy if a script coming in from stdin needs arguments or if a script file argument given to ilua should have *its* stdin redirected. The second case is rather trivial, as it is handled as usual:
+
+  c:\ >ilua script.lua arg1 arg2 arg3 ... <redir.file
+
+Here, ilua simply reads and executes script.lua (which has its stdin redirected to redir.file), passing the other parameters as usual to the script.
+
+The other case is handled by calling ilua with a dash as the first argument. In this case, ilua proceeds to read the script file from stdin and passes it the other arguments:
+
+  c:\ >ilua <script.lua - arg1 arg2 arg3 ...
+
+Obviously, once you've redirected input in this way you can't redirect stdin again for the script.
+
+Last but not least there is a way to re-initialise the plugin:
+
+  c:\ >ilua --reset
+
+This resets the internal Lua interpreter. The main reason to do so would be clear all globally defined items (mostly variables and functions).
+
+Note: so long as the lua4nt plugin is not reset or reloaded, global variables and functions will keep their values between successive calls to ilua. This may or may not be what your scripts expect, so you may have to adapt them accordingly. An exception to this is the array holding the command-line arguments (called arg): this is reinitialised before every ilua call with the current arguments.

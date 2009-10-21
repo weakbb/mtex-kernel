@@ -1,0 +1,36 @@
+@echo off
+iff %@cdrom[%MTEX]==1 then
+  echo You are running MTeX from CDROM!  
+  quit
+endiff
+setlocal
+
+set f=%MTEX\PKG.LST
+pushd
+iff #%1==# then
+  gosub help
+elseiff #%1==#* then
+  echo Creating package list file %f ...
+  if exist %f del %f
+  gosub update %MTEX\texinput>%f
+  gosub update %MTEX\texlocal>>%f
+else
+  echo Updating package list file %f ...
+  for %a in (%&) do gosub update %a>>%f
+endiff
+popd
+
+type %f>_tmp_.lst
+sortu _tmp_.lst > "%f"
+del _tmp_.lst>&nul
+quit
+
+:help
+echo Usage1: %0 * ==) Create %MTEX\PKG.LST from all *.sty;*.cls files
+echo Usage2: %0 dirs ==) Update %MTEX\PKG.LST from files in specified dirs
+return
+
+:update [d]
+cdd %d
+for /r %b in (*.cls;*.sty) do echo %@lower[%@name[%b]]
+return

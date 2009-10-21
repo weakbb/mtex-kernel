@@ -1,0 +1,527 @@
+@echo off
+echo Running: %0 %&
+rem [mhb]该工具用于转换图像文件，可支持各种格式。需要装GhostScipt/IrfanView/XnView/gtools。
+rem 若需要转换时有特殊处理（如改变大小），可设置如下环境变量：
+rem GS_OPT (Gswin32c); IView_OPT (i_view32); NConvert_OPT (nconvert)
+rem eps2pdf作了特殊处理，以支持较大的图片。
+rem 修改了gconv.exe以自动转换unix型文件路径。
+rem 支持mps格式文件到其它格式的转化。
+
+setlocal
+set conv=
+set out=
+set crop=1
+set ov=
+set view=
+set automake=
+set makexxx=
+apath %UTILS\iview;%UTILS\xnview;%UTILS\gtools
+apath %UTILSLOCAL\iview;%UTILSLOCAL\xnview;%UTILSLOCAL\gtools
+
+if #%1==# goto help
+set GraphicsPath=
+
+DO  WHILE #%@wild[%1,[-:]*]==#1
+switch #%1
+case #-p
+  set GraphicsPath=%@replace[{, ,%@replace[}, ,%@replace[/,\,%2]]]
+  echo GraphicsPath=%2  [%GraphicsPath]
+  shift    
+case #-a
+  set automake=1
+case #-view
+  set view=1
+case #-o
+  set ov=1
+case #-
+  set out=%2 
+  set ov=1 
+  set crop= 
+  shift
+case #--
+  set out=%2 
+  set ov=1 
+  set crop=1 
+  shift 
+case #-xxx
+  set makexxx
+default
+  iff %@wild[%1,:*]==1 then 
+  set conv=%@instr[1,,%1]
+  endiff
+endswitch
+shift
+ENDDO
+
+if #%1==# goto help
+if %conv#%2==#  goto help
+if #%makexxx==#1 goto MakeXxx
+if #%automake==#1 goto AutoMake
+
+set _e=%@lower[%@ext[%1]]
+if %conv#%_e==#  goto AutoMake
+iff #%conv==# then  
+  for %a in (%2&) do gosub convert %_e %a
+  iff not #%out==# then
+    iff not exist %out then
+      move %@path[%2]%@name[%2].%_e %out
+    endiff
+  endiff
+else
+  iff islabel #%conv then
+    for %a in (%&) do gosub #%conv %a
+  elseiff islabel %conv .AND. %@index[%conv,-] GT 0 then 
+    set ii=%@index[%conv,-]
+    set ee=%@instr[0,%i,%conv]  
+    set _e=%@instr[%@inc[%ii],,%conv]
+    for %a in (%&) do (
+      set e=%@ext[%a]
+      if #%e==# (set e=%ee)
+      set f=%@name[%a]
+      echo Converting [%f.%e] to [*.%_e] by [%conv] ...
+      gosub %conv %_e %e %f
+    )
+  else
+    for %a in (%&) do call %conv %a
+  endiff
+endiff
+iff #%view==#1 then
+  if exist "%f.%_e" (call openx %f.%_e)
+endiff
+quit
+
+
+:make_from_ext [ext]
+if not exist "%f.%ext" (return)
+echo Found figure file "%f.%ext"!
+set src=%f.%ext
+iff %@wild[%_e,[0-9]*]==1 then
+  echo [%f.mp] ==) [%f.%_e]
+  set testltx=%@execstr[xfind "\documentclass" %@name[%f].mp]
+  iff not #%testltx==# then
+    set TEX=latex
+  endiff
+  mpost %f.mp
+elseiff not #%_e==# then
+  rem \includegraphics command specifies output graphics extension
+  echo [%src] ==) [%f.%_e]
+  gosub convert %_e %src
+elseiff not %@index[ %exts ,.eps ]==-1 then
+  rem exts=.eps .ps .eps.gz .ps.gz .eps.Z
+  echo [%src] ==).eps of [%exts]
+  gosub convert eps %src
+else
+  rem exts=.png .pdf .jpg .mps .jpeg .jbig2 .jb2 .PNG .PDF .JPG .JPEG .JBIG2 .JB2
+  echo [%src] ==).pdf of [%exts]
+  gosub convert pdf %src
+endiff
+popd
+quit
+return
+
+:AutoMake
+set /r %@if[exist "%ETC\texscan.cfg","%ETC\texscan.cfg","%MTEX\_\texscan.cfg"]
+set f=%@name[%1]
+set _e=%@ext[%1]
+set _p=%@path[%1]
+iff %@wild[%_e,[0-9]*]==1 then
+  set mask=%f.mp
+  set FIG_EXT=mp
+else
+  set mask=%f.jpg
+  for %a in (%FIG_EXT) do set mask=%mask;%f.%a
+endiff
+for %a in (%GraphicsPath .) do (
+  if exist %a\%mask (set _p=%a)
+)
+pushd %_p
+set exts=%2&
+for %ext in (%FIG_EXT) do gosub make_from_ext %ext
+popd
+quit
+
+:no-use
+if %@wild[%_e,[0-9]*]==1 goto MakeMps
+set exts=%2&
+for %ext in (%FIG_EXT) do gosub make_from_ext %ext
+popd
+quit
+
+
+
+:MakeMps
+popd
+set testltx=%@execstr[xfind "\documentclass" %@name[%f].mp]
+iff not #%testltx==# then
+  set TEX=latex
+endiff
+mpost %f.mp
+quit
+
+
+:MakeXxx
+for %a in (%&) do gosub convert jpg %a
+for %a in (%&) do gosub convert bb %a
+for %a in (%&) do gosub convert eps %a
+::for %a in (%&) do gosub convert png %a
+::for %a in (%&) do gosub convert pdf %a
+quit
+
+:convert [_e a]
+set f=%@path[%a]%@name[%a]
+set e=%@lower[%@ext[%a]]
+if %@index[tex cls, %e] GT 0 return
+if not exist "%f.%e"  return
+echo [%f.%e==).%_e]
+iff #%Ov==# then 
+  if exist "%f.%_e"  return
+endiff
+::set f=%@name[%@sfn[%a]]
+pushd %@path[%a]
+
+set f=%@name[%a]
+iff %@len[%f] GT 8 then
+  copy "%@name[%a].%e" __tmp__.%e >& nul
+  set f=__tmp__
+endiff
+
+iff %@numeric[1%e]==1 then 
+  iff islabel mps-%_e then
+    echo ** gosub mps-%_e %_e %e %f 
+    gosub mps-%_e %_e %e %f 
+  elseiff islabel mps-xxx then
+    echo ** gosub mps-xxx %_e %e %f 
+    gosub mps-xxx %_e %e %f 
+  endiff
+elseiff islabel %e-%_e then
+  echo ** gosub %e-%_e %_e %e %f 
+  gosub %e-%_e %_e %e %f 
+elseiff islabel %e-xxx then
+  echo ** gosub %e-xxx %_e %e %f 
+  gosub %e-xxx %_e %e %f 
+elseiff islabel xxx-%_e then 
+  echo ** gosub xxx-%_e %_e %e %f 
+  gosub xxx-%_e %_e %e %f 
+else
+  echo gosub xxx-xxx %_e %e %f
+  gosub xxx-xxx %_e %e %f
+endiff
+
+iff not "%f"=="%@name[%a]" then
+	move "%f.%_e" "%@name[%a].%_e" >& nul
+    del "__tmp__.%@lower[%@ext[%a]]" >& nul
+    move /O "%f.*" "%@name[%a].*" >& nul
+endiff
+popd
+set f=%@path[%a]%@name[%a]
+return
+
+:emf-eps [_e e f]
+call emf2eps %f.%e %f.%_e 
+return 
+
+:emf-pdf [_e e f]
+call emf2ps %f.%e %f.prn
+gosub eps-pdf %_e prn %f
+return 
+
+
+
+:mps-eps [_e e f]
+call mp2eps -- %f.%_e %f.%e
+return
+
+:mps-pdf [_e e f]
+MPTOPDF %f.%e
+return
+
+:mps-xxx [_e e f]
+if not exist %f.pdf gosub mps-pdf pdf %e %f
+gosub pdf-xxx %_e pdf %f
+return
+
+:mp-xxx [_e e f]
+if not exist %f.1 call mpost %f.%e
+if #%_e==#pdf (gosub mps-pdf %_e 1 %f) else (gosub mps-xxx %_e 1 %f)
+return
+
+
+::eps-pdf [_e e f]
+::For GS 7.xx below
+set z=%f.%_e
+if not #%out==# set z=%out
+iff not #%crop==# then
+  vdm
+  eps_eps<"%f.%e">"%f.epx"
+  GS -dNOPAUSE -dBATCH -q -sDEVICE=pdfwrite -sOutputFile=%z -sPAPERSIZE=a0 %f.epx
+else
+  GS -dNOPAUSE -dBATCH -q -sDEVICE=pdfwrite -sOutputFile=%z -sPAPERSIZE=a0 %f.%e
+endiff
+del "%f.epx">&nul
+return
+
+:ps-pdf [_e e f]
+:eps-pdf [_e e f]
+:pstex-pdf [_e e f]
+set z=%f.%_e
+if not #%out==# set z=%out
+set s=-dEPSCrop -dEPSFitPage %f.%e
+iff #%crop==# then
+  set s=%f.%e
+endiff
+set _z=pdfwrite -sPAPERSIZE=a0 -dCompatibilityLevel#1.3 
+if #%e==#eps set _z=%_z -dPDFSETTINGS=/prepress -dSubsetFonts=true -dEmbedAllFonts=true
+gswin32c -dNOPAUSE -dBATCH -q -sDEVICE=%_z -sOutputFile=%z %s
+return
+
+:eps-xxx [_e e f]
+:pdf-xxx [_e e f]
+:pdf-eps [_e e f]
+set z=%f.%_e
+if not #%out==# set z=%out
+set s=-dEPSCrop -dEPSFitPage %f.%e
+iff #%crop==# then
+  set s=%f.%e
+endiff
+set _z=
+switch #%_e
+case #bmp
+  set _z=bmpmono
+  ::set _z=bmp16
+case #jpg
+  set _z=jpeg
+case #png
+  set _z=png256
+case #pdf
+  set _z=pdfwrite -sPAPERSIZE=a0 -dCompatibilityLevel#1.3 
+case #pcx
+  set _z=pcx256
+case #tif
+  set _z=tifflzw
+case #ppm
+  set _z=ppmraw
+case #pnm
+  set _z=pnmraw
+case #pbm
+  set _z=pbmraw
+case #pgm
+  set _z=pgmraw
+case #eps
+  set _z=epswrite
+case #ps
+  set _z=pswrite
+default
+  return
+endswitch
+gswin32c -dNOPAUSE -dBATCH -q -sDEVICE=%_z -sOutputFile=%z %s
+return
+
+
+
+
+:eps-bb [_e e f]
+:ps-bb [_e e f]
+(GSX bbox %f.%e)>&"%f.bb"
+iff %@filesize[%f.bb] LE 0 then
+  xfind `%%`BoundingBox: %f.%e>&"%f.bb" 
+endiff
+set GSX_OPT=
+return
+
+
+:xxx-eps [_e e f]
+:xxx-ps [_e e f]
+gosub xxx-xxx jpg %e %f
+gosub jpg-eps %_e jpg %f 
+return
+
+:xxx-pdf [_e e f]
+gosub xxx-xxx jpg %e %f
+:jpg-pdf [_e e f]
+gosub jpg-eps eps jpg %f 
+gosub eps-pdf pdf eps %f
+return
+
+:bmp-xpm [_e e f]
+bmp2xpm "%f.%e"
+return
+
+:xxx-bmp [_e e f]
+gosub xxx-xxx bmp %e %f
+return
+
+:xxx-xxx [_e e f]
+if #%Ov==# .AND. exist "%f.%_e" (return)
+gosub iview %_e %e %f
+if exist "%f.%_e" (return)
+if #%_e==#tga (set ee=targa) else (set ee=%_e)
+xxx2jpg  "%f.%e" 
+jpg2xxx -%ee "%f.jpg"
+return
+
+:iview [_e e f]
+if #%@execstr[call %MTEX\bin\search.btm i_view32.exe]==# (goto xnview)
+echo ** iview %_e %e %f
+iff not #%SCALE==#  then 
+  set RESIZE=/resize=(%[SCALE]p,%[SCALE]p)
+else
+  set RESIZE=
+endiff
+i_view32.exe "%f.%e"  %IView_OPT% %RESIZE /convert=%f.%_e
+return
+
+:xnview [_e e f]
+if #%@execstr[call %MTEX\bin\search.btm nconvert.exe]==# (return)
+echo ** xnview %_e %e %f
+set ee=%_e
+if #%_e==#jpg  set ee=jpeg
+if #%_e==#tif  set ee=tiff
+if #%_e==#ppm  set ee=pnm
+iff not #%SCALE==# then 
+  set RESIZE=-resize %[SCALE]`%%` %[SCALE]`%%` 
+else 
+  set RESIZE=
+endiff
+nconvert %NConvert_OPT% %RESIZE -out %ee  "%f.%e" 
+return
+
+:ps-eps [_e e f]
+:pdf2eps [_e e f]
+GSX epswrite -sOutputFile=%f.%_e "%f.%e" 
+return
+
+:jpg-eps [_e e f]
+jpeg2ps "%f.%e">"%f.%_e" 
+return
+
+:jpg-ps [_e e f]
+jpeg2ps "%f.%e">"%f.%_e" 
+return
+
+
+:jpg-bb [_e e f]
+ebb "%f.jpg"
+return
+
+:xxx-bb [_e e f]
+gosub xxx-xxx jpg %e %f
+gosub jpg-bb  bb jpg %f
+return
+
+:dvi-bmp [_e e f]
+call dvi2bmp %f.%e
+return
+
+:dvi-ps [_e e f]
+dvips -o %f.%_e %f.%e
+return
+
+:dvi-eps [_e e f]
+dvips -o %f.%_e %f.%e -E
+return
+
+:dvi-xxx  [_e e f]
+gosub dvi-bmp bmp dvi %f
+gosub xxx-xxx %_e bmp %f
+return
+
+
+
+:bmp-bmf [_e e f]
+:pcx-bmf [_e e f]
+:tif-bmf [_e e f]
+apath %UTILS\cct;%UTILSLOCAL\cct
+img2cct %f.%e
+return
+
+:bmf-pcx [_e e f]
+apath %UTILS\cct;%UTILSLOCAL\cct
+bmf2pcx %f.%e
+return
+
+:bmf-tif [_e e f]
+apath %UTILS\cct;%UTILSLOCAL\cct
+bmf2tif %f.%e
+return
+
+:xxx-bmf [_e e f]
+gosub xxx-xxx pcx %e %f
+gosub pcx-bmf bmf pcx %f
+return
+
+:bmf-xxx [_e e f]
+gosub bmf-pcx pcx %e %f
+gosub xxx-xxx %_e pcx %f
+return
+
+:bmf-eps [_e e f]
+gosub bmf-pcx pcx %e %f
+gosub xxx-eps %_e pcx %f
+return
+
+:eps-bmf [_e e f]
+gosub eps-xxx pcx %e %f
+gosub pcx-bmf %_e pcx %f
+return
+
+:tpx-eps [_e e f]
+:tpx-svg [_e e f]
+:tpx-emf [_e e f]
+:tpx-png [_e e f]
+:tpx-bmp [_e e f]
+:tpx-pdf [_e e f]
+:tpx-mps [_e e f]
+:tpx-eps [_e e f]
+:tpx-eps [_e e f]
+:tpx-eps [_e e f]
+:tpx-eps [_e e f]
+apath %UTILS\tpx;%UTILSLOCAL\tpx
+start /wait tpx.exe %f.%e -o %f -m %_e
+return
+
+:asy-eps [_e e f]
+call asy -f eps %f.%e
+return
+
+:asy-pdf [_e e f]
+call asy -f pdf %f.%e
+return
+
+:txt-tex [_e e f]
+:txt-ltx [_e e f]
+call t2l %f.%e %f.%_e
+return
+
+:txt-dvi [_e e f]
+call txt2dvi %f.%e %f.%_e
+return
+
+
+:txt-ps [_e e f]
+call txt2ps %f.%e %f.%_e
+return
+
+:txt-pdf [_e e f]
+call txt2pdf %f.%e %f.%_e
+return
+
+:help
+set 0=gconvert
+echo Usage1: %0 [-o] .ext  files	=) Convert files to *.ext 
+echo Usage2: %0 [-o] -- outfile .ext infile  =) Convert infile to outfile with format .ext (Cropped!)
+echo Usage3: %0 [-o] - outfile .ext infile =) Convert infile to outfile with format .ext (Non-cropped!)
+echo Usage4: %0 [-o] -xxx  files =) Convert files to *.eps,*.jpg,*.pdf,*.bb
+echo Usage5: %0 -a xyz .ext1 .ext2 ... =) Convert xyz.* to one format (eps/pdf) listed in extensions
+echo Usage6: %0 -a xyz.n .ext1 .ext2 ... =) Convert xyz.mp to mps file xyz.* (n is a number)
+echo Usage7: %0 :cmd files =)Convert files by converter [cmd]
+echo %@repeat[=,70]
+echo This tool can do arbitrary conversion for any files.
+echo This tool may require GhostScript,IrfanView/Gtools/Tools or other tools.
+echo To overwrite existing files, use option "-o".
+echo In usages1-6, the converter is determined automatically.
+echo Usage2 auto crops the .eps file, but Usage3 DOESN'T do it. 
+echo Usage5 and Usage6 are used in package {graphics} to support auto conversion.
+echo Usage7 can manually specify converter, but cmd must determine outfile.
+quit
+
+:end

@@ -1,0 +1,16 @@
+@echo off
+setlocal
+if #%1==# goto usage
+dvicopy %1 __tmp__.cpy
+move __tmp__.cpy %@if[#%2==#,%1,%2]
+quit
+
+:copy_dvi [in out]
+set TFMFonts=%MTEX\fonts\tfm\\
+set VFFonts=%MTEX\fonts\vf\\
+dvicopy -mag=1 %@sfn[%in] %@sfn[%out]
+return
+
+:usage
+echo %0 infile [outfile]  ==) Expand virtual fonts in .dvi file. Support long file names.
+quit

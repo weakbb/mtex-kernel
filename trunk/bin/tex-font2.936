@@ -1,0 +1,17 @@
+${Title=请选择一个TrueType字体文件,w=400,label=a0}请选择一个ttf文件并指定对应的TeX字体名前缀与LaTeX字体族。建议TeX字体名前缀和LaTeX字体族不要超过5个字母。;
+/"{label=a1,w=100}TrueType文件：;
+-{label=fn1,w=200};{label=b1,openfiledlg=fn1,w=100}浏览...;
+/"{label=a2,w=100}TeX字体名前缀：;-{label=fn2,w=100};
+"{label=a3,w=100}LaTeX字体族：;-{label=fn3,w=100};
+/*{w=200,label=chn}这是一个中文字体文件;
+"{label=a4,w=100}中文编码：;
+@{label=fn4,w=100,UGBK,GB_EUC,Bg5_Big5,Unicode};
+/*{label=fd,w=150,checked}生成fd文件;
+*{label=ttf,w=150,checked}更新ttfonts.map;
+/*{label=dvi,w=150,checked}更新dvipdfm.map;
+*{label=pdf,w=150,checked}更新pdftex.map;
+/*{label=tfm,w=150,checked}生成tfm文件;
+*{label=enc,w=150,checked}生成enc文件;
+/*{label=pfb,w=300}生成pfb文件（不推荐而且通常不必要！）;
+/{label=ok}确定;{label=cancel}取消;
+*{label=save,w=250,checked}添加到配置文件TTFONTS.CFG

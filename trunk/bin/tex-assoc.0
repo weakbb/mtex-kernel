@@ -1,0 +1,15 @@
+"{Title=MTeX Files Association};
+"{w=650}===Please choose file types to assciate with MTeX===;
+/*{label=texfile,w=650,checked}Associate TeX source files (tex ctx ty dtx ltx):[Edit with TEX-EDT];
+/*{label=fontfile,w=650,checked}Associate various font files (pfb pfa mf pk gf tfm afm):[Preview with VIEWFONT];
+/*{label=btmfile,w=650,checked}Associate MTeX batch scripts (btm):[Run with TEX-DOS];
+/*{label=dvifile,w=325,checked}Associate dvi files:[Preview];
+*{label=pdffile,w=325,checked}Associate pdf files:[Preview];
+/*{label=psfile,w=325,checked}Associate ps files:[Preview];
+*{label=epsfile,w=325,checked}Associate eps files:[Preview];
+/*{label=tpxfile,w=325,checked}Associate TpX files:[Edit+Preview];
+*{label=asyfile,w=325,checked}Associate Asymptote files:[Compile+Preview];
+/*{label=mpfile,w=325,checked}Associate Metapost files:[Compile+Preview];
+*{label=gpfile,w=325,checked}Associate Gnuplot files:[Run+Preview];
+/*{label=lyxfile,w=325,checked}Associate LyX documents:[Edit+Preview];
+/{label=ok,w=325}OK;{label=cancel,w=325}Cancel;

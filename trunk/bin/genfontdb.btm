@@ -1,0 +1,36 @@
+@echo off
+if #%1==# goto usage
+if not #%@ext[%1]==#rar goto usage
+iff exist "%ETC\fonts_db.cfg" then
+  copy "%ETC\fonts_db.cfg" "%ETC\fonts_db.old"
+endiff
+
+?"Overwrite previous $ETC\fonts_db.cfg?" echos>"%ETC\fonts_db.cfg"
+switch .%@ext[%1]
+case .rar
+  gosub from_rar
+endswitch
+
+echo Fonts databse file "%ETC\fonts_db.cfg" has been generated! 
+quit
+
+:from_rar
+for %a in (%1) do gosub proc_rar
+del _tmp_.tmp >& nul
+return
+
+:proc_rar
+echo %a
+echo %@name[%a]:>> "%ETC\fonts_db.cfg"
+unrar lb %a > _tmp_.tmp
+sed -n -e "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/[0-9][0-9][0-9][0-9]//g;/\.[tpm][f]/{s/\.[a-z]*//gp;};" _tmp_.tmp > _tmp2_.tmp
+sortu _tmp2_.tmp >> "%ETC\fonts_db.cfg"
+del _tmp_.tmp;_tmp2_.tmp >& nul
+return
+
+
+
+:usage
+echo Usage:%0 *.rar ==) Create $ETC\pkg_db.cfg from *.rar
+echo Note: This tool is to generate macro package databse from zip archives.
+quit

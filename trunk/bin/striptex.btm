@@ -1,0 +1,44 @@
+@echo off
+if #%1==#  goto help
+setlocal
+set _lst=_tmp_.lst
+set _opt=
+iff #%1==#-s then
+  set _opt=/S 
+  shift
+endiff
+dir %_opt %1 /b > %_lst
+except (%_lst) for %a in (@%_lst) do gosub strip %a 
+del %_lst >& nul
+quit
+
+:help
+echo Usage: %0 [-s] infile [outfile] ==) Strip comments of infile, then write to outfile
+echo Warning: If outfile not specied, I will overwrite infile! Wildcards supported.
+echo Examples: %0 a.tex              ==) strip and overwrite a.tex 
+echo           %0 a.tex b.tex        ==) strip a.tex to b.tex
+echo           %0 *.tex;*.cls;*.sty  ==) strip and overwrite *.tex;*.cls;*.sty
+echo           %0 *.tex *.sav        ==) strip *.tex to *.sav
+echo Option -s allows to process all subdirectories.
+quit
+
+:strip [a]
+
+iff #%2==#  then
+  set b=%a
+elseiff isdir %2 then
+  set b=%@if[%@right[1,%2]==\,%2,%2\]%@name[%a].%@ext[%a]
+elseiff %@name[%2]==* then 
+  set b=%@name[%a].%@ext[%2]
+elseiff %@ext[%2]==* then 
+  set b=%@name[%2].%@ext[%a]
+else 
+  set b=%2
+endiff
+
+echo Stripping file [%a] to [%b]...
+texstrip < %a > %TMP\_tmp_.tmp
+iff %@filesize[%TMP\_tmp_.tmp] GT 1 then
+move %TMP\_tmp_.tmp %b
+endiff
+return

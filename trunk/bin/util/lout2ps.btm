@@ -1,0 +1,16 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set n=1
+iff %@wild[%1,-[1-9]]==1 then
+  set n=%@abs[%1] 
+  shift
+endiff
+set opt=-o "%@name[%1].ps"
+for /L %a in (1,1,%n) do call util lout %opt %2& %1 
+quit
+
+:usage
+echo Usage: %0 [-passes] xxx.lt [options] ==) lout xxx.lt to xxx.ps
+echo Note: passes=1 (default), 2, ..., 9  
+quit

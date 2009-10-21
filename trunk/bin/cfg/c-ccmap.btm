@@ -1,0 +1,3 @@
+if isdir %MTEX\FONTS\cmap  quit
+if isdir %TMP\cmap  quit
+call makecmap.btm

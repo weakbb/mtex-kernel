@@ -1,0 +1,36 @@
+@echo off
+rem [mhb]本工具用于解决长文件名问题。将源文件中内容拷到一个相应的短文件名文件中。
+rem 选项"-L"用于仅仅建立一个TeX“连接”，源文件将被覆盖，但很少占磁盘空间，适用于TeX文件。
+setlocal
+set L=
+set EXT=sty cls fd fdd sfd enc ini cfg def dat tex clo ist doc mbs ins dtx new tss
+iff #%1==#-L then
+  shift  
+  set L=1
+endiff
+if #%1==#  goto help
+for %z in (%&) do gosub trunc_file %z
+quit
+
+:trunc_file [_file]
+set d=%@path[%_file]
+set b=%@name[%_file]
+set e=%@ext[%_file]
+set N=%@left[5,%b]%@right[3,%b].%@left[3,%@ext[%_file]]
+if isdir %_file return
+if %@len[%@name[%_file]] LE 8  return
+if %@index[ %EXT, %@lower[%@ext[%_file]]]==-1 return
+iff exist %d%%N%  then
+  echo File %d%%N% exists! 
+  return
+endiff
+echo [%b.%@ext[%_file]--)%N]
+copy %_file %[d]%[N]
+if #%L==#1  (echo \input %N>%_file)
+return
+
+:help
+echo Usage: %0 [-L] files  ---) Make EMTEX support files with long-file-names.
+echo Note: Option "-L" asks me to make links instead copy files .
+echo Note: File names should NOT contain spaces or ~.
+quit

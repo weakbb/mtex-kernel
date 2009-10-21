@@ -1,0 +1,14 @@
+@echo off
+if #%1==# goto usage
+set ?=0
+if not exist %2  quit
+if %@fileage[%1] GT %@fileage[%2] quit
+set ?=1
+quit
+
+:usage
+echo %0 file1 file2 ==) Compare modification time of two files 
+echo Return 0 --- if file1 is newer than file2 (or file2 does not exists); 
+echo        1 --- if file1 is not newer than file2.
+quit
+

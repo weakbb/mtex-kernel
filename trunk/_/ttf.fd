@@ -1,0 +1,17 @@
+\ProvidesFile{$(FONTENC)$(FONTFAMILY).fd}[Created by mhb.]
+
+\DeclareFontFamily{$(FONTENC)}{$(FONTFAMILY)}{}
+
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{b}{n}{<->$(FONTBASE)b}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{b}{sl}{<-> $(FONTBASE)bx}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{b}{it}{<-> $(FONTBASE)bi}{}
+
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{m}{n}{<-> $(FONTBASE)}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{m}{sl}{<-> $(FONTBASE)x}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{m}{it}{<-> $(FONTBASE)i}{}
+
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{bx}{n}{<->ssub * $(FONTFAMILY)/b/n}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{bx}{sl}{<->ssub * $(FONTFAMILY)/b/sl}{}
+\DeclareFontShape{$(FONTENC)}{$(FONTFAMILY)}{bx}{it}{<->ssub * $(FONTFAMILY)/b/it}{}
+
+\endinput

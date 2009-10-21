@@ -1,0 +1,45 @@
+This tool is used to help you search the LaTeX packages on the internet, and download them for MTeX. [mhb & qhs] v0.87
+Button 0: check whether there exists the specified package in MTeX (and copy the package file path to the clipboard).
+Button 1: search the package¡úButton 2: download the selected package files¡úButton 3: install the package
+You can also click [...] to select the saving destination directory, default is to download them to the package directory of MTeX.
+If you need to use the proxy server or to change other default setting, please click [Settings].
+Invalid username or password of the proxy, please click [Settings] to reset the proxy.
+Downloading 
+Failure
+Succeed
+Connecting 
+ succeed 
+succeed 
+Package
+Maybe it has installed, click [OK] to search the new version of this package.
+Start to search in CTAN 
+(It will select the package files automatically according to the filename), please wait ... 
+, please wait ... 
+Fail to search on the internet, please check your network connection.
+Found the font files 
+, do you want to search and download the whole font family [
+Please input the package name first!
+Cannot find any files of package "
+", please confirm the package name!
+The possible package files are selected automatically, you can press Ctrl and change the selection.
+You can click Button 2 to download the files to the default directory or the selected directory after you confirm the selection.
+Empty download list!
+Please select a server!
+Invalid server!
+Can not create the local directory: 
+, please select the saving directory again.
+Can not download the package files!
+Finish downloading. Now you can click Button 3 to install the package to MTeX.
+Finish installing the package!
+Cannot find the package or file
+Please click [OK] to reload the setting after editting the settings.
+Search
+Download
+Install
+Chinese MTeX Suite Package Download/Install Tool [mhb & qhs]
+1.¡ï
+2.¡ý
+3.¡ó
+Settings
+Please select the saving directory (we recommend you click [Cancel] to use the default settings):
+

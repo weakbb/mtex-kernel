@@ -1,0 +1,8 @@
+@echo off
+iff #%LANG==#%1 .OR. 0==%1 then
+  shift
+  set _msg=%@replace[~~,%@char[255],%&]
+  set _msg=%@word["%@char[255]",0,%_msg]
+endiff
+
+*quit

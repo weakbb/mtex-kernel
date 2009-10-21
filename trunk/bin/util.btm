@@ -1,0 +1,141 @@
+@echo off
+if #%1==# goto #usage
+setlocal
+iff %@wild[%1,:*]==1 then
+  set _d=%@instr[1,,%1] 
+  shift
+else
+  set _d=%1
+endiff
+if #%1==# goto #usage
+set _d=%@lower[%@name[%_d]]
+iff exist "%ETC\%_d.env" then
+  set /r "%ETC\%_d.env"
+endiff
+gosub #detect
+iff #%_a==# then
+  call add_util.btm %1 %_d  1>&2
+  iff exist "%ETC\add_util.sav" then 
+    set _a=%@line["%ETC\add_util.sav",0]
+	del /z /q "%ETC\add_util.sav" >& nul
+  endiff
+endiff
+apath %UTILS\%_d
+apath %MTEX\%_d
+apath %UTILSLOCAL\%_d
+iff not #%_a==# then
+  gosub #run %_a
+else
+  gosub #error
+endiff
+quit
+
+:#usage
+echo Usage: %0 [:utildir] cmd [args] ==)Start an util with specified args.
+quit
+
+:#error
+msg 0 Still not found! Please check PATH variable or folder [%UTILS] to see whether this util is installed.~~
+msg 936 仍然找不到，请检查PATH环境变量。~~
+MsgBox OK %_msg
+cancel 0
+quit
+
+:#run [x]
+msg 0 Not found [%x]! I will quit now.~~
+msg 936 没发现文件 %x ！即将退出。~~
+iff not exist %x then
+  msgbox OK %_msg
+  quit
+endiff
+set _p=%@path[%x]
+iff exist "%[_p]_\s-%_d.btm" then
+  call "%[_p]_\s-%_d.btm"
+endiff
+set _s=
+iff #%@ext[%x]==#exe then
+  if %@wild[%@execstr[exetype %x],Win??]==1  set _s=start 
+elseiff #%@ext[%x]==#btm then
+  set _s=call
+elseiff #%@ext[%x]==#bat then
+  set _s=call
+elseiff #%@ext[%x]==#cmd then
+  set _s=call
+elseiff #%@ext[%x]==#jar then 
+  call setjava
+  set _s=start "" /MIN %JAVA -jar
+endiff 
+%_s %x %2&
+iff %_save==0 then
+  endlocal
+  set /r %ETC\mtex.ini
+endiff
+quit
+
+
+
+:#auto
+gosub #run %1
+quit
+
+:#detect
+set %_d=%@iniread["%ETC\mtex.ini",Utils,%_d]
+iff defined %_d then
+  set _a=%@sfn[%[%_d]]
+  apath %@path[%_a]
+  unset %_d
+else
+  set _a=%@execstr[call %MTEX\bin\search.btm %1 %UTILS\%_d;%MTEX\%_d;%UTILSLOCAL\%_d]
+  iff #%_a==# then
+    set _a=%@execstr[call %MTEX\bin\search.btm -u %1 ]
+  endiff
+endiff
+iff #%_a==# then
+  set _p=%@if[isdir %UTILS\%_d,%UTILS\%_d,%UTILSLOCAL\%_d]
+  iff exist "%_p\_\download.ini" then
+    pushd %_p
+	if exist _\u-*.btm  call %@findfirst[_\u-*.btm]
+    call down_src _\download.ini
+	if exist _\c-*.btm  call %@findfirst[_\c-*.btm]
+	if exist _\L-*.btm  call %@findfirst[_\L-*.btm]
+	popd
+	set _a=%@execstr[call %MTEX\bin\search.btm -u %1 %_p]
+  endiff
+endiff
+return
+
+
+
+:#detect-old
+set %_d=%@iniread["%ETC\mtex.ini",Utils,%_d]
+iff defined %_d then
+  set _a=%@sfn[%[%_d]]
+  apath %@path[%_a]
+  unset %_d
+else
+  iff #%@ext[%1]==# then 
+    set exts=exe com btm bat cmd jar
+    do _i = 0 to 5
+		set _e=%@word[%_i,%exts]
+		set _a=%@search[%1.%_e,%UTILS\%_d;%MTEX\%_d;%UTILSLOCAL\%_d]
+		if not #%_a==# (leave)
+	enddo
+	iff #%_a==# then
+	  set _a=%@search[%1]
+	  if %@index[%_a,%MTEX\bin\util] GE 0 (set _a=)
+	endiff  
+  else
+    set _a=%@search[%1,%UTILS\%_d;%MTEX\%_d;%UTILSLOCAL\%_d;%PATH]
+  endiff
+endiff
+iff #%_a==# then
+  set _p=%@if[isdir %UTILS\%_d,%UTILS\%_d,%UTILSLOCAL\%_d]
+  iff exist "%_p\_\download.ini" then
+    pushd %_p
+    call down_src _\download.ini
+	popd
+	set _a=%@search[%1,%_p]
+  endiff
+endiff
+return
+

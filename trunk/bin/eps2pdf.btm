@@ -1,0 +1,10 @@
+@echo off
+setlocal
+if #%1==# (goto usage)
+set out=%@if[#%2==#,%@path[%1]%@name[%1].pdf,%2]
+gswin32c -dNOPAUSE -dBATCH -q -sDEVICE=pdfwrite -sOutputFile=%out -sPAPERSIZE=a0 -dEPSCrop -dEPSFitPage  -dCompatibilityLevel#1.3 -dPDFSETTINGS=/prepress -dSubsetFonts=true -dEmbedAllFonts=true %1
+quit
+
+:usage
+echo Usage: %0 epsfile [pdffile] ==) Convert eps file to pdf file (cropped!)
+quit

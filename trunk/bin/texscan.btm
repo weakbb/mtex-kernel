@@ -1,0 +1,115 @@
+@echo off
+if #%1==#  goto usage
+setlocal
+iff #%1==#-sfn then
+  shift 
+  set _sfn=1
+endiff
+iff #%1==#-eps then
+  shift 
+  set _eps=1
+endiff
+iff #%1==#-pdf then
+  shift 
+  set _pdf=1
+endiff
+if #%1==# quit
+if not exist %1 quit
+set /r "%MTEX\_\texscan.cfg"
+set /r "%ETC\texscan.cfg" >& nul
+if #%TEXSCAN==#  (set TEXSCAN=\input \include \epsf \graph \emgraph \psgraph)
+if #%FIG_EXT==# (set FIG_EXT=eps jpg gif bmp pcx tif png wmf mp)
+if #%PKGSCAN==# (set PKGSCAN=\documentclass \usepackage)
+if not exist %MTEX\pkg.lst (set PKGSCAN=)
+set _f=%TMP\_tmp_.inp
+set _g=_tmp_.btm
+set _z=%@sfn[%1]
+set _z=%@name[%_z].%@ext[%_z]
+echo.>%_f
+echo @echo off>%_g
+for %_a in (*.mp) do gosub check_mp 
+for %_a in (%PKGSCAN %TEXSCAN) do (xfind %_a %_z|tee /a %_f)
+for %_a in (@%_f) do (gosub scan)
+if exist %_g  call %_g
+:end
+del %_f %_g>&nul
+quit
+
+:check_mp
+if not exist %[_a]x return
+if %@fileage[%_a] GT %@fileage[%[_a]x] del %[_a]x
+return
+
+
+:scan
+if %@index["%_a",\documentclass]==1   goto scan_pkg
+if %@index["%_a",\usepackage]==1   goto scan_pkg
+:scan_others
+if %@index[%_a,\begin] GE 0   return
+set _n=%@words["{} ",%_a]
+do _b = 1 to %_n
+  set _w=%@word["{}\ ",%_b,%_a]
+  if #%_w==# iterate
+  set _w=%@replace[/,\,%_w]
+  gosub proc %_w
+enddo
+return
+:scan_pkg
+set _aa=%@word["{}",1,%_a]
+set _n=%@words[",",%_aa]
+do _b = 0 to %@dec[%_n]
+  set _w=%@word["{}, ",%_b,%_aa]
+  if #%_w==# iterate
+  gosub proc_pkg %_w
+enddo
+return
+
+
+
+:proc [f]
+set n=%@name[%f]
+set p=%@path[%f]
+set e=%@lower[%@ext[%f]]
+if not #%e==# goto next
+for %_e in (%FIG_EXT) (
+  iff exist %[p]%[n].%[_e] then
+    set e=%_e 
+    goto next
+  endiff
+)
+
+:next
+::echo %[p]%[n].%[e]
+iff exist %[p]%[n].mp then  
+  if %@numeric[1%e]==1 .OR. %e==mp echo if not exist %[p]%[n].mpx call mpost %[p]%[n].mp>>%_g
+  return
+endiff
+if not exist %[p]%[n].%[e]  return
+set x=%[p]%[n].%[e]
+iff #%_sfn==#1 then
+  if %@len[%n] GT 8 (copy /z %x %[p]%@left[5,%n]%@right[3,%n].%e)
+endiff
+if %@index[%FIG_EXT ,%e ]==-1 (return)
+iff #%_eps==#1 then
+  if not exist %[p]%[n].eps echo call gconvert -xxx %x>>%_g
+endiff
+iff #%_pdf==#1 then 
+  if not exist %[p]%[n].pdf echo call gconvert .pdf %x>>%_g
+endiff
+return
+
+
+:proc_pkg [f]
+if #%f==# return
+if exist %f.cls return
+if exist %f.sty return
+ net_pkg %f /q
+return
+
+:usage
+echo Usage: %0 [-sfn] [-eps] [-pdf] texfile ==) Guess those files included in specified file.
+echo Options: -sfn ==) Convert long file names to short file names to support emTeX.
+echo          -eps ==) Convert graphics files to .eps format (for use with LaTeX).
+echo          -pdf ==) Convert graphics files to .pdf format (for use with pdfLaTeX).
+echo Note: You can set env TEXSCAN to specify commands to scan.
+quit

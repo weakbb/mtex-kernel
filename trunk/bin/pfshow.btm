@@ -1,0 +1,212 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set _tmp=_pfshow_.ps
+set _siz=40
+if %# GT 1 set _siz=%@int[%@eval[50/%#]]
+gosub pfshow_pro > %_tmp
+echo 0 730 sethome %_siz setfontsize 1000 setrightborder >> %_tmp
+for %_a in (%&) do (gosub proc %_a >> %_tmp)
+gswin32 -q %GSOPT% %_tmp
+del %_tmp
+quit
+
+:usage
+echo pfshow pfbfile1 pfbfile2 ... ==) Show specified Type1 font files.
+quit
+
+
+:proc [f]
+set x=%f
+if not exist %f (set x=%@execstr[kwhich.exe %f])
+if #%x==# return
+if  #%@ext[%x]==#pfb (t1ascii %x)
+if  #%@ext[%x]==#pfa (type %x)
+echo                                    appendnewfont 
+echo showallfonts showpage quit 
+return
+
+:pfshow_pro
+text
+%! print font samples and character sets
+/home {leftmargin top moveto} def
+/rightmargin {leftmargin} def
+/sethome {/top exch def /leftmargin exch def} def
+/setfontsize {/fontsize exch def} def
+/setrightborder {/rightborder exch def} def
+70 740 sethome
+20 setfontsize
+550 setrightborder
+/leading 4 def
+/nl {currentpoint exch pop leftmargin exch
+	fontsize sub leading sub moveto} def
+/hl {currentpoint exch pop leftmargin exch
+	fontsize 2 div sub leading sub moveto} def
+
+/fontN {currentfont} def
+/fontB {fontN} def
+/fontI {fontB} def
+/fontBI {fontB} def
+/N {fontN setfont} def
+/B {fontB setfont} def
+/I {fontI setfont} def
+/BI {fontBI setfont} def
+/pushfont {/fontBI /fontI load def
+	/fontI /fontB load def
+	/fontB /fontN load def
+	/fontN currentfont def
+	} def
+/nextfonti 0 def
+/setnextfont {[/fontN /fontI /fontB /fontBI] nextfonti get currentfont def
+	/nextfonti nextfonti 1 add def
+	} def
+
+/namefont {currentfont} def
+/showtext {
+  N
+  (Scoloplos ist eury) show odieresis show 
+   (k. Er ist in der gesamten borealen Region in fast allen) show nl
+  (marinen Sedimenten zu finden, die einen sandigen Anteil aufweisen. Man) show nl
+  (findet ihn von ) show B (Gr) show odieresis show (nland ) show 
+	N (bis zum ) show I (Mittelmeer) show 
+	N (, in der ) show BI (Nordsee) show 
+	N (, an der kanadischen) show nl
+  (K) show udieresis show (ste und im Wei) show germandbls show
+   (en Meer (Markelova 1981).) show nl
+  quotedblleft show (Er besiedelt sowohl das ) show guillemotleft show 
+   (Eulitoral) show guillemotright show ( als auch das ) show quotedblbase show
+   (Bathyal) show quotedblleft show (.) show quotedblright show nl
+  quoteleft show (Er besiedelt sowohl das ) show guilsinglleft show 
+   (Eulitoral) show guilsinglright show ( als auch das ) show quotesinglbase show
+   (Bathyal) show quoteleft show (.) show quoteright show nl
+	} def
+/showcset {
+	[cs0 cs1 cs2 cs3 cs4 cs5 cs6 cs7] {show nl} forall
+	currentfont
+	currentpoint
+	dup fontsize leading add 3 mul add
+	% leftmargin 400 add exch moveto
+		currentfont /FontName get findfont 70 scalefont setfont
+		rightborder (Forqen) stringwidth pop sub exch moveto
+		(Forqen) show
+	moveto
+	setfont
+	} def
+/showname {currentfont namefont setfont
+	dup /FontName get dup length string cvs show
+	setfont nl
+	} def
+/showfont { % param: fontname
+	fontsize ff
+	home
+	showtext
+	showname
+	showcset
+	} def
+/showallfonts {
+	% /fontlist [ FontDirectory {pop} forall ] def
+%	fontlist
+%		{dup findfont copyfont definefont pop}
+%		forall
+
+	fontlist {fontsize ff setnextfont} forall
+	fontlist length 0 ne {home showtext} if
+	[fontN fontI fontB fontBI] 0 fontlist length getinterval
+	{hl setfont (    ) show showname hl showcset} forall
+	} def
+
+/findfont+ {dup findfont
+	dup maxlength dict begin
+	{1 index dup /FID ne exch /UniqueID ne and
+		{def} {pop pop} ifelse} forall
+	Encoding StandardEncoding eq
+	% pop true	% for unconditional re-encoding
+	  {/Encoding Win31+ def} if
+	% /Encoding PrestigeElite def
+	currentdict end
+	definefont
+	} def
+/ff {exch findfont+ exch dup /fontsize exch def scalefont
+	setfont} def
+
+/fontlist [] def
+/FontDirectoryKnown FontDirectory dup length 20 add dict copy def
+/appendnewfont {
+	/fontlist [ fontlist aload pop
+	FontDirectoryKnown begin
+	FontDirectory
+	{FontDirectoryKnown 2 index known {pop pop} {2 copy def pop} ifelse
+	} forall
+	end
+	] def
+	} def
+/registerfont {run appendnewfont} def
+
+/=dict { % for debugging
+	{2 array astore ==} forall
+	} def
+
+/fillsample {	% param: name from-code
+	32 string dup
+	3 -1 roll dup 1 exch 31 add
+		{dup 32 mod exch put dup}
+		for pop def
+	} def
+/cs0	0 fillsample
+/cs1	32 fillsample
+/cs2	64 fillsample
+/cs3	96 fillsample
+/cs4	128 fillsample
+/cs5	160 fillsample
+/cs6	192 fillsample
+/cs7	224 fillsample
+
+/Win31+ [
+% Windows 3.1 character set extended with other common characters,
+% nbspace instead of second space, minus instead of second hyphen;
+% first 32 positions filled up with additional characters from MacIntosh.
+% Windows 3.1 character set is basically an extension of ISO Latin-1 
+% with a few deviations.
+/NUL /HT /LF /CR /DLE /DC1 /DC2 /DC3 /DC4 /US /RS /DEL
+/lessequal /greaterequal /notequal /approxequal /lozenge /apple
+/infinity /partialdiff /summation /product /integral /radical
+/Delta /Omega /pi 
+/breve /dotaccent /hungarumlaut /ogonek /ring 
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quotesingle
+/parenleft /parenright /asterisk /plus /comma /hyphen /period /slash
+/zero /one /two /three /four /five /six /seven
+/eight /nine /colon /semicolon /less /equal /greater /question
+/at /A /B /C /D /E /F /G /H /I /J /K /L /M /N /O
+/P /Q /R /S /T /U /V /W
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore
+/grave /a /b /c /d /e /f /g /h /i /j /k /l /m /n /o
+/p /q /r /s /t /u /v /w
+/x /y /z /braceleft /bar /braceright /asciitilde /fraction
+
+/fi /fl /quotesinglbase /florin 
+	/quotedblbase /ellipsis /dagger /daggerdbl 
+/circumflex /perthousand /Scaron /guilsinglleft /OE /Lslash /Zcaron /caron 
+/dotlessi /quoteleft /quoteright /quotedblleft 
+	/quotedblright /bullet /endash /emdash 
+/tilde /trademark /scaron /guilsinglright /oe /lslash /zcaron /Ydieresis 
+
+/nbspace /exclamdown /cent /sterling /currency /yen /brokenbar /section
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /minus /registered /macron
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /periodcentered
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown
+
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla
+/Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis
+/Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply
+/Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls
+/agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla
+/egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis
+/eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide
+/oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis
+] def
+Win31+
+0 1 31 {2 copy get exch 1 string dup 0 4 -1 roll put def} for
+127 1 255 {2 copy get exch 1 string dup 0 4 -1 roll put def} for
+pop
+
+endtext

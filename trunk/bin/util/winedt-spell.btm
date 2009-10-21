@@ -1,0 +1,1 @@
+%MTEX\winedt\winedt.exe -V "[Open('%1');CMD('Spell Check');CMD('Exit');]"

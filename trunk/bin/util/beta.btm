@@ -1,0 +1,3 @@
+@echo off
+if "%1"=="" (call util beta *.inp beta.add) else (call util beta %&)
+if isdir htm (?ren htm\*.htm htm\*.html)

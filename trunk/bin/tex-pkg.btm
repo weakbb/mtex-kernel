@@ -1,0 +1,207 @@
+@echo off
+rem [mhb]本工具用于管理MTEX中的附加宏包。
+setlocal
+set d=%MTEX\texlocal
+iff not isdir %d then
+  echo Run TEX-CFG to configure your MTEX!  
+  quit
+endiff
+if #%1==#  (goto usage)
+iff #%1==#-e  then
+  shift  
+  goto explore
+elseiff #%1==#-i then
+  shift  
+  goto install_pkgs
+elseiff #%1==#-u then
+  shift  
+  goto uninstall_pkgs
+elseiff #%1==#-a then
+  shift  
+  goto addfiles
+elseiff #%1==#-d then
+  shift  
+  goto delfiles
+elseiff #%1==#-l then
+  shift  
+  goto list_pkgfiles
+elseiff #%1==#-b then
+  shift  
+  goto browse_pkgfiles
+elseiff #%1==#-net then
+  shift  
+  goto netdown_pkgs
+quit
+
+
+
+:usage
+echo Usage: D=[%d%]
+echo 	%0 -b        ==) Browse files of installed packages
+echo 	%0 -e        ==) Browse D using Windows explorer
+echo 	%0 -i pkgs   ==) Install package(s) to D
+echo 	%0 -u pkgs   ==) Uninstall package(s) from D
+echo 	%0 -a files   ==) Add file(s) to D
+echo 	%0 -d files   ==) Delete file(s) from D
+echo 	%0 -l pkgs   ==) List files of installed package(s)
+echo 	%0 -net pkgs   ==) Download and Install package(s) from Internet to D
+quit
+
+:explore
+start %MTEX\texinput
+start %MTEX\texlocal
+quit
+
+:netdown_pkgs
+for %p in (%&) do start "" net_pkg %p
+quit
+
+:install_pkgs
+set src=%PKGDIR%
+if #%src==# (set src=.)
+set files=*.sty *.cls *.fd *.fdd *.sfd *.enc *.ini *.cfg *.def *.dat *.pro *.ps *.tex *.clo *.ist *.doc *.mbs *.tss *.new *.mld *.mlo
+iff #%1==# then
+  echo You must specify a package or directory!
+  quit
+endiff
+for %p in (%&) do gosub install_p %p
+quit
+
+:uninstall_pkgs
+for %p in (%&) do gosub uninstall_p %p
+quit
+
+:addfiles
+for %a in ( %& ) do gosub addfile %a
+quit
+
+:delfiles
+pushd %d
+for %a in ( %& ) do gosub delfile %a
+popd
+quit
+
+:list_pkgfiles
+pushd %d
+if #%1==# (dir /z /oi /p)
+for %p in ( %& ) do gosub list_p %p
+popd
+quit
+
+:list_p [p]
+set g=%@name[%p]
+set l=%@dec[%@len[%p]]
+if #%g==# set g=%@name[%@left[%l,%p]]
+if #%g==# (return)
+iff isdir %g then
+  dir /p %g 
+  return
+endiff
+iff isdir %MTEX\texinput\%g then 
+  dir /p %MTEX\texinput\%g 
+  return
+endiff
+iff isdir "%@left[8,%g]" then
+  dir /p %@left[8,%g] 
+  return
+endiff
+set x=%@path[%@execstr[ffind /s /f %g.*]]
+iff not #%x==# then
+  dir /p %x 
+  return
+endiff
+dir /p /i"%g"
+return
+
+
+:browse_pkgfiles
+pushd %d
+set _asked=
+set _cmd=
+set _arg=
+select /z /oi gosub runcmd (.)
+::for %p in ( %& ) do (select /z /i"%p" gosub runcmd (.) )
+popd
+quit
+
+:install_p [p]
+iff isdir %p then
+  pushd %p
+elseiff isdir %src\%p then
+  pushd %src\%p
+else
+  echo Can't find package [%p]! Please configure PKGDIR in MTEX.CFG!
+  return
+endiff
+set g=%@name[%p]
+set l=%@dec[%@len[%p]]
+if #%g==# set g=%@name[%@left[%l,%p]]
+iff #%g==# then
+  popd %
+  return
+endiff
+::set dg=%d\%@left[8,%g]
+set dg=%d\%g
+echo Installing package  [%g] ...
+:compile
+for %a in (*.ins) do (?"Compile ins?" call latex %a)
+:copypkg
+mkdir %dg>&nul
+copy /e/s %files %dg\
+copy /e/s /[s1,20000] *.pdf *.png *.jpg %dg\
+popd
+return
+
+:uninstall_p [p]
+pushd %d
+set g=%@name[%p]
+set l=%@dec[%@len[%p]]
+if #%g==# set g=%@name[%@left[%l,%p]]
+iff #%g==# then
+  popd 
+  return
+endiff
+echo Now I will delete package [%g]. Please confirm this operation...
+del /I"%g" *
+iff isdir %g then
+  del %g\*.* 
+  rmdir %g
+elseiff isdir %@left[8,%g] then
+  del %@left[8,%g]\*.* 
+  rmdir %@left[8,%g]
+endiff
+iff isdir %MTEX\fonts\mf\%g then
+  del %MTEX\fonts\mf\%g 
+  rmdir %MTEX\fonts\mf\%g
+endiff
+iff isdir %MTEX\fonts\tfm\%g then
+  del %MTEX\fonts\tfm\%g 
+  rmdir %MTEX\fonts\mf\%g
+endiff
+popd
+return
+
+:addfile [a]
+set e=%@lower[%@ext[%a]]
+set N=%@name[%a].%e
+set N2=%@left[5,%@name[%a]]%@right[3,%@name[%a]].%e
+copy %a %d\
+::call tex-lfn -L %d\%N
+return
+
+:delfile [a]
+if exist %a%  (del %a%)
+set N=%@left[8,%@name[%a]].%@ext[%a]
+if exist %N  (del %N%) 
+if %@len[%@name[%a]] GT 8 (set N=%@left[5,%@name[%a]]%@right[3,%@name[%a]].%@ext[%a])
+if exist %N  (del %N%) 
+return
+
+:runcmd [f]
+iff #%_asked==# then
+  set _asked=1 
+  input Command?  %%_cmd 
+  input Arguments?  %%_arg
+endiff
+if #%_asked==#1 (%_cmd %f %_arg)
+return

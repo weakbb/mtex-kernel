@@ -1,0 +1,99 @@
+@echo off
+if #%1==# goto #usage
+setlocal
+
+:start
+set doc_dir=%MTEX\doc\_new
+iff not #%DOCSLOCAL==# then
+  set doc_dir=%DOCSLOCAL\_new
+endiff
+mkdir /s %doc_dir >& nul
+
+iff not "%MSETUP"=="" .OR. #%@ext[%1]==#rar then
+  call chkmsetup
+  gosub #local_extract
+endiff
+
+set server=%@line["%MTEX\_\mserver.cfg",0]
+iff exist "%ETC\mserver.cfg" then
+  set server=%@line["%ETC\mserver.cfg",0]
+endiff
+set server=%@execstr[call ask_server.btm]
+
+pushd "%TMP"
+REM ~ set url=%@execstr[dir /b /s "%[server]docs/%1*.*"]
+dir_ftp "%[server]docs/"
+REM ~ sed -n -e "/ %1/p" .listing > __docs__.tmp
+xfind %1 .listing > __docs__.tmp
+if %@lines[__docs__.tmp]==-1 goto #error
+set _arc=%@line[__docs__.tmp,0]
+if "%_arc"=="" goto #error
+iff %@lines[__docs__.tmp] GT 0 then
+  set _arc=%@select[__docs__.tmp,1,1,25,60,Please select a document archive,1]
+endiff
+del .listing;__docs__.tmp >& nul
+set _arc=%@word[-0,%_arc]
+set url=%[server]docs/%_arc
+
+if "%url"=="" (goto #error)
+
+
+set _fn=%@name[%url].%@ext[%url]
+set _ii=%@index[%url,/docs/]
+set url=%[server]%@instr[%@eval[%_ii+1],,%url]
+gosub #download_doc
+quit
+
+:#usage
+echo Usage1: %0 docname ==) Install a document from MTeX server
+echo Usage2: %0 xyz.rar ==) Install a document from archive xyz.rar
+quit
+
+:#local_extract
+set _u=%1
+iff not %@path[%1]#%@ext[%1]==#rar then
+  set _u=%@if[exist "%TMP"\docs\%1.rar,"%TMP"\docs\%1.rar,docs\%1.rar]
+endiff
+iff #%@ext[%_u]==#rar then
+  set _u=%@execstr[call %MTEX\bin\search.btm %_u .;%MSETUP]
+  if #%_u==#  return
+endiff
+echoerr Automatically installing doc archive [%_u] ...
+iff exist "%_u" then 
+  unrar x -o+ %_u %doc_dir
+  echoerr Documents in archive [%_u] has been extracted to folder [%doc_dir]!
+endiff
+quit
+
+
+:#error
+popd
+msg 0 I cannot find document [%1] on MTeX server! Try another server?~~
+msg 936 MTeX服务器上还没有发现文档[%1]！是否尝试其它服务器?~~
+msgbox OKCANCEL %_msg
+if %_?==10 (goto start)
+quit
+
+:#download_doc
+mkdir /s "%TMP\docs" >& nul
+pushd "%TMP\docs"
+echo Downloading file [%url] to [%TMP\docs\%_fn], please wait until finished ...
+echo Running: down_url "%_fn" "%url"
+down_url "%_fn" "%url"
+
+echo Downloading finished? I will test the rar archieve:-)
+
+unrar t %@sfn["%_fn"]
+iff %?==0 then 
+  unrar x -o+ %_fn %doc_dir\
+  msg 0  Downloading finished! Documents in archive [%_fn] have been extracted to folder [%doc_dir]!~~
+  msg 936 下载完毕！文件[%TMP\docs\%_fn]已解压到文档文件夹[%doc_dir]！~~
+else
+  del "%_fn"
+  msg 0 Error in downloading? Please make sure the URL is correct!~~
+  msg 936 下载似乎有错误！请确认下载地址正确！~~
+endiff
+msgbox OK %_msg
+popd
+return
+

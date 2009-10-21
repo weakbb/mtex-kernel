@@ -1,0 +1,46 @@
+@echo off
+setlocal
+if #%1==# (goto usage)
+if not exist %1 (goto usage)
+set _out=%2
+if #%2==# (set _out=%@name[%1].htm)
+pushd %@path[%1]
+gosub htm-head > %_out
+gosub htm-body >> %_out
+gosub htm-end >> %_out
+popd
+quit
+
+:htm-head
+text
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+ <HEAD>
+endtext
+echo `  <TITLE>` %@name[%1] `</TITLE>`
+text
+  <META NAME="Generator" CONTENT="MTeX t2h">
+  <META NAME="Author" CONTENT="mathmhb">
+  <META NAME="Keywords" CONTENT="">
+  <META NAME="Description" CONTENT="">
+ </HEAD>
+
+ <BODY>
+ 
+ endtext
+ return
+ 
+:htm-end
+text
+</BODY>
+</HTML>
+endtext
+return
+
+:htm-body
+sed -f "%MTEX\bin\t2h.sed" %1
+return
+
+:usage
+echo Usage: %0 txtfile [htmfile] ==) Convert txtfile to htmfile
+quit

@@ -1,0 +1,17 @@
+@echo off
+setlocal
+set exlist=breqn empheq flexisym mathstyle mathtools mhsetup xfrac 
+for /r %a in (*.dtx) do gosub compile %a
+quit
+
+:compile [x]
+pushd
+set basename=%@name[%x]
+set texcmd=latex
+iff %@index[ %exlist , %basename ] GE 0 then
+  set texcmd=tex
+endiff
+cdd %@path[%x]
+%texcmd %@name[%x].dtx
+popd
+return

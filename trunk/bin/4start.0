@@ -1,0 +1,5 @@
+ Hint|Back|Exit|Cls|Dir|Explorer|Find|CDD|Run|RunOne|RunMany|RunSame|
+Alt+H Bksp  X    C   D     E      F    J   R     O      M       S   
+F4:4NT help;PgUp:commands history;Ctrl-PgUp:folders history;Up:prev command;
+Ctrl-X:expand env;Ctrl-F:expand alias;Ctrl-A:SFN/LFN;Tab:complete filename.
+Alt-A:MTeX main menu;Alt-T:TeX editor;Alt-L:list commands available.

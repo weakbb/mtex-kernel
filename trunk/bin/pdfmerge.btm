@@ -1,0 +1,96 @@
+@echo off
+setlocal
+set _f0=_tmp_.tex
+
+set frame=false
+set fitpaper=false
+set nup=1x1
+set paper=a4paper
+set orient=auto
+set pages=-
+set landscape=false
+set turn=true
+set noautoscale=false
+set column=false
+set columnstrict=false
+set delta=0 0
+set offset=0 0
+set trim=0 0 0 0
+set scale=1.0
+set openright=false
+set tidy=true
+
+set out=_Merged_.pdf
+iff #%1==#-o then
+  set out=%2
+  shift
+  shift
+endiff
+if #%1==# goto usage
+
+set opts=
+do while %@wild[%1,-*]==1
+  set k=%@word["-:",0,%1]
+  set v=%@word["-:",1,%1]
+  set v=%@unquotes[%v]
+  set %[%k]=%v
+  shift
+  iff %@index[orient fitpaper ,%k ] GT 0  then
+    set opts=%opts,%k=%v
+  endiff
+enddo
+iff #%orient=#auto then
+  set x=%@word["x",0,%nup]
+  set y=%@word["x",1,%nup]
+  set fitpaper=true
+  iff %x GT %y then
+    set orient=landscape 
+    set fitpaper=false
+  elseiff %x LT %y then
+    set orient=portrait 
+    set fitpaper=false
+  endiff
+endiff
+
+echo Current settings: [nup=%nup, landscape=%landscape, frame=%frame, fitpaper=%fitpaper, trim=%trim, delta=%delta, offset=%offset, scale=%scale, turn=%turn, noautoscale=%noautoscale, column=%column, columnstrict=%columnstrict, openright=%openright]
+
+pushd %@path[%1]
+set pdfname=%@name[%1].%@ext[%1]
+if %@index[%1,,]==-1 (set pdfname=%pdfname,-) 
+for %a in (%2&) do (
+  set pdffile=%@word[",",0,%a]
+  set pdffile=%@name[%pdffile].%@ext[%pdffile]
+  set pdfpage=%@word[",",1,%a]
+  iff #%pdfpage==# then
+    set pdfpage=-
+  endiff
+  set pdfname=%pdfname,%pdffile,%pdfpage
+  if %@index[%a,,]==-1 (set pdfname=%pdfname,-)
+)
+set pdfname=%@replace[",,%pdfname]
+gosub pdfmerge >%_f0
+call pdflatex %_f0
+move %@name[%_f0].pdf %out
+del %@name[%_f0].*>&nul
+echo Merged file is [%out]!
+popd
+quit
+
+:pdfmerge
+echo \documentclass[%paper,%orient]{article}
+echo \usepackage{pdfpages}
+echo \begin{document}
+echo \includepdfset{%opts}
+echo \includepdfmerge[nup=%nup, landscape=%landscape, frame=%frame, fitpaper=%fitpaper, trim=%trim, delta=%delta, offset=%offset, scale=%scale, turn=%turn, noautoscale=%noautoscale, column=%column, columnstrict=%columnstrict, openright=%openright]{%pdfname}
+echo \end{document} 
+return
+
+
+:usage
+echo Usage: pdfmerge [-o outfile] [options] "pdffile1[,pages1]" "pdffile2[,pages2]" ...
+echo Examples of pages: -; 2-5; 2-; -5; 2,4,5
+echo Default outfile: [_Merged_.pdf]
+echo Default options: -nup:%nup -landscape:%landscape -frame:%frame -fitpaper:%fitpaper -trim:"%trim" -delta:"%delta" -offset:"%offset" -scale:"%scale" -turn:%turn -noautoscale:%noautoscale -column:%column -columnstrict:%columnstrict -openright:%openright
+echo Supports also any other options of package {pdfpages}. 
+quit
+

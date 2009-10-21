@@ -1,0 +1,16 @@
+@echo off
+setlocal
+set out=_Merged_.dvi
+iff #%1==#-o then
+  set out=%2
+  shift
+  shift
+endiff
+if #%1==# goto usage
+call dviconcat -o %out %&
+quit
+
+:usage
+echo dvimerge [-o outfile] [-m mag] dvifile1 dvifile2 ... ==)Merge dvi files.
+echo Default outfile: [_Merged_.dvi]
+quit

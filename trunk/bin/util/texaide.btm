@@ -1,0 +1,4 @@
+@echo off
+setlocal
+for %a in (%UTILS\texaide\*.ttf %UTILSLOCAL\texaide\*.ttf) start /wait wfont %a
+call util.btm :texaide eqnedt32 %&

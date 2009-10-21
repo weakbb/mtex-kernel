@@ -1,0 +1,10 @@
+
+\DeclareFontFamily{$(E)}{$(FONTFAMILY)}{}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{m}{n}{<-> CJK * $(FONTBASE)}{}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{bx}{n}{<-> CJKb * $(FONTBASE)}{\CJKbold}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{m}{it}{<-> CJK * $(FONTBASE)sl}{}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{bx}{it}{<-> CJKb * $(FONTBASE)sl}{\CJKbold}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{m}{sl}{<-> CJK * $(FONTBASE)sl}{}
+\DeclareFontShape{$(E)}{$(FONTFAMILY)}{bx}{sl}{<-> CJKb * $(FONTBASE)sl}{\CJKbold}
+
+\endinput

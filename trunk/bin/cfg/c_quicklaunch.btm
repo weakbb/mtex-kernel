@@ -1,0 +1,6 @@
+mkdir /s "%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\"
+cdd "%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\"
+msg 0 MTeX MainMenu
+msg 936 MTeXÖ÷²Ëµ¥
+::msg 950 MTeX¥Dµæ³æ
+wlnk "%_msg" "%MTeX\MainMenu.exe" " " "%MTeX\" "%MTeX\bin\mtex.ico"

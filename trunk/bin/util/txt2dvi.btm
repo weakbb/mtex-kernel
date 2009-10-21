@@ -1,0 +1,22 @@
+@echo off
+setlocal
+if #%1==# goto usage
+if #%2==# (set out=%@path[%1]%@name[%1].dvi) else (set out=%2)
+vdm
+call setemtex
+text2dvi -CJK %3& %1 %out
+quit
+
+:usage
+echo %0 txtfile [dvifile]  [options]=) Convert .txt file to .dvi file
+text
+Options:
+  -CJK  use CJK fonts (default: use CCT fonts).
+  -c#   number of chars/line (default 80).
+  -l#   number of lines/page (default 58).
+  -z#   typeface (0=song, 1=hei, 2=kai, 3=fangsong).
+  -p    don't add page numbers.
+  -n#   first page number (default 1).
+endtext
+quit
+

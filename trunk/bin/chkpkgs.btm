@@ -1,0 +1,41 @@
+@echo off
+setlocal
+set server=ftp://tug.ctan.org/tex-archive
+pushd %TMP
+if #%1==# goto #usage
+iff %@wild[%1,-*]==1 then
+  if islabel %1 (gosub %1)
+else
+  for %z in (%&) do gosub #check %z
+endiff
+popd
+quit
+
+:#usage
+echo Usage1:%0 -checkall
+
+
+:-checkall
+del FILES.*
+wget "%server/FILES.*"
+sed -n -e "/macros.*\.zip/p" FILES.byname |sortw.exe > macros.lst
+list macros.lst
+return
+
+:-downloadall
+wget -c -nd -np -r -N --accept=zip "%server/macros/latex/"
+return
+
+:-download-all
+for %x in (@macros.lst) do gosub #download
+return
+
+:#download
+set f_dat=%@trim[%@word["|",0,%x]]
+set f_siz=%@trim[%@word["|",1,%x]]
+set f_pkg=%@trim[%@word["|",2,%x]]
+set f_nam=%@name[%f_pkg].%@ext[%f_pkg]
+echo ===%f_nam:%f_dat,%f_siz,%f_pkg==
+wget -c -O "%f_nam" "%server/%f_pkg"
+%pause
+return

@@ -1,0 +1,50 @@
+@echo off
+setlocal
+set m=ps
+iff #%1==#-ps then
+  set m=ps 
+  shift
+elseiff #%1==#-pdf then
+  set m=pdf 
+  shift
+elseiff #%1==#-dvi then
+  set m=dvi
+  shift
+endiff
+if #%1==# goto usage
+pushd %@path[%1]
+set f=%@name[%1].%@ext[%1]
+set z=
+iff #%@ext[%f]==#mp .OR. #%@ext[%f]==#  then 
+  set testltx=%@execstr[xfind "\documentclass" %@name[%f].mp]
+  iff not #%testltx==# then
+    set TEX=latex
+  endiff
+  call mpost %f
+  set z=%@name[%f].[0-9]*
+else
+  set z=%f %2&
+endiff
+set _mps=%@expand[%z]
+if #%_mps==# (goto end)
+echo Running: tex mproof %_mps
+call tex mproof %_mps
+move mproof.* _mproof_.*
+::call makepk.btm _mproof_.dvi
+if #%m=#ps (dvips _mproof_.dvi)
+if #%m=#pdf (dvipdfm _mproof_.dvi)
+del _mproof_.log
+if not #%m==#dvi (del _mproof_.dvi)
+call %[m]view _mproof_.%[m]
+:end
+popd
+quit
+
+:usage
+echo Usage1: %0 [-option] mp_file ==) Compile mp_file and Preview metapost figures. 
+echo Usage2: %0 [-option] mps_files ==) Preview metapost figures. Support wildcards.
+echo Option: ps, pdf, dvi ==) preview mode (default:ps)
+echo Example: %0 fig-ex.mp ==) metapost file, make proof.ps and preview
+echo Example: %0 -pdf fig-ex.* ==) make proof.pdf from fig-ex.* and preview
+echo Example: %0 -dvi fig-ex.? ==) make proof.dvi and preview (NOT recommended!)
+quit

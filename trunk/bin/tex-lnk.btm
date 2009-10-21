@@ -1,0 +1,266 @@
+@echo off
+if #%1==# goto help
+setlocal
+alias del=`*del /Y /Q `
+
+pushd %TMP
+set s=%@execstr[wfolder.exe $SendTo\]
+set d=%@execstr[wfolder.exe $Desktop\]
+set p=%@execstr[wfolder.exe $Programs\MTeX\]
+del wfolder.sav>&nul
+
+if #%s==#\  set s=%WINDIR\SendTo\
+if #%d==#\  set d=%WINDIR\Desktop\
+if #%p==#\MTeX\  set p=%WINDIR\STARTM~1\Programs\MTeX\
+set q=%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\
+
+echo Detected folders of shortcuts: 
+echo   DESKTOP=[%@full[%d]]
+echo   SENDTO=[%@full[%s]]
+echo   PROGRAMS=[%@full[%p]]
+echo   QUICKLAUCH=[%@full[%q]]
+
+for %a in (%&) gosub %@if[islabel %a#%LANG,%a#%LANG,%a]
+
+popd
+quit
+
+:help
+echo Usage: %0 [-desktop] [-programs] [-sendto] [-quick] ==) Create shortcuts for MTeX.
+echo Usage: %0 [-test] ==) Not create shortcuts, but only display info on folders.
+echo Usage: %0 [-clear] ==) Clear all shortcuts for MTeX.
+quit
+
+:-test
+:-test#936
+return
+
+:-quick#936
+:-quicklauch#936
+gosub -clear-quick
+cdd "%q"
+wlnk "%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\MTeX主菜单" "%MTeX\MainMenu.exe" " " "%MTeX\" "%MTeX\bin\mtex.ico" ~~
+return
+
+:-desktop#936
+gosub -clear-desktop
+mkdir /s %d>&nul
+cdd "%d"
+wlnk "$Desktop\TeX集成环境" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$Desktop\MTeX主菜单" "%MTeX\MainMenu.exe" " " "%MTeX\" "%MTeX\bin\mtex.ico" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Desktop\MTeX-中文LyX排版" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+return
+
+:-desktop1#936
+gosub -desktop#936
+wlnk "$Desktop\TeX-DOS窗口" "%MTeX\bin\4nt.exe" "cdd %MTeX\demo\" "" "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$Desktop\MTeX工具栏" "%MTeX\bin\tmac.exe" ~~
+return
+
+:-desktop2#936
+gosub -clear-desktop
+set x=%[d]MTeX
+mkdir /s %x>&nul
+if not isdir "%x" return 
+cdd "%x"
+wlnk "$Desktop\MTeX\看图软件" "%Utils\iview\i_view32.exe" ~~
+wlnk "$Desktop\MTeX\MTeX使用说明" "%MTeX\doc\MTeX.htm" ~~
+wlnk "$Desktop\MTeX\MTeX主菜单" "%MTeX\MainMenu.exe" " " "c:\" ~~
+wlnk "$Desktop\MTeX\TeX-DOS窗口" "%MTeX\bin\tex-dos.exe" "" "%MTeX\demo" "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$Desktop\MTeX\TeX集成环境" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$Desktop\MTeX\TeX工具箱管家" "%MTeX\bin\utilsman.exe" ~~
+wlnk "$Desktop\MTeX\TeX位图工具" "%MTeX\bin\tex-bmp.exe" ~~
+wlnk "$Desktop\MTeX\参考文献提取工具" "%MTeX\bin\bibx.exe" ~~
+wlnk "$Desktop\MTeX\模板及符号选择器" "%MTeX\bin\tmac.exe" ~~
+wlnk "$Desktop\MTeX\重新配置MTeX" "%MTeX\bin\4nt.exe" "/c tex-cfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Desktop\MTeX\MTeX基本配置" "%MTeX\bin\4nt.exe" "/c mtexcfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Desktop\MTeX\TrueType字体配置向导" "%MTeX\bin\4nt.exe" "/c tex-font -wiz" " " "%MTeX\bin\mtex.ico" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Desktop\MTeX\MTeX-中文LyX排版" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+wlnk "$Desktop\MTeX\反安装MTeX套装" "%MTeX\bin\4nt.exe" "/c uninstall" "c:\" "%MTeX\bin\mtex.ico" ~~
+return
+
+:-programs#936
+gosub -clear-programs
+set x=%p
+mkdir /s %x>&nul
+if not isdir "%x" return 
+cdd %x
+wlnk "$Programs\MTeX\看图软件" "%Utils\iview\i_view32.exe" ~~
+wlnk "$Programs\MTeX\MTeX使用说明" "%MTeX\doc\MTeX.htm" ~~
+wlnk "$Programs\MTeX\MTeX各种文档" "%MTeX\bin\4nt.exe" "/c doc.btm :?" "c:\" "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\MTeX主菜单" "%MTeX\MainMenu.exe" ~~
+wlnk "$Programs\MTeX\MTeX工具栏" "%MTeX\bin\tmac.exe" ~~
+wlnk "$Programs\MTeX\TeX-DOS窗口" "%MTeX\bin\tex-dos.exe" "" "%MTeX\demo" "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$Programs\MTeX\TeX集成环境" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$Programs\MTeX\TeX工具箱管家" "%MTeX\bin\utilsman.exe" ~~
+wlnk "$Programs\MTeX\TeX位图工具" "%MTeX\bin\tex-bmp.exe" ~~
+wlnk "$Programs\MTeX\参考文献提取工具" "%MTeX\bin\bibx.exe" ~~
+wlnk "$Programs\MTeX\重新配置MTeX" "%MTeX\bin\4nt.exe" "/c tex-cfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\MTeX基本配置" "%MTeX\bin\4nt.exe" "/c mtexcfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\TrueType字体配置向导" "%MTeX\bin\4nt.exe" "/c tex-font -wiz" " " "%MTeX\bin\mtex.ico" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Programs\MTeX\MTeX-中文LyX排版" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+wlnk "$Programs\MTeX\反安装MTeX套装" "%MTeX\bin\4nt.exe" "/c uninstall" "c:\" "%MTeX\bin\mtex.ico" ~~
+return
+
+:-sendto#936
+gosub -clear-sendto
+set x=%s
+mkdir /s %x>&nul
+if not isdir "%x" return 
+cdd %x
+wlnk "$SendTo\ 用MTeX智能转换" "%MTeX\bin\4nt.exe" "/c m-conv" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ 用MTeX智能打开" "%MTeX\bin\4nt.exe" "/c openx" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ 用MTeX智能编辑" "%MTeX\bin\4nt.exe" "/c openx -edit" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ 用MTeX智能编译" "%MTeX\bin\4nt.exe" "/c openx -compile" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ TeX-DOS窗口" "%MTeX\bin\4nt.exe" "echo %%1" " " "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$SendTo\ TeX集成环境" "%MTeX\bin\tex-edt.exe" " " "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$SendTo\ TeX工具箱管家" "%MTeX\bin\utilsman.exe" " " "%MTeX\bin\utilsman.exe" ~~
+wlnk "$SendTo\ MTeX拼写检查" "%MTeX\bin\4nt.exe" "/c spell" " " "%MTeX\bin\spell.ico" ~~
+return
+
+
+:-quick
+:-quicklauch
+gosub -clear-quick
+cdd "%q"
+wlnk "MTeX MainMenu" "%MTeX\MainMenu.exe" " " "%MTeX\" "%MTeX\bin\mtex.ico" ~~
+return
+
+:-desktop
+gosub -clear-desktop
+if not isdir %d return 
+cdd "%d"
+wlnk "$Desktop\MTeX MainMenu" "%MTeX\MainMenu.exe"  ~~
+wlnk "$Desktop\TeX IDE" "%MTeX\bin\tex-edt.exe" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Desktop\MTeX-Chinese LyX" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+return
+
+:-desktop1
+gosub -desktop
+wlnk "$Desktop\MTeX Toolbar" "%MTeX\mtexbars.exe" ~~
+wlnk "$Desktop\TeX-DOS Prompt" "%MTeX\bin\tex-dos.exe" "" "%MTeX\demo" "%MTeX\bin\tex-dos.ico" ~~
+::wlnk "$Desktop\TeX Utils Manager" "%MTeX\bin\utilsman.exe" ~~ 
+return
+
+:-desktop2
+gosub -clear-desktop
+set x=%[d]MTeX
+mkdir /s "%x" >&nul
+if not isdir "%x" return
+cdd "%x"
+wlnk "$Desktop\MTeX\IrfanView Pictur Viewer" "%Utils\iview\i_view32.exe" ~~
+wlnk "$Desktop\MTeX\MTeX User Manual" "%MTeX\doc\MTeX.htm" ~~
+wlnk "$Desktop\MTeX\MTeX MainMenu" "%MTeX\MainMenu.exe" ~~
+wlnk "$Desktop\MTeX\TeX-DOS Prompt" "%MTeX\bin\tex-dos.exe" "" "%MTeX\demo" "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$Desktop\MTeX\TeX IDE" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$Desktop\MTeX\TeX Utils Manager" "%MTeX\bin\utilsman.exe" ~~
+wlnk "$Desktop\MTeX\TeX Bitmap" "%MTeX\bin\tex-bmp.exe" ~~
+wlnk "$Desktop\MTeX\BibX--Extract Bib Info" "%MTeX\bin\bibx.exe" ~~
+wlnk "$Desktop\MTeX\TMac--Templates and Symbols" "%MTeX\bin\tmac.exe" ~~
+wlnk "$Desktop\MTeX\Reconfigure MTeX" "%MTeX\bin\4nt.exe" "/c tex-cfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Desktop\MTeX\MTeX Basic Settings" "%MTeX\bin\4nt.exe" "/c mtexcfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Desktop\MTeX\TTF Configuration Wizard" "%MTeX\bin\4nt.exe" "/c tex-font -wiz" " " "%MTeX\bin\mtex.ico" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Desktop\MTeX\MTeX-Chinese LyX" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+wlnk "$Desktop\MTeX\Uninstall MTeX" "%MTeX\bin\4nt.exe" "/c uninstall" "c:\" "%MTeX\bin\mtex.ico" ~~
+return
+
+
+:-programs
+gosub -clear-programs
+set x=%p
+mkdir /s "%x" >&nul
+if not isdir "%x" return
+cdd "%x"
+wlnk "$Programs\MTeX\IrfanView Pictur Viewer" "%Utils\iview\i_view32.exe" ~~
+wlnk "$Programs\MTeX\MTeX User Manual" "%MTeX\doc\MTeX.htm" ~~
+wlnk "$Programs\MTeX\MTeX Documents" "%MTeX\bin\4nt.exe" "/c doc.btm :?" "c:\" "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\MTeX MainMenu" "%MTeX\MainMenu.exe" " " "c:\" "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\TeX-DOS Prompt" "%MTeX\bin\tex-dos.exe" "" "%MTeX\demo" "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$Programs\MTeX\TeX IDE" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$Programs\MTeX\TeX Utils Manager" "%MTeX\bin\utilsman.exe" ~~
+wlnk "$Programs\MTeX\TeX Bitmap" "%MTeX\bin\tex-bmp.exe" ~~
+wlnk "$Programs\MTeX\BibX--Extract Bib Info" "%MTeX\bin\bibx.exe" ~~
+wlnk "$Programs\MTeX\TMac--Templates and Symbols" "%MTeX\bin\tmac.exe" ~~
+wlnk "$Programs\MTeX\Reconfigure MTeX" "%MTeX\bin\4nt.exe" "/c tex-cfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\MTeX Basic Settings" "%MTeX\bin\4nt.exe" "/c mtexcfg" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$Programs\MTeX\TTF Configuration Wizard" "%MTeX\bin\4nt.exe" "/c tex-font -wiz" " " "%MTeX\bin\mtex.ico" ~~
+iff isdir "%UTILS\lyx" then
+  wlnk "$Programs\MTeX\MTeX-Chinese LyX" "%MTeX\bin\4nt.exe" "/c util lyx" "%MTeX\" "%MTeX\bin\mtex-lyx.ico" ~~
+endiff
+wlnk "$Programs\MTeX\Uninstall MTeX" "%MTeX\bin\4nt.exe" "/c uninstall" "c:\" "%MTeX\bin\mtex.ico" ~~
+return
+
+:-sendto
+gosub -clear-sendto
+set x=%s
+mkdir /s "%x">&nul
+cdd "%x"
+wlnk "$SendTo\ Smart Convert with MTeX" "%MTeX\bin\4nt.exe" "/c m-conv" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ Smart Open with MTeX" "%MTeX\bin\4nt.exe" "/c openx" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ Smart Edit with MTeX" "%MTeX\bin\4nt.exe" "/c openx -edit" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ Smart Compile with MTeX" "%MTeX\bin\4nt.exe" "/c openx -edit" " " "%MTeX\bin\mtex.ico" ~~
+wlnk "$SendTo\ MTeX DOS Prompt" "%MTeX\bin\4nt.exe" "echo %%1" " " "%MTeX\bin\tex-dos.ico" ~~
+wlnk "$SendTo\ MTeX IDE" "%MTeX\bin\tex-edt.exe" ~~
+wlnk "$SendTo\ MTeX Utils Manager" "%MTeX\bin\utilsman.exe" ~~
+wlnk "$SendTo\ MTeX Spell Checker" "%MTeX\bin\4nt.exe" "/c spell" " " "%MTeX\bin\spell.ico" ~~
+return
+
+
+
+
+:-clear
+gosub -clear-sendto
+gosub -clear-desktop
+gosub -clear-programs
+gosub -clear-quick
+return
+
+
+:-clear-sendto
+iff isdir "%s" then
+pushd "%s"
+del " *MTeX*.lnk" >& nul
+del " TeX*.lnk" >& nul
+popd
+endiff
+return 
+
+:-clear-desktop
+iff not #%d==# .AND.  isdir "%d" then
+pushd "%d"
+del "TeX*.*" >& nul
+del "MTeX*.*" >& nul 
+del MTeX\*.lnk /y >& nul
+rmdir MTeX >& nul
+popd
+endiff
+return
+
+
+:-clear-quick
+iff isdir "%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\"  then
+pushd "%userprofile%\Application Data\Microsoft\Internet Explorer\Quick Launch\"
+del "MTeX*.*" >& nul
+popd
+endiff
+return
+
+:-clear-programs
+iff not #%p==# .AND. isdir "%p" then
+pushd "%p"
+del *.lnk /y >& nul
+popd
+rmdir "%p" >& nul
+endiff
+return
+

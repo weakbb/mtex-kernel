@@ -1,0 +1,38 @@
+@echo off
+rem [mhb]本工具用于运行一个命令前，对其进一步修改，然后运行。
+rem 一些技巧：出现命令行后，命令前输入4nt，可以不退出DOS窗口；
+rem 命令前如果有空格，可以使程序运行完后暂停。
+
+if #%1==#  goto usage
+setlocal
+set _sel=
+set _noask=
+iff #%1==#-n  then
+	set _noask=1
+	shift
+endiff
+if %@wild[%&,(*)]==1 (set _sel=select)
+if %@wild[%&,[*]]==1 (set _sel=select)
+set Command= %&
+
+DO FOREVER
+	msg 0 Please input your command or commands [leading space will cause pause]:~~
+	msg 936 请输入要运行的命令行[命令行前的空格将导致运行后暂停]:~~
+	echo %_msg
+	eset Command
+	call %_sel %Command
+	if not "%@left[1,%Command]"==" " (set _noask=1)
+	if #%_noask==#1 quit
+	msg 0 Run new command (Y/N)?~~
+	msg 936 是否运行新的命令(Y/N)?~~
+	set key=N
+	inkey /W10 /K"YN" %_msg %%key
+	if #%key==#N (quit)
+ENDDO
+quit
+
+:usage
+echo Usage: %0 [-n] [cmds]	==) Edit and run cmds.
+echo Option: -n ==) Do not ask to run new command 
+echo You can use any DOS/4DOS/4NT commands.
+quit

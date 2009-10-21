@@ -1,0 +1,32 @@
+@echo off
+iff #%_PROXYTYPE==# then
+  set _PROXYTYPE=http
+endiff
+iff #%_PROXY==# then
+  set _PROXY=%@regquery["HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ProxyServer"]
+  echoerr Detected IE Proxy is [%_PROXY] !
+  msg 0 Detected IE Proxy is [%_PROXY] ! Click OK to use IE proxy directly or edit the proxy address.~~
+  msg 936 检测到IE设置的代理服务器是[%_PROXY]！点击[OK]使用该设置，否则请直接输入代理服务器地址。~~
+  if not #%_PROXY==# querybox /E %_msg %%_PROXY
+endiff
+if #_PROXY==# quit
+
+:check
+set CURL_OPT=%@if[#%_PROXY==#,,%@if[#%_PROXYTYPE==#HTTP,-x,%@lower[%_PROXYTYPE]] %_PROXY]
+
+del %TMP\.listing >& nul
+curl %CURL_OPT  -l -m 1 "ftp://ftp.amss.ac.cn" > %TMP\.listing
+iff %@filesize[%TMP\.listing]==0 then
+  msg 0 It seems that the proxy server does not work well. Please correct it and check it again.~~
+  msg 936 代理服务器似乎有问题，请重新设置和测试。~~
+  querybox /E %_msg %%_PROXY
+  if %_?==0  goto check
+  echo Failure!
+else
+  msg 0 Congratulations! The proxy server [%_PROXY] is okay. You can use it now.~~
+  msg 936 代理服务器[%_PROXY]已经通过测试！您可以继续使用该代理设置。~~
+  msgbox OK %_msg
+  echo Success!
+endiff
+del %TMP\.listing >& nul
+quit

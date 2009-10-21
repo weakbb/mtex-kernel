@@ -1,0 +1,1 @@
+@util texcntr /nosplash /ddecmd "[goto('%2','%1')]" %3&

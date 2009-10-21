@@ -1,0 +1,40 @@
+All files(*.*)|*.*|TeX files(*.tex)|*.tex;*.ctx;*.sty;*.ty;*.ltx|Programs or scripts|*.c;*.cpp;*.dpr;*.pp;*.rc;*.asm;*.php;*.btm;*.cmd
+Template Selection Tool TMac v0.991   Copyright 2004--2008 mhb & qsh. Welcome to use it! This software is freeware!
+If you have any questions or comments, please contact me freely.
+Basic usage£ºTMac v0.95 provides a new customizable toolbar panel, which is very useful to invoke MTeX utils easily in any applications. You can see a hint message once you put mouse cursor over any tool icon for a while.
+If you move mouse to the leftmost tool icon (TMac), I will open previous Templates/Symbols window, and you can select a template or command from the blue combobox, or select a symbol panel from the red combobox and select a symbol from current panel, and it will be sent to the clipboard automatically. 
+If you have specified the editor in the command line, then the selected template or command will be sent to the corresponding text editor. 
+If you click the first small icon (OPEN) in the tool bar panel, then I will prompt you to choose a file and open it by the default text editor. Note that I will remember the current file path so that other tool icons can use such information. I can pass the current file path to the utils configured in TMac.ini.NOTE: right-click to select from file history.
+If you click the second small icon (UtilsMan) in the tool bar panel, then I will invoke Utils Manager, which can smartly popup proper dropdown menu according to the type of current file. In this way, you can easily compile your TeX files or programs without using any complex text editors with tool menus. Thus by this powerful MTeX toolbar panel for all applications, you can even use stupid Notepad to edit and compile your tex files or programs easily by clicking the OPEN icon to open the file and clicking UtilsMan icon to invoke popup menu.
+Other icons in the toolbar panel include several distinguished MTeX utils and those utils defined in TMac.ini. If you click the top rightmost small icon (EditIni), file tmac.ini will be opened with mini_pad for your editting. The formats of settings are very simple, and I hope you can add your own templates, symbols or tools by cloning existing settings and making changes:-) 
+Please click [OK] to reload the settings after editting the settings.
+Hide symbols panel
+Select a file and open it with the text editor specified in commandline (Right-click to slect from files history)
+Edit current opened file
+Utils Manager: this tool is very powerful and it can popup a filetype-sensitive menus. Use it to operate any file, including compiling your tex file or program, and so on. 
+Openx-Compile: this tool can smartly compile any source file via file type!
+MTeX Mainmenu: this tool will let you choose many functions of MTeX by simple menu buttons. Easy-to-use for all users!
+TEX-DOS Prompt: this tool will open a powerful dos shell window, and you can enter commands directly to use powerful MTeX. Very useful for advanced uses!
+TeX-Bitmap: this tool will enable you to use powerful LaTaX typesetting in any Windows applications such as PowerPoint, WinWord, etc. With this tool, you can typeset beautiful mathematical equations as bitmap when you make presentations by PowerPoint or Kingsoft WPP.
+BibX: this tool can help you to extract bib item automatically or manually from the information obtained by web database such as SCI, Scirus, etc. You can make your bib file by this tool easily.
+Spell: this tool can spell-check current file with any spell-checking util in MTeX.
+Net_Pkg: this tool help you search things in CTAN, download and install packages.
+TEX_Edit: this tool can invoke your favarite editor. 
+Docs: this tool let you choose any local or server documents provided by MTeX.
+Simple help
+Edit configuration file TMac.ini
+No file found
+Select text editor window
+Send current template to the clipborad or specified editor window
+Note: You have chosen editor 
+with Paste hotkey 
+and NewFile hotkey
+If you need to set the Paste hotkey as Shift+Insert or NewFile hotkey as Alt+FN, please add the editor name into setting Apps_ShiftIns or Apps_AltFN.
+Please configure the following settings correctly in the settings file:  
+ the size of each symbol!
+ the number of symbols!
+Found an image in clipboard and I have saved it to file 
+Please select a template/symbol [mhb&qhs]
+Times New Roman,14
+Send
+Please select a file to open:

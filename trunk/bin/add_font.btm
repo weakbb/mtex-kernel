@@ -1,0 +1,188 @@
+@echo off
+if #%1==# (goto usage)
+setlocal
+
+gosub parse_args
+echoerr Found font: %f_dir,%f_arc,%f_lst
+
+
+iff not "%MSETUP"=="" then
+  call chkmsetup
+  gosub local_extract
+endiff
+
+iff %@ext[%1]#%f_dir==# then
+  net_pkg %@name[%1].tfm
+  quit
+elseiff #%@ext[%1]==#rar then
+  iff not exist %1 then
+    iff #%@path[%f_arc]==# then
+      set f_arc=fonts/%f_arc
+    endiff
+  endiff
+  iff exist "%f_arc" then
+    gosub extract_font
+    quit
+  endiff
+endiff
+gosub ask_choice
+quit
+
+
+:usage
+echo Usage1: %0 wncyr10 ==) Add/install font archive containing wncyr10.tfm
+echo Usage2: %0 cyrillic.rar  ==) Add/install font archive cyrillic.rar 
+echo Usage3: %0 fonts2.rar  bera  *\bera\* ==) Add/install font files from archive fonts2.rar
+quit
+
+:local_extract
+set _u=%@replace[/,\,%[f_arc]]
+iff %@index[%_u,:]==-1 then
+  echoerr Searching [%_u] in [%MSETUP] ...
+  set _u=%@execstr[call %MTEX\bin\search.btm %_u  %MSETUP]
+  if #%_u==#  return
+endiff
+echoerr Automatically installing font archive [%_u] ...
+set f_arc=%_u
+mkdir "%TMP\fonts" >& nul
+pushd "%TMP\fonts"
+gosub extract_font
+popd
+quit
+return
+
+:parse_args
+set f_dir=
+set f_arc=
+set f_lst=%2*
+iff #%@ext[%1]==# then
+  gosub query_db
+elseiff #%@ext[%1]==#rar then
+  set f_arc=%1
+  set f_dir=%@if[#%2==#,%@name[%1],%2]
+  set f_lst=%@if[#%3==#,*,%3]
+endiff
+set f_sav=%@name[%f_arc].%@ext[%f_arc]
+return
+
+:query_db
+set pat=%@lower[%1]
+for %a in (cs ec el l7x qx rm t5 texansi ts1 t1) do set pat=%@replace[%a-,,%pat]
+set pat=%@replace[-105,,%pat]
+set len=%@len[%pat]
+set isgbk=0
+iff %@wild[%pat,gbk*[0-9][0-9]]==1 then
+  set pat=%@left[%@eval[%len-2],%pat]
+  set isgbk=1
+elseiff %@wild[%pat,bg5*[0-9a-z][0-9a-z]]==1 then
+  set pat=%@left[%@eval[%len-2],%pat]
+  set isgbk=1
+elseiff %@wild[%pat,uni*[0-9a-z][0-9a-z]]==1 then
+  set pat=%@left[%@eval[%len-2],%pat]
+  set isgbk=1
+endiff
+iff #%isgbk==#1 then
+  set res=%@execstr[sed -n -e "/%pat@/p" "%MTEX\_\ttfonts.map"]
+  set ttf_file=%@word[1,%res]
+  set f_dir=%pat
+  ::%@name[%ttf_file]
+  set f_arc=fonts/%@name[%ttf_file].rar
+  return
+endiff
+set dbfile=%@if[exist %ETC\fonts_db.cfg,%ETC\fonts_db.cfg,%MTEX\_\fonts_db.cfg]
+set res=%@execstr[sed -n -e "/:/h;/^%pat[^a-zA-Z]/{g;p;q;}" %dbfile]
+if #%res==# (return)
+set f_dir=%@word[":",0,%res]
+set f_arc=%@word[":",1,%res]
+set f_lst=%@word[":",2,%res]
+iff #%f_arc==# then
+  set f_arc=fonts/%[f_dir].rar
+endiff
+iff #%f_lst==# then
+  set f_lst=%2*
+endiff
+return
+
+:ask_choice
+msg 0 Do you want to install font family [%f_dir] from [%f_arc]? Please choose: //Copy From Local Folder/Extract From Font Archive/Download and Install/Search in CTAN by Net_pkg/Cancel~~
+msg 936 是否从字体包[%f_arc]安装字体[%f_dir]?请选择://从文件夹拷贝字体/从字体压缩包解压字体/在线下载并安装字体/用Net_pkg搜索CTAN/取消~~
+wask {160}%_msg
+set _i=%?
+
+iff #%_i==#-1 .OR. #%_i==#5 then
+elseiff #%_i==#1 then 
+  gosub copy_font
+elseiff #%_i==#2 then 
+  ::if isdir "%MSETUP" (set f_sav=%MSETUP\%@replace[/,\,%f_arc])
+  set f_arc=%@sfn[%@getfile[%f_sav]]
+  if exist "%f_arc" (gosub extract_font)
+elseiff #%_i==#3 then 
+  pushd %TMP\fonts
+  gosub download_font
+  gosub extract_font
+  popd
+elseiff #%_i==#4 then 
+  net_pkg %@name[%1].tfm
+endiff
+return
+
+:copy_font
+set src_dir=%@getdir[c:\]
+call copyfnts.btm %src_dir %f_dir 
+return
+
+:extract_font
+if #%f_dir==# (return)
+iff exist "%f_arc" then
+  REM ~ mkdir /s %f_dir >& nul
+  echo Running: unrar.exe x -o+ %f_arc %f_lst %f_dir\
+  unrar.exe x -o+ %f_arc %f_lst %f_dir\
+  set src_dir=%f_dir\
+  call copyfnts.btm -q %src_dir %f_dir 
+  del /q /s /x /y /e %f_dir
+endiff
+return
+
+:download_font
+set server=%@line["%MTEX\_\mserver.cfg",0]
+iff exist "%ETC\mserver.cfg" then
+  set server=%@line["%ETC\mserver.cfg",0]
+endiff
+set server=%@execstr[call ask_server.btm]
+
+iff exist "%f_sav" then
+  msg 0 Do you really want to overwrite file [%f_sav] in [%_CWD]?~~
+  msg 936 文件[%_CWD\%f_sav]已存在，是否确认要覆盖它？~~
+  msgbox YESNOCANCEL %_msg
+  if not %_?==10 return
+endiff
+
+set url=%[server]/%@replace[\,/,%f_arc]
+msg 0 Ready to download [%f_arc] from server [%server], please confirm the URL and then wait until downloaded.~~ 
+msg 936 即将下载如下文件，请确认网址。下载文件可能较慢，确认后请耐心等待。~~
+querybox /E %_msg %%url
+if %_?==2 (return)
+echo Downloading file [%url] to [%_CWD\%f_sav], please wait until finished ...
+
+echo Running: down_url "%_fn" "%url"
+down_url "%f_sav" "%url"
+
+echo Downloading finished? I will test the rar archieve:-)
+
+unrar t "%f_sav"
+iff %?==0 then 
+  msg 0  Downloading finished! File [%f_sav] is saved in folder [%_CWD]!~~
+  msg 936 下载完毕！文件[%f_sav]保存于文件夹[%_CWD]！~~
+  ::set f_arc=%@sfn[%f_sav]
+  set f_arc=%_CWD\%f_sav
+  msgbox OK %_msg
+else
+  del "%f_sav"
+  set f_arc=
+  msg 0 Error in downloading? Please make sure the URL is correct!~~
+  msg 936 下载似乎有错误！请确认下载地址正确！~~
+  msgbox OKCANCEL %_msg
+  if %_?==10 (goto download_font)
+endiff
+
+return

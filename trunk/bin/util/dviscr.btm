@@ -1,0 +1,1 @@
+@start /max dviscr.exe -gvga -r600 -z0 %@sfn[%1] %2&

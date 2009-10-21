@@ -1,0 +1,16 @@
+@echo off
+if #%1==# goto usage
+setlocal
+set _tmp=__tmp__.tex
+if not exist %1 goto usage
+set out=%2
+if #%2==# set out=%@name[%1].dvi
+call t2l.btm %1 %_tmp
+call latex %_tmp
+for %a in (log aux tex) del %@name[%_tmp].%a
+move %@name[%_tmp].dvi "%out"
+quit
+
+:usage
+echo %0 txtfile [dvifile] ==) Convert txtfile to dvifile
+quit

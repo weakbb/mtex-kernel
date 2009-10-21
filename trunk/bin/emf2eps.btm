@@ -1,0 +1,31 @@
+@echo off
+setlocal
+if #%1==# (goto #usage)
+iff %@wild[%1,:*]==1 then
+  set converter=%@instr[1,255,%1]
+  shift
+endiff
+if not exist %1 (goto #usage)
+set out=%2
+if #%2==# (set out=%@path[%1]%@name[%1].eps)
+gosub #gen_eps
+quit
+
+:#usage
+echo Usage1: %0 emffile [epsfile] ==) Convert emf file to eps format through EMP2PS
+echo Usage2: %0 :jpg_eps emffile [epsfile] ==) Convert emf file to eps format through JPEG2PS
+echo Note: I will use EMP2PS [mathmhb] to make the conversion if you have installed PS-Printer.
+return 
+
+:#gen_eps
+emf2ps.exe %1 "%TMP\_emf2ps_.ps" > %out
+if not exist "%TMP\_emf2ps_.ps" (goto #jpg_eps)
+::sed -e "s/^[%%].*BoundingBox//g" "%TMP\_emf2ps_.ps" >> %out
+type "%TMP\_emf2ps_.ps" >> %out
+del "%TMP\_emf2ps_.ps" >& nul
+return
+
+:#jpg_eps
+call gconvert.btm .jpg %1
+jpeg2ps.exe "%@path[%1]%@name[%1].jpg" > %out
+return

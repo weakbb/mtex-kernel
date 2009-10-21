@@ -1,0 +1,215 @@
+@echo off
+if #%1==#  goto usage
+setlocal
+set TTFONTS=%TTFDIR
+set TTFCFG=%MTEX\texinput\ttfcfg
+if not isdir %TTFCFG set TTFCFG=%MTEX\texlocal\ttfcfg
+set TTF2PKINPUTS=%ETC!!;%MTEX\texinput\ttfcfg;%MTEX\texlocal\ttfcfg
+set FONTS=%TMP\fonts
+::if %@cdrom[%MTEX]==0 .AND. %@removable[%MTEX]==0 (set FONTS=%MTEX\fonts)
+
+set _f=%1
+set _e=%@ext[%1]
+set _n=%@name[%1]
+set _p=%@path[%1]
+if not #%2==#  set _n=%2
+if %@wild[%1,????[0-9][0-9][0-9][0-9]]==1 goto make_ectc
+iff %_p#%_e==# then
+  set _tfm=%@execstr[kwhich %[_n].tfm]
+  iff not #%_tfm==# then
+    echo %_tfm 
+    quit
+  endiff
+endiff
+if #%_e==#  goto make_tfm
+iff not exist %_f then
+  set _f=%@execstr[kwhich %_f]
+  if #%_f==# quit
+  set _f=%@replace[/,\,%_f ]
+endiff
+if exist %_f  goto start
+quit
+
+:start
+set _e=%@lower[%@ext[%_f]]
+set _p=%@path[%_f]
+set _p=%@replace[.%_e,tfm,%_p ]
+set _p=%@replace[\%_e\,\tfm\,%_p ]
+set _tfm=%[_p]%[_n].tfm
+iff exist %_tfm then 
+  echo %_tfm 
+  quit
+endiff
+
+iff islabel %_e then 
+  pushd %TMP
+  gosub %_e  1>&2
+  mkdir %_p >&nul
+  move %_n.tfm %_tfm >&nul
+  popd
+endiff
+if exist %_tfm (echo %_tfm)
+quit
+
+:check [tfm]
+iff exist %tfm then
+  echo %tfm 
+  quit
+endiff
+return
+
+
+
+:error
+echoerr Cannot make [%_n.tfm]!
+quit
+
+:make_ectc
+pushd %TMP
+set _ff=%@left[4,%1]
+set _fs=%@right[4,%1]
+echo if unknown exbase: input exbase fi; > %1.mf
+echo gensize:=%@eval[%_fs/100]; >> %1.mf
+echo generate %_ff >> %1.mf
+MF "\mode=localfont; input %1"  1>&2
+mkdir /s "%TMP\fonts\tfm\ec" >& nul
+mkdir /s "%TMP\fonts\mf\ec" >& nul
+move %1.tfm "%TMP\fonts\tfm\ec" >& nul
+move %1.mf "%TMP\fonts\mf\ec" >& nul
+del %1.log %1.[0-9]* >& nul
+echo %TMP\fonts\tfm\ec\%1.tfm
+popd
+quit
+
+
+:make_tfm
+pushd %TMP
+set _tmp=%TMP\__tmp__.tmp
+ttf2pk -t %_n >& %_tmp
+
+iff %?==0 then
+  set _s=%@line[%_tmp,1]
+  set _a=%@word[0,%_s]
+  set _i=%@index[%_s, ]
+  set _s=%@instr[%_i,255,%_s]
+  set _s=%@replace[Slant=,-s ,%_s]
+  set _s=%@replace[Extend=,-e ,%_s]
+  set _s=%@replace[Encoding=,-T ,%_s]
+  set _s=%@replace[Eid=,-E ,%_s]
+  set _s=%@replace[Pid=,-P ,%_s]
+  set _s=%_s -q %_a
+  set _dd=%@if[#%@right[1,%_a]==#@,cjk,ttf]\
+  set _d=%@path[%@execstr[call %MTEX\bin\search.btm %_n.tfm %MTEX\fonts\tfm\%_dd;%TMP\fonts\tfm\%_dd]]
+  iff #%_d==# then 
+  set _d=%FONTS\tfm\%_dd
+  mkdir /s %_d >&nul
+  pushd %_d
+  if not exist %_n.tfm (ttf2tfm %_s 1>&2)
+  popd
+  endiff
+else
+  gosub get_src_opt
+  set _e=%@lower[%@ext[%_f]]
+  set _d=%@replace[/,\,%_f]
+  set _d=%@replace[\%_e\,\tfm\,%_d]
+  set _d=%@path[%_d]
+  set T1INPUTS=%_d
+  mkdir /s %_d >&nul
+  pushd %_d
+  if not exist %_n.tfm  (gosub %_e  1>&2)
+  popd
+endiff
+echo %[_d]%[_n].tfm
+del %_tmp >&nul
+popd
+quit
+
+
+
+:get_src_opt
+set opt=
+set _f=%@execstr[kwhich %_n.mf]
+if not #%_f==#  return
+set fx=%@execstr[xfind " %_n " %ETC\makepk.map]
+set _f=%@word[1,%fx]
+set opt=%@word[";",1,%fx]
+set opt=%@replace[-e,-T ,%opt ]
+set opt=%@replace[-S,-s ,%opt ]
+set opt=%@replace[-E,-e ,%opt ]
+
+if #%@name[%_f]==#  set _f=%_n.pfb
+iff #%@ext[%_f]==#vf then
+  set _f=%_n.pfb
+endiff
+
+if exist %_f  return
+set _f=%@execstr[kwhich %_f]
+if not #%_f==#  return
+
+call add_font.btm %_n  1>&2
+::net_pkg %[_n].tfm
+set _tfm=%@execstr[kwhich %[_n].tfm]
+if #%_tfm==# goto error
+
+set _tfm=%@replace[\,/,%_tfm]
+echo %_tfm
+del %_tmp >&nul
+popd
+quit
+
+:error
+msg 0 I cannot generate file [%[_n].tfm]! Do you want to cheat TeX by using faked tfm file [cmr10.tfm]?~~
+msg 936 经过尝试仍无法生成字体文件%[_n].tfm！是否生成假的tfm文件[cmr10.tfm]欺骗TeX以编译通过？~~
+msgbox YESNO %_msg
+if %_?==10 (copy %MTEX\fonts\tfm\cm\cmr10.tfm %TMP\%[_n].tfm  1>&2 )
+del %_tmp >&nul
+echo %TMP\%[_n].tfm
+popd
+quit
+
+
+
+:mf
+MFX 1 %_f 
+del /E *.log *.[0-9]* 
+return
+
+:pfb
+type1afm %_f
+afm2tfm %opt %@replace[.pfb,.afm,%_f] %_n.tfm 
+return
+
+:ttf
+:ttc
+cdd %TMP
+if %@filesize[%_f,k] GT 800  goto cjk
+ttf2tfm %_f -q -T T1-WGL4.enc %_n.tfm
+set _tfm=%FONTS\tfm\ttf\%_n.tfm
+return
+
+:cjk
+return
+msg 0 Please use MAKEFNT command to configure font file [%_f]! MAKETFM only works for western TTF file.~~
+msg 936 MAKETFM仅适用于西文TTF文件，请用MAKEFNT命令来配置中文TTF字体[%_f]！~~
+msgbox OK %_msg
+return 
+
+
+:vf
+pushd %TMP
+set _vf=%@execstr[kwhich %_n.vf]
+if #%_vf==# (return)
+set _vf=%@replace[/,\,%_vf]
+set _tfm=%@replace[vf,tfm,%_vf]
+set vn=%@execstr[vfname %_vf]
+if #%vn==# return
+set _vn=%@execstr[mktextfm %vn]
+copy %_vn %_tfm
+return
+
+
+
+:usage
+echo Usage1: %0 xxx  ==)Try to create file [xxx.tfm]. 
+echo Usage2: %0 font_file [xxx]  ==) Make tfm file from spcified font file (Metafont/Type1/TrueType).
+quit
