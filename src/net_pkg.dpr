@@ -35,6 +35,7 @@ const
 	+'°´Å¥1:ÔÚÍøÉÏËÑË÷ºê°ü¡ú°´Å¥2:ÏÂÔØÑ¡ÔñµÄÎÄ¼ş¡ú°´Å¥3:°²×°ºê°ü¡£'+CR
 	+'Äú»¹¿ÉÒÔÓÃ°´Å¥[...]Ñ¡ÔñÎÄ¼şÏÂÔØµÄÄ¿±êÎÄ¼ş¼Ğ£¬Ä¬ÈÏÇé¿öÏÂÖ±½ÓÏÂÔØµ½MTeXºê°üÄ¿Â¼ÖĞ¡£'+CR
 	+'Èç¹ûÄúĞèÒªÊ¹ÓÃ´úÀí·şÎñÆ÷»òĞŞ¸ÄÆäËüÄ¬ÈÏÅäÖÃ£¬Çëµã»÷°´Å¥[ÅäÖÃ]¡£';
+   s_pattern='***';
    // def_ctan_find='http://www.ctan.org/cgi-bin/filenameSearch.py?filename=';
    def_ctan_find='http://www.ctan.org/search/?&search_type=filename&filename_number=1000&filename_start=0&search=***';
    def_ctan_tpm='http://www.ctan.org/tex-archive/systems/win32/fptex/current/package/';
@@ -45,8 +46,9 @@ const
    def_comspec='mtex-dos.exe';
    def_pkglist='pkg.lst';
    def_workdir='texlocal\_new\';
-   def_ftpsite='ftp://ftp.ctex.org/CTAN/';
-   //'localhost';ftp://ftp.comp.hkbu.edu.hk/pub/TeX/CTAN;ftp://ftp.ccu.edu.tw/pub/tex;http://ctan.cdpa.nsysu.edu.tw/;ftp://ftp.nctu.edu.tw/pub/tex
+   def_ftpsite='ftp://ftp.ctex.org/CTAN';
+   bit_ctan_mirror='http://mirror.bitunion.org/CTAN';
+   //'localhost';ftp://ftp.comp.hkbu.edu.hk/pub/TeX/CTAN;ftp://ftp.ccu.edu.tw/pub/tex;http://ctan.cdpa.nsysu.edu.tw;ftp://ftp.nctu.edu.tw/pub/tex
    //'http://www.ctan.org/get?fn=/'
    def_extlist='.sty.cls.fd.fdd.fdx.sfd.enc.dtx.ins.ini.con.cfg.def.dat.cap.cpx.pro.ps.tex.clo.ist.doc.mbs.tss.new.mf.tfm.pfb';
    def_extractcab='for %a in (*.cab) call cabarc -p -o X %a';
@@ -367,13 +369,16 @@ showmessage('ºê°ü'+pkgname+'¿ÉÄÜÒÑ¾­°²×°,µã»÷[È·¶¨]¿ÉÒÔ´ÓÍøÉÏ²éÕÒ¸üĞÂµÄºê°üÎÄ¼ş¡
 end;
 
 procedure CheckTPM;
-var s0,s1,s2:string;
+var s0,s1,s2,url,server:string;
 begin;
 s0:=pkgname+'.tpm';
 EB1.add('¿ªÊ¼µ½ CTAN ÍøÉÏËÑË÷ '+s0+'£¨½«¸ù¾İ¸ÃÎÄ¼şÖÇÄÜÑ¡Ôñºê°üÎÄ¼ş£©£¬ÇëµÈ´ı ... ');W.processmessages;
-EB1.add(CR+ctan_tpm+s0);W.processmessages;
+url:=ctan_tpm+s0;
+server:= trim(CB2.Text);
+if Pos('/',ctan_tpm)=1 then url:=server+url;
+EB1.add(CR+url+' ');W.processmessages;
 p.Clear;
-if not GetInetFile(ctan_tpm+s0,p) then begin;EB1.add('Ê§°Ü'+CR);exit;end;
+if not GetInetFile(url,p) then begin;EB1.add('Ê§°Ü'+CR);exit;end;
 s_tpm:=p.Text; s_files:='';
 if not (Pos('<!DOCTYPE rdf:RDF',s_tpm)=1) then begin;EB1.add('Ê§°Ü'+CR);exit;end;
 EB1.add('³É¹¦'+CR);
@@ -445,7 +450,11 @@ if Length(http_proxy) > 0 then EB1.add('Ê¹ÓÃ´úÀí·şÎñÆ÷'+http_proxy+CR);
 if (searchtpm='1') and (Pos('.',pkgname)=0) then CheckTPM;//[mhb]: do not check TPM for filename
 p.Clear;LB1.Clear;
 
-url:=StrReplaceAll(ctan_find,'***',pkgname);
+if Pos(s_pattern,ctan_find)>0 then 
+  url:=StrReplaceAll(ctan_find,s_pattern,pkgname)
+else 
+  url:=ctan_find+pkgname;
+  
 EB1.add('¿ªÊ¼µ½ CTAN ÍøÉÏËÑË÷ '+pkgname+'£¬ÇëµÈ´ı ... ');W.processmessages;
 EB1.add(CR+url+' ');W.processmessages;
 
@@ -800,6 +809,7 @@ if pos('http=',ftp_proxy)=1 then
 if pos('http=',http_proxy)=1 then
   begin;Delete(http_proxy,1,5);http_proxy:='http://'+http_proxy;end;
 ftps:=GetIniStr(f_ini,'General','FTP',def_ftpsite);
+if IsInBIT then ftps:=bit_ctan_mirror;
 ChDir(GetStartDir);
 if FileExists(f_ftp) then ftps:=ftps+CR+StrLoadFromFile(f_ftp);
 p.Text:=ftps;LastSite:=CB2.text;CB2.clear;for i:=0 to p.Count-1 do CB2.Add(p.Items[i]); p.clear;
