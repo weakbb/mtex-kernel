@@ -1,4 +1,6 @@
 {
+v0.91: 根据CTAN网站搜索功能的改变，修改默认设置和相关代码，允许CTAN_Find里面用***代表文件名
+v0.90: 允许用户设置CTAN_Find、CTAN_TPM，并提供国内搜索的url，从而方便教育网用户不用出国代理就能搜索CTAN资源
 v0.88: 修正查找tfm异常退出的bug
 v0.87: 使用系统默认字体
 v0.86: WorkDir设置允许用环境变量；实现线程
@@ -28,18 +30,21 @@ const
    BufferSize = 65536;
    fn_ini='net_pkg.ini';
    f_ftp='net_pkg.ftp';
-   usage='本工具用于帮您在网上搜索宏包，并下载下来装到MTeX中。[mhb & qhs] v0.88'+CR
+   usage='本工具用于帮您在网上搜索宏包，并下载下来装到MTeX中。[mhb & qhs] v0.90'+CR
 	+'按钮0:该按钮用来检查MTeX是否已有指定宏包(并将宏包文件路径拷贝到剪贴板)。'+CR
 	+'按钮1:在网上搜索宏包→按钮2:下载选择的文件→按钮3:安装宏包。'+CR
 	+'您还可以用按钮[...]选择文件下载的目标文件夹，默认情况下直接下载到MTeX宏包目录中。'+CR
 	+'如果您需要使用代理服务器或修改其它默认配置，请点击按钮[配置]。';
-   ctan_find='http://www.ctan.org/cgi-bin/filenameSearch.py?filename=';
-   pre_beg='<pre class=''filename_search_hits''>';pre_end='</pre>';
+   // def_ctan_find='http://www.ctan.org/cgi-bin/filenameSearch.py?filename=';
+   def_ctan_find='http://www.ctan.org/search/?&search_type=filename&filename_number=1000&filename_start=0&search=***';
+   def_ctan_tpm='http://www.ctan.org/tex-archive/systems/win32/fptex/current/package/';
+   // pre_beg='<pre class=''filename_search_hits''>';pre_end='</pre>';
+   // a_beg='<a href=';a_mid='>';a_end='</a>';
+   pre_beg='<table class=''pkg_info''>';pre_end='</table>';
    a_beg='<a href=';a_mid='>';a_end='</a>';
-   def_comspec='tex-dos.exe';
+   def_comspec='mtex-dos.exe';
    def_pkglist='pkg.lst';
    def_workdir='texlocal\_new\';
-   def_tpmsite='http://www.ctan.org/tex-archive/systems/win32/fptex/current/package/';
    def_ftpsite='ftp://ftp.ctex.org/CTAN/';
    //'localhost';ftp://ftp.comp.hkbu.edu.hk/pub/TeX/CTAN;ftp://ftp.ccu.edu.tw/pub/tex;http://ctan.cdpa.nsysu.edu.tw/;ftp://ftp.nctu.edu.tw/pub/tex
    //'http://www.ctan.org/get?fn=/'
@@ -73,7 +78,7 @@ var App,W,B0,B1,B2,B3,B4,B5,B6,E1,E2,E3,E4,L1,L2,L3,L4,LB1,CB1,CB2,CB3,CB4,P1,C1
 	T:PTimer;
 	cnt:integer;
 
-	f_ini,mtex,pkgname,comspec,extractcab,extractzip,searchtpm,cmd_install,ftp_site,extlist,pkglist,workdir,ftp_proxy,http_proxy,HttpProxyUser,HttpProxyPass,ftps,s_tpm,s_files:string;
+	f_ini,mtex,pkgname,comspec,extractcab,extractzip,searchtpm,cmd_install,ftp_site,ctan_find,ctan_tpm,extlist,pkglist,workdir,ftp_proxy,http_proxy,HttpProxyUser,HttpProxyPass,ftps,s_tpm,s_files:string;
 	Th:PThread;
 	Th_Session,Th_Connect:HInternet;
 	Th_fileURL,Th_FileName,Th_proxy: String;
@@ -366,8 +371,9 @@ var s0,s1,s2:string;
 begin;
 s0:=pkgname+'.tpm';
 EB1.add('开始到 CTAN 网上搜索 '+s0+'（将根据该文件智能选择宏包文件），请等待 ... ');W.processmessages;
+EB1.add(CR+ctan_tpm+s0);W.processmessages;
 p.Clear;
-if not GetInetFile(def_tpmsite+s0,p) then begin;EB1.add('失败'+CR);exit;end;
+if not GetInetFile(ctan_tpm+s0,p) then begin;EB1.add('失败'+CR);exit;end;
 s_tpm:=p.Text; s_files:='';
 if not (Pos('<!DOCTYPE rdf:RDF',s_tpm)=1) then begin;EB1.add('失败'+CR);exit;end;
 EB1.add('成功'+CR);
@@ -404,6 +410,7 @@ if i>0 then Result:=Copy(tfm,1,i-1) else Result:=tfm;
 tfm:='/tfm/'+tfm;
 p.Clear;
 EB1.add(CR+'开始到 CTAN 网上搜索 '+tfm+'，请等待 ... ');W.processmessages;
+EB1.add(CR+ctan_find+tfm);W.processmessages;
 b:=GetInetFile(ctan_find+tfm,p);
 if (not b) or (pos('<!DOCTYPE html',p.Text)<=0) then
   begin;
@@ -418,7 +425,7 @@ if Msg_OkCancel('发现字体文件 '+'*/'+fn+tfm+'，是否搜索并下载整个字体族['+fn+']?
 end;
 
 function Search:bool;
-var s0,s1,s2,ss,ext:string;zip_exists,zip_selected:boolean;
+var s0,s1,s2,ss,ext,url:string;zip_exists,zip_selected:boolean;
 begin;
 Result:=false;
 if trim(CB1.Text) = '' then begin;Showmessage('请先输入要查找的宏包名称!');Setfocus(CB1.handle);Exit;End;
@@ -431,18 +438,26 @@ if ext='.tfm' then
 
 if Pos(ext+'.','.sty.cls.')>0 then pkgname:=ExtractFileNameWOExt(pkgname);
 EB1.clear;
+
+//[mhb]03/06/12 added: to show proxy settings
+if Length(http_proxy) > 0 then EB1.add('使用代理服务器'+http_proxy+CR);
+
 if (searchtpm='1') and (Pos('.',pkgname)=0) then CheckTPM;//[mhb]: do not check TPM for filename
 p.Clear;LB1.Clear;
 
-
+url:=StrReplaceAll(ctan_find,'***',pkgname);
 EB1.add('开始到 CTAN 网上搜索 '+pkgname+'，请等待 ... ');W.processmessages;
+EB1.add(CR+url+' ');W.processmessages;
 
-if (not GetInetFile(ctan_find+pkgname,p)) or (pos('<!DOCTYPE html',p.Text)<=0) then
+if (not GetInetFile(url,p)) 
+//[mhb]03/06/12 commented: or (pos('<!DOCTYPE html',p.Text)<=0) 
+then
   begin;
     EB1.add('失败'+CR);EB1.add('在网上搜索失败，请检查您能否上网。');W.processmessages;Exit;
   end;
 s:=p.Text;//showmessage(s);
-if pos('Sorry; no matches found.',s)>0 then
+// if pos('Sorry; no matches found.',s)>0 then
+if pos(' no ',s)>0 then
 begin;
   EB1.add('失败'+CR);EB1.add('未找到任何关于宏包 '+pkgname+' 的文件，请确认宏包名称是否正确！');Exit;
 end;
@@ -460,11 +475,14 @@ repeat
   s0:=S_Before(a_beg,s);
   s1:=S_Before(a_mid,s);
   s2:=S_Before(a_end,s);
-  LB1.Add(s2);
-  if not zip_exists then LB1.ItemSelected[LB1.Count-1]:=IsSelected(LowerCase(s2))
-  else if zip_exists and (not zip_selected) and (Pos('/'+pkgname+'.zip',s2)>0) then
-	  begin;LB1.ItemSelected[LB1.Count-1]:=true;zip_selected:=true;end
-  else begin;LB1.ItemSelected[LB1.Count-1]:=false;end;
+  if Pos('/',s2)=1 then 
+    begin;
+    LB1.Add(s2);
+    if not zip_exists then LB1.ItemSelected[LB1.Count-1]:=IsSelected(LowerCase(s2))
+    else if zip_exists and (not zip_selected) and (Pos('/'+pkgname+'.zip',s2)>0) then
+        begin;LB1.ItemSelected[LB1.Count-1]:=true;zip_selected:=true;end
+    else begin;LB1.ItemSelected[LB1.Count-1]:=false;end;
+    end;
 until s='';//[mhb] fix a bug: s0=''
 
 EB1.add('可能的宏包文件已经为您自动选中，您可以按住 Ctrl 键调整选中的文件。'
@@ -766,6 +784,8 @@ comspec:=GetIniStr(f_ini,'General','Comspec',def_comspec);
 // extractcab:=GetIniStr(f_ini,'General','ExtractCab',def_extractcab);
 // extractzip:=GetIniStr(f_ini,'General','ExtractZip',def_extractzip);
 searchtpm :=GetIniStr(f_ini,'General','SearchTPM','1');
+ctan_tpm :=GetIniStr(f_ini,'General','CTAN_TPM',def_ctan_tpm);
+ctan_find :=GetIniStr(f_ini,'General','CTAN_Find',def_ctan_find);
 cmd_install:=GetIniSec(f_ini,'Install');
 if Length(cmd_install)<10 then cmd_install:=def_cmd_install;
 
